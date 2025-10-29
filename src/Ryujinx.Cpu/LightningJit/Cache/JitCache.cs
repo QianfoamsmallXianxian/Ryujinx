@@ -63,7 +63,7 @@ namespace Ryujinx.Cpu.LightningJit.Cache
 
         [SupportedOSPlatform("windows")]
         [LibraryImport("kernel32.dll", SetLastError = true)]
-        public static partial IntPtr FlushInstructionCache(IntPtr hProcess, IntPtr lpAddress, UIntPtr dwSize);
+        public static partial nint FlushInstructionCache(nint hProcess, nint lpAddress, nuint dwSize);
 
         public static void Initialize(IJitMemoryAllocator allocator)
         {
@@ -94,7 +94,7 @@ namespace Ryujinx.Cpu.LightningJit.Cache
             }
         }
 
-        public unsafe static IntPtr Map(ReadOnlySpan<byte> code)
+        public unsafe static nint Map(ReadOnlySpan<byte> code)
         {
             lock (_lock)
             {
@@ -126,7 +126,7 @@ namespace Ryujinx.Cpu.LightningJit.Cache
                     funcOffset = Allocate(code.Length);
                 }
 
-                IntPtr funcPtr = _jitRegion.Pointer + funcOffset;
+                nint funcPtr = _jitRegion.Pointer + funcOffset;
 
                 if (OperatingSystem.IsMacOS() && RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
                 {
@@ -134,7 +134,7 @@ namespace Ryujinx.Cpu.LightningJit.Cache
                     {
                         fixed (byte* codePtr = code)
                         {
-                            JitSupportDarwin.Copy(funcPtr, (IntPtr)codePtr, (ulong)code.Length);
+                            JitSupportDarwin.Copy(funcPtr, (nint)codePtr, (ulong)code.Length);
                         }
                     }
                 }
@@ -146,7 +146,7 @@ namespace Ryujinx.Cpu.LightningJit.Cache
 
                     if (OperatingSystem.IsWindows() && RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
                     {
-                        FlushInstructionCache(Process.GetCurrentProcess().Handle, funcPtr, (UIntPtr)code.Length);
+                        FlushInstructionCache(Process.GetCurrentProcess().Handle, funcPtr, (nuint)code.Length);
                     }
                     else
                     {
@@ -166,7 +166,7 @@ namespace Ryujinx.Cpu.LightningJit.Cache
             }
         }
 
-        public static void Unmap(IntPtr pointer)
+        public static void Unmap(nint pointer)
         {
             lock (_lock)
             {

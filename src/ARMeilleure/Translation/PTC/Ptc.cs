@@ -258,11 +258,11 @@ namespace ARMeilleure.Translation.PTC
                     return false;
                 }
 
-                IntPtr intPtr = IntPtr.Zero;
+                nint intPtr = nint.Zero;
 
                 try
                 {
-                    intPtr = Marshal.AllocHGlobal(new IntPtr(outerHeader.UncompressedStreamSize));
+                    intPtr = Marshal.AllocHGlobal(new nint(outerHeader.UncompressedStreamSize));
 
                     using UnmanagedMemoryStream stream = new((byte*)intPtr.ToPointer(), outerHeader.UncompressedStreamSize, outerHeader.UncompressedStreamSize, FileAccess.ReadWrite);
                     try
@@ -356,7 +356,7 @@ namespace ARMeilleure.Translation.PTC
                 }
                 finally
                 {
-                    if (intPtr != IntPtr.Zero)
+                    if (intPtr != nint.Zero)
                     {
                         Marshal.FreeHGlobal(intPtr);
                     }
@@ -438,11 +438,11 @@ namespace ARMeilleure.Translation.PTC
 
             outerHeader.SetHeaderHash();
 
-            IntPtr intPtr = IntPtr.Zero;
+            nint intPtr = nint.Zero;
 
             try
             {
-                intPtr = Marshal.AllocHGlobal(new IntPtr(outerHeader.UncompressedStreamSize));
+                intPtr = Marshal.AllocHGlobal(new nint(outerHeader.UncompressedStreamSize));
 
                 using UnmanagedMemoryStream stream = new((byte*)intPtr.ToPointer(), outerHeader.UncompressedStreamSize, outerHeader.UncompressedStreamSize, FileAccess.ReadWrite);
                 stream.Seek((long)Unsafe.SizeOf<InnerHeader>(), SeekOrigin.Begin);
@@ -496,7 +496,7 @@ namespace ARMeilleure.Translation.PTC
             }
             finally
             {
-                if (intPtr != IntPtr.Zero)
+                if (intPtr != nint.Zero)
                 {
                     Marshal.FreeHGlobal(intPtr);
                 }
@@ -648,7 +648,7 @@ namespace ARMeilleure.Translation.PTC
 
             foreach (RelocEntry relocEntry in relocEntries)
             {
-                IntPtr? imm = null;
+                nint? imm = null;
                 Symbol symbol = relocEntry.Symbol;
 
                 if (symbol.Type == SymbolType.FunctionTable)
@@ -659,7 +659,7 @@ namespace ARMeilleure.Translation.PTC
                     {
                         unsafe
                         {
-                            imm = (IntPtr)Unsafe.AsPointer(ref translator.FunctionTable.GetValue(guestAddress));
+                            imm = (nint)Unsafe.AsPointer(ref translator.FunctionTable.GetValue(guestAddress));
                         }
                     }
                 }
@@ -667,7 +667,7 @@ namespace ARMeilleure.Translation.PTC
                 {
                     int index = (int)symbol.Value;
 
-                    if (Delegates.TryGetDelegateFuncPtrByIndex(index, out IntPtr funcPtr))
+                    if (Delegates.TryGetDelegateFuncPtrByIndex(index, out nint funcPtr))
                     {
                         imm = funcPtr;
                     }
@@ -682,7 +682,7 @@ namespace ARMeilleure.Translation.PTC
 
                     unsafe
                     {
-                        imm = (IntPtr)Unsafe.AsPointer(ref callCounter.Value);
+                        imm = (nint)Unsafe.AsPointer(ref callCounter.Value);
                     }
                 }
                 else if (symbol == DispatchStubSymbol)
@@ -732,7 +732,7 @@ namespace ARMeilleure.Translation.PTC
             bool highCq)
         {
             var cFunc = new CompiledFunction(code, unwindInfo, RelocInfo.Empty);
-            var gFunc = cFunc.MapWithPointer<GuestFunction>(out IntPtr gFuncPointer);
+            var gFunc = cFunc.MapWithPointer<GuestFunction>(out nint gFuncPointer);
 
             return new TranslatedFunction(gFunc, gFuncPointer, callCounter, guestSize, highCq);
         }

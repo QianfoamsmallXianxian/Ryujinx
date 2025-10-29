@@ -103,7 +103,7 @@ namespace ARMeilleure.Translation
             IntPtr funcPtr = Delegates.GetDelegateFuncPtrByIndex(index);
 #else
             // For other platforms, use direct method handle approach
-            IntPtr funcPtr = info.MethodHandle.GetFunctionPointer();
+            nint funcPtr = info.MethodHandle.GetFunctionPointer();
 #endif
 
             OperandType returnType = GetOperandType(info.ReturnType);

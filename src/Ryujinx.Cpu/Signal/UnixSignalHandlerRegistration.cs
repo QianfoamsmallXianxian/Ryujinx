@@ -18,10 +18,10 @@ namespace Ryujinx.Cpu.Signal
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct SigAction
         {
-            public IntPtr sa_handler;
+            public nint sa_handler;
             public SigSet sa_mask;
             public int sa_flags;
-            public IntPtr sa_restorer;
+            public nint sa_restorer;
         }
 
         [SupportedOSPlatform("android"), StructLayout(LayoutKind.Sequential, Pack = 8)]
@@ -55,7 +55,7 @@ namespace Ryujinx.Cpu.Signal
         private static partial int sigaction(int signum, ref SigActionBionic sigAction, out SigActionBionic oldAction);
 
         [LibraryImport("libc", SetLastError = true)]
-        private static partial int sigaction(int signum, IntPtr sigAction, out SigAction oldAction);
+        private static partial int sigaction(int signum, nint sigAction, out SigAction oldAction);
 
         [SupportedOSPlatform("android"), LibraryImport("libc", SetLastError = true)]
         private static partial int sigaction(int signum, IntPtr sigAction, out SigActionBionic oldAction);
@@ -73,7 +73,7 @@ namespace Ryujinx.Cpu.Signal
 
             if (PlatformInfo.IsBionic)
             {
-                result = sigaction(SIGSEGV, IntPtr.Zero, out SigActionBionic tmp);
+                result = sigaction(SIGSEGV, nint.Zero, out SigActionBionic tmp);
 
                 old = new SigAction
                 {
@@ -85,7 +85,7 @@ namespace Ryujinx.Cpu.Signal
             }
             else
             {
-                result = sigaction(SIGSEGV, IntPtr.Zero, out old);
+                result = sigaction(SIGSEGV, nint.Zero, out old);
             }
 
             if (result != 0)
@@ -96,7 +96,7 @@ namespace Ryujinx.Cpu.Signal
             return old;
         }
 
-        public static SigAction RegisterExceptionHandler(IntPtr action)
+        public static SigAction RegisterExceptionHandler(nint action)
         {
             int result;
             SigAction old;
