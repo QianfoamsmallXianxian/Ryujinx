@@ -1608,11 +1608,11 @@ namespace Ryujinx.Ava.UI.ViewModels
 
         private void Update_StatusBar(object sender, StatusUpdatedEventArgs args)
         {
-            if (ShowMenuAndStatusBar && !ShowLoadProgress)
+            if (ShowMenuAndStatusBar && !ShowLoadProgress && Application.Current != null)
             {
                 Dispatcher.UIThread.InvokeAsync(() =>
                 {
-                    Application.Current!.Styles.TryGetResource(args.VSyncMode,
+                    Application.Current.Styles.TryGetResource(args.VSyncMode,
                         Application.Current.ActualThemeVariant,
                         out object color);
 
