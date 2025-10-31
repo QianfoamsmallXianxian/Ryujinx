@@ -189,6 +189,8 @@ namespace Ryujinx.Audio.Renderer.Server.Voice
         /// </summary>
         public Span<bool> BiquadFilterNeedInitialization => SpanHelpers.AsSpan<BiquadFilterNeedInitializationArrayStruct, bool>(ref _biquadFilterNeedInitialization);
 
+        private static List<ErrorInfo> _waveBufferUpdaterErrorInfosList;
+
         /// <summary>
         /// Initialize the <see cref="VoiceInfo"/>.
         /// </summary>
@@ -217,6 +219,8 @@ namespace Ryujinx.Audio.Renderer.Server.Voice
             DataSourceStateAddressInfo.Setup(0, 0);
 
             InitializeWaveBuffers();
+
+            _waveBufferUpdaterErrorInfosList ??= [];
         }
 
         /// <summary>
@@ -588,14 +592,14 @@ namespace Ryujinx.Audio.Renderer.Server.Voice
             
             Span<WaveBuffer> waveBuffersSpan = WaveBuffers.AsSpan();
             Span<WaveBufferInternal> pWaveBuffersSpan = parameter.WaveBuffers.AsSpan();
-            List<ErrorInfo> errorInfosList = [];
+            _waveBufferUpdaterErrorInfosList.Clear();
 
             for (int i = 0; i < Constants.VoiceWaveBufferCount; i++)
             {
-                UpdateWaveBuffer(errorInfosList, ref waveBuffersSpan[i], ref pWaveBuffersSpan[i], parameter.SampleFormat, voiceState.IsWaveBufferValid[i], mapper, ref behaviourInfo);
+                UpdateWaveBuffer(_waveBufferUpdaterErrorInfosList, ref waveBuffersSpan[i], ref pWaveBuffersSpan[i], parameter.SampleFormat, voiceState.IsWaveBufferValid[i], mapper, ref behaviourInfo);
             }
             
-            errorInfos = errorInfosList.ToArray();
+            errorInfos = _waveBufferUpdaterErrorInfosList.ToArray();
         }
 
         /// <summary>
@@ -629,14 +633,14 @@ namespace Ryujinx.Audio.Renderer.Server.Voice
             
             Span<WaveBuffer> waveBuffersSpan = WaveBuffers.AsSpan();
             Span<WaveBufferInternal> pWaveBuffersSpan = parameter.WaveBuffers.AsSpan();
-            List<ErrorInfo> errorInfosList = [];
+            _waveBufferUpdaterErrorInfosList.Clear();
 
             for (int i = 0; i < Constants.VoiceWaveBufferCount; i++)
             {
-                UpdateWaveBuffer(errorInfosList, ref waveBuffersSpan[i], ref pWaveBuffersSpan[i], parameter.SampleFormat, voiceState.IsWaveBufferValid[i], mapper, ref behaviourInfo);
+                UpdateWaveBuffer(_waveBufferUpdaterErrorInfosList, ref waveBuffersSpan[i], ref pWaveBuffersSpan[i], parameter.SampleFormat, voiceState.IsWaveBufferValid[i], mapper, ref behaviourInfo);
             }
             
-            errorInfos = errorInfosList.ToArray();
+            errorInfos = _waveBufferUpdaterErrorInfosList.ToArray();
         }
 
         /// <summary>
