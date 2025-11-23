@@ -4,7 +4,6 @@ using Ryujinx.Graphics.Vulkan.Effects;
 using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.KHR;
 using System;
-using System.Linq;
 using VkFormat = Silk.NET.Vulkan.Format;
 
 namespace Ryujinx.Graphics.Vulkan

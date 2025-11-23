@@ -1,5 +1,3 @@
-using System;
-
 namespace ARMeilleure.Translation
 {
     public class DelegateInfo
