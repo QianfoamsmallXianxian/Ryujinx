@@ -33,8 +33,6 @@ namespace Ryujinx.HLE.HOS.Kernel.Threading
         public ulong AffinityMask { get; private set; }
 
         public ulong ThreadUid { get; private set; }
-        
-        public bool IsThreadNamed { get; set; }
 
         private long _totalTimeRunning;
 
