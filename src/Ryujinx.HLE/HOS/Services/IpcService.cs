@@ -128,7 +128,7 @@ namespace Ryujinx.HLE.HOS.Services
 
                     _parameters[0] = context;
                     
-                    result = (ResultCode)processRequest.Invoke(service, _parameters);
+                    result = (ResultCode)processRequest.Invoke(service, _parameters)!;
                 }
                 else
                 {
@@ -183,7 +183,7 @@ namespace Ryujinx.HLE.HOS.Services
 
                     _parameters[0] = context;
                     
-                    result = (ResultCode)processRequest.Invoke(this, _parameters);
+                    result = (ResultCode)processRequest.Invoke(this, _parameters)!;
                 }
                 else
                 {
