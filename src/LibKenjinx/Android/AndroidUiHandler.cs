@@ -22,6 +22,11 @@ namespace LibKenjinx.Android
             throw new NotImplementedException();
         }
 
+        public void TakeScreenshot()
+        {
+            throw new NotImplementedException();
+        }
+
         public bool DisplayErrorAppletDialog(string? title, string? message, string[] buttonsText)
         {
             Interop.UpdateUiHandler(title ?? "",
