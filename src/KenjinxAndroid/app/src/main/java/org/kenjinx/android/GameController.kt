@@ -37,15 +37,38 @@ typealias GamePadConfig = RadialGamePadConfig
 private const val DUMMY_LEFT_STICK_PRESS_ID  = 10001
 private const val DUMMY_RIGHT_STICK_PRESS_ID = 10002
 
-class GameController(var activity: Activity) {
+class GameController(var activity: Activity) : IGameController {
 
     companion object {
         private fun init(context: Context, controller: GameController): View {
             val inflater = LayoutInflater.from(context)
             val parent = FrameLayout(context)
             val view = inflater.inflate(R.layout.game_layout, parent, false)
-            view.findViewById<FrameLayout>(R.id.leftcontainer)!!.addView(controller.leftGamePad)
-            view.findViewById<FrameLayout>(R.id.rightcontainer)!!.addView(controller.rightGamePad)
+
+            val leftContainer  = view.findViewById<FrameLayout>(R.id.leftcontainer)!!
+            val rightContainer = view.findViewById<FrameLayout>(R.id.rightcontainer)!!
+
+            leftContainer.addView(controller.leftGamePad)
+            rightContainer.addView(controller.rightGamePad)
+
+            leftContainer.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ ->
+                val scale = QuickSettings(controller.activity).controllerScale.coerceIn(0.5f, 1.5f)
+                v.pivotX = 0f
+                v.pivotY = v.height.toFloat()
+                v.scaleX = scale
+                v.scaleY = scale
+            }
+            rightContainer.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ ->
+                val scale = QuickSettings(controller.activity).controllerScale.coerceIn(0.5f, 1.5f)
+                v.pivotX = v.width.toFloat()
+                v.pivotY = v.height.toFloat()
+                v.scaleX = scale
+                v.scaleY = scale
+            }
+
+            leftContainer.post { leftContainer.requestLayout() }
+            rightContainer.post { rightContainer.requestLayout() }
+
             return view
         }
 
@@ -76,16 +99,18 @@ class GameController(var activity: Activity) {
         }
     }
 
+
     private var controllerView: View? = null
     var leftGamePad: GamePad
     var rightGamePad: GamePad
     var controllerId: Int = -1
-    val isVisible: Boolean
+    override val isVisible: Boolean
         get() = controllerView?.isVisible ?: false
 
     init {
-        leftGamePad = GamePad(generateConfig(true), 16f, activity)
-        rightGamePad = GamePad(generateConfig(false), 16f, activity)
+        val useSwitchLayout = QuickSettings(activity).useSwitchLayout
+        leftGamePad = GamePad(generateConfig(true,  useSwitchLayout), 16f, activity)
+        rightGamePad = GamePad(generateConfig(false, useSwitchLayout), 16f, activity)
 
         leftGamePad.primaryDialMaxSizeDp = 200f
         rightGamePad.primaryDialMaxSizeDp = 200f
@@ -96,14 +121,14 @@ class GameController(var activity: Activity) {
         rightGamePad.gravityY = 1f
     }
 
-    fun setVisible(isVisible: Boolean) {
+    override fun setVisible(isVisible: Boolean) {
         controllerView?.apply {
             this.isVisible = isVisible
             if (isVisible) connect()
         }
     }
 
-    fun connect() {
+    override fun connect() {
         if (controllerId == -1)
             controllerId = KenjinxNative.inputConnectGamepad(0)
     }
@@ -177,7 +202,7 @@ suspend fun <T> Flow<T>.safeCollect(block: suspend (T) -> Unit) {
         .collect { block(it) }
 }
 
-private fun generateConfig(isLeft: Boolean): GamePadConfig {
+private fun generateConfig(isLeft: Boolean, useSwitchLayout: Boolean): GamePadConfig {
     val distance = 0.3f
     val buttonScale = 1f
 
@@ -231,7 +256,7 @@ private fun generateConfig(isLeft: Boolean): GamePadConfig {
                     SecondaryDialConfig.RotationProcessor()
                 ),
 
-                // L-Bumper
+                // L Bumper
                 SecondaryDialConfig.DoubleButton(
                     /* sector */ 2,
                     distance,
@@ -249,7 +274,7 @@ private fun generateConfig(isLeft: Boolean): GamePadConfig {
                     SecondaryDialConfig.RotationProcessor()
                 ),
 
-                // ZL-Trigger
+                // ZL Trigger
                 SecondaryDialConfig.SingleButton(
                     /* sector */ 9,
                     buttonScale,
@@ -268,7 +293,7 @@ private fun generateConfig(isLeft: Boolean): GamePadConfig {
                     SecondaryDialConfig.RotationProcessor()
                 ),
 
-                // NEW (remains): L3 as a separate button
+                // L3 as a separate button
                 SecondaryDialConfig.SingleButton(
                     /* sector */ 1,
                     buttonScale,
@@ -293,20 +318,23 @@ private fun generateConfig(isLeft: Boolean): GamePadConfig {
             /* ringSegments = */ 12,
             /* Primary (ABXY) */
             PrimaryDialConfig.PrimaryButtons(
-                listOf(
-                    ButtonConfig(
-                        GamePadButtonInputId.A.ordinal, "A", true, null, "A", setOf(), true, null
-                    ),
-                    ButtonConfig(
-                        GamePadButtonInputId.X.ordinal, "X", true, null, "X", setOf(), true, null
-                    ),
-                    ButtonConfig(
-                        GamePadButtonInputId.Y.ordinal, "Y", true, null, "Y", setOf(), true, null
-                    ),
-                    ButtonConfig(
-                        GamePadButtonInputId.B.ordinal, "B", true, null, "B", setOf(), true, null
+                if (useSwitchLayout) {
+                    // Switch/Nintendo: A=Right, X=Top, Y=Left, B=Bottom
+                    listOf(
+                        ButtonConfig(GamePadButtonInputId.A.ordinal, "A", true, null, "A", setOf(), true, null), // Right
+                        ButtonConfig(GamePadButtonInputId.X.ordinal, "X", true, null, "X", setOf(), true, null), // Top
+                        ButtonConfig(GamePadButtonInputId.Y.ordinal, "Y", true, null, "Y", setOf(), true, null), // Left
+                        ButtonConfig(GamePadButtonInputId.B.ordinal, "B", true, null, "B", setOf(), true, null)  // Bottom
                     )
-                ),
+                } else {
+                    // Xbox Style: B=Right, Y=Top, X=Left, A=Bottom
+                    listOf(
+                        ButtonConfig(GamePadButtonInputId.B.ordinal, "B", true, null, "B", setOf(), true, null), // Right
+                        ButtonConfig(GamePadButtonInputId.Y.ordinal, "Y", true, null, "Y", setOf(), true, null), // Top
+                        ButtonConfig(GamePadButtonInputId.X.ordinal, "X", true, null, "X", setOf(), true, null), // Left
+                        ButtonConfig(GamePadButtonInputId.A.ordinal, "A", true, null, "A", setOf(), true, null)  // Bottom
+                    )
+                },
                 null,
                 0f,
                 true,
@@ -347,7 +375,7 @@ private fun generateConfig(isLeft: Boolean): GamePadConfig {
                     SecondaryDialConfig.RotationProcessor()
                 ),
 
-                // R-Bumper
+                // R Bumper
                 SecondaryDialConfig.DoubleButton(
                     /* sector */ 3,
                     distance,
@@ -365,7 +393,7 @@ private fun generateConfig(isLeft: Boolean): GamePadConfig {
                     SecondaryDialConfig.RotationProcessor()
                 ),
 
-                // ZR-Trigger
+                // ZR Trigger
                 SecondaryDialConfig.SingleButton(
                     /* sector */ 9,
                     buttonScale,
@@ -384,7 +412,7 @@ private fun generateConfig(isLeft: Boolean): GamePadConfig {
                     SecondaryDialConfig.RotationProcessor()
                 ),
 
-                // NEW (remains): R3 as a separate button
+                // R3 as a separate button
                 SecondaryDialConfig.SingleButton(
                     /* sector */ 5,
                     buttonScale,
