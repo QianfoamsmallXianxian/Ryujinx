@@ -15,6 +15,7 @@ using System.Threading;
 using System.Timers;
 using static ARMeilleure.Translation.PTC.PtcFormatter;
 using Timer = System.Timers.Timer;
+using System.Linq;
 
 namespace ARMeilleure.Translation.PTC
 {

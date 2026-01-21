@@ -85,7 +85,10 @@ namespace Ryujinx.HLE.HOS.Services.Nv
 
                 NvDeviceFile deviceFile = (NvDeviceFile)constructor?.Invoke([context, _clientMemory, _owner]);
 
-                deviceFile?.Path = path;
+                if (deviceFile != null)
+                {
+                    deviceFile.Path = path;
+                }
 
                 fd = DeviceFileIdRegistry.Add(deviceFile);
 

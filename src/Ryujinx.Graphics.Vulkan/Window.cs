@@ -5,6 +5,7 @@ using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.KHR;
 using System;
 using VkFormat = Silk.NET.Vulkan.Format;
+using System.Linq;
 
 namespace Ryujinx.Graphics.Vulkan
 {

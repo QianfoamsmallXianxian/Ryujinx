@@ -232,7 +232,10 @@ namespace Ryujinx.Common.Collections
                 parent = ParentOf(element);
                 color = ColorOf(element);
 
-                child?.Parent = parent;
+                if (child != null)
+                {
+                    child.Parent = parent;
+                }
 
                 if (parent == null)
                 {
@@ -252,7 +255,8 @@ namespace Ryujinx.Common.Collections
                 element.Right = old.Right;
                 element.Parent = old.Parent;
                 element.Predecessor = old.Predecessor;
-                element.Predecessor?.Successor = element;
+                if (element.Predecessor != null)
+                    element.Predecessor.Successor = element;
 
                 if (ParentOf(old) == null)
                 {
@@ -285,7 +289,10 @@ namespace Ryujinx.Common.Collections
             parent = ParentOf(nodeToDelete);
             color = ColorOf(nodeToDelete);
 
-            child?.Parent = parent;
+            if (child != null)
+            {
+                child.Parent = parent;
+            }
 
             if (parent == null)
             {
@@ -304,9 +311,11 @@ namespace Ryujinx.Common.Collections
             {
                 RestoreBalanceAfterRemoval(child);
             }
-
-            old.Successor?.Predecessor = old.Predecessor;
-            old.Predecessor?.Successor = old.Successor;
+            
+            if (old.Successor != null)
+                old.Successor.Predecessor = old.Predecessor;
+            if (old.Predecessor != null)
+                old.Predecessor.Successor = old.Successor;
 
             return old;
         }

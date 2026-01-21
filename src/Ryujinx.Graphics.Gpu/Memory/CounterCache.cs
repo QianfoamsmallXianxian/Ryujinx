@@ -84,7 +84,10 @@ namespace Ryujinx.Graphics.Gpu.Memory
             for (int i = 0; i < count; i++)
             {
                 ICounterEvent evt = _items[index + i].Event;
-                evt?.Invalid = true;
+                if (evt != null)
+                {
+                    evt.Invalid = true;
+                }
             }
 
             _items.RemoveRange(index, count);

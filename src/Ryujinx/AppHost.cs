@@ -504,12 +504,18 @@ namespace Ryujinx.Ava
 
         private void UpdateIgnoreMissingServicesState(object sender, ReactiveEventArgs<bool> args)
         {
-            Device?.Configuration.IgnoreMissingServices = args.NewValue;
+            if (Device != null)
+            {
+                Device.Configuration.IgnoreMissingServices = args.NewValue;
+            }
         }
 
         private void UpdateAspectRatioState(object sender, ReactiveEventArgs<AspectRatio> args)
         {
-            Device?.Configuration.AspectRatio = args.NewValue;
+            if (Device != null)
+            {
+                Device.Configuration.AspectRatio = args.NewValue;
+            }
         }
 
         private void UpdateAntiAliasing(object sender, ReactiveEventArgs<AntiAliasing> e)

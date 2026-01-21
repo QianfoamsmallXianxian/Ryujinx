@@ -1169,7 +1169,9 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd
 
         public override void DestroyAtExit()
         {
-            _context?.Dispose();
+            if (_context != null) {
+                _context.Dispose();
+            }
         }
     }
 }

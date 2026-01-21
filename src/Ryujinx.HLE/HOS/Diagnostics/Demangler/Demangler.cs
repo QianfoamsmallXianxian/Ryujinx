@@ -885,7 +885,10 @@ namespace Ryujinx.HLE.HOS.Diagnostics.Demangler
                 result = new NestedName(name, prev);
             }
 
-            context?.FinishWithTemplateArguments = false;
+            if (context != null)
+            {
+                context.FinishWithTemplateArguments = false;
+            }
 
             return result;
         }
@@ -1065,7 +1068,10 @@ namespace Ryujinx.HLE.HOS.Diagnostics.Demangler
                                 return null;
                             }
 
-                            context?.CtorDtorConversion = true;
+                            if (context != null)
+                            {
+                                context.CtorDtorConversion = true;
+                            }
 
                             return new ConversionOperatorType(type);
                         default:
@@ -1333,7 +1339,10 @@ namespace Ryujinx.HLE.HOS.Diagnostics.Demangler
 
                 _position++;
 
-                context?.CtorDtorConversion = true;
+                if (context != null)
+                {
+                    context.CtorDtorConversion = true;
+                }
 
                 if (isInherited && ParseName(context) == null)
                 {
@@ -1353,7 +1362,10 @@ namespace Ryujinx.HLE.HOS.Diagnostics.Demangler
 
                 _position++;
 
-                context?.CtorDtorConversion = true;
+                if (context != null)
+                {
+                    context.CtorDtorConversion = true;
+                }
 
                 return new CtorDtorNameType(prev, true);
             }
@@ -2956,10 +2968,16 @@ namespace Ryujinx.HLE.HOS.Diagnostics.Demangler
 
             BaseNode result = null;
             CvType cv = new(ParseCvQualifiers(), null);
-            context?.Cv = cv;
+            if (context != null)
+            {
+                context.Cv = cv;
+            }
 
             SimpleReferenceType Ref = ParseRefQualifiers();
-            context?.Ref = Ref;
+            if (context != null)
+            {
+                context.Ref = Ref;
+            }
 
             if (ConsumeIf("St"))
             {
@@ -3004,7 +3022,10 @@ namespace Ryujinx.HLE.HOS.Diagnostics.Demangler
                     }
 
                     result = new NameTypeWithTemplateArguments(result, templateArgument);
-                    context?.FinishWithTemplateArguments = true;
+                    if (context != null)
+                    {
+                        context.FinishWithTemplateArguments = true;
+                    }
 
                     _substitutionList.Add(result);
                     continue;
@@ -3194,7 +3215,10 @@ namespace Ryujinx.HLE.HOS.Diagnostics.Demangler
                     return null;
                 }
 
-                context?.FinishWithTemplateArguments = true;
+                if (context != null)
+                {
+                    context.FinishWithTemplateArguments = true;
+                }
 
                 return new NameTypeWithTemplateArguments(substitution, templateArguments);
             }
@@ -3214,7 +3238,10 @@ namespace Ryujinx.HLE.HOS.Diagnostics.Demangler
                     return null;
                 }
 
-                context?.FinishWithTemplateArguments = true;
+                if (context != null)
+                {
+                    context.FinishWithTemplateArguments = true;
+                }
 
                 return new NameTypeWithTemplateArguments(result, templateArguments);
             }
