@@ -83,7 +83,7 @@ namespace Ryujinx.Graphics.Gpu.Synchronization
             // TODO: Remove this when GPU channel scheduling will be implemented.
             if (timeout == Timeout.InfiniteTimeSpan)
             {
-                timeout = TimeSpan.FromSeconds(1);
+                timeout = TimeSpan.FromSeconds(30);
             }
 
             using ManualResetEvent waitEvent = new(false);
@@ -98,9 +98,13 @@ namespace Ryujinx.Graphics.Gpu.Synchronization
 
             if (!signaled && info != null)
             {
-                Logger.Error?.Print(LogClass.Gpu, $"Wait on syncpoint {id} for threshold {threshold} took more than {timeout.TotalMilliseconds}ms, resuming execution...");
+                uint currentValue = _syncpoints[id].Value;
+                Logger.Error?.Print(LogClass.Gpu, $"Wait on syncpoint {id} for threshold {threshold} took more than {timeout.TotalMilliseconds}ms (current value: {currentValue}), resuming execution...");
 
                 _syncpoints[id].UnregisterCallback(info);
+
+                // Give the GPU some time to recover if it's struggling.
+                Thread.Sleep(100);
             }
 
             return !signaled;

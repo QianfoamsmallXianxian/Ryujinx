@@ -212,12 +212,12 @@ namespace LibKenjinx
             _touchScreenManager?.Dispose();
             _touchScreenManager = null;
 
-            _gpuDoneEvent.WaitOne(3000);
-            _gpuDoneEvent.Dispose();
+            _gpuDoneEvent?.WaitOne(3000);
+            _gpuDoneEvent?.Dispose();
             _gpuDoneEvent = null;
 
-            _gpuCancellationTokenSource.Cancel();
-            _gpuCancellationTokenSource.Dispose();
+            _gpuCancellationTokenSource?.Cancel();
+            _gpuCancellationTokenSource?.Dispose();
             _gpuCancellationTokenSource = null;
 
             SwitchDevice.Dispose();

@@ -71,6 +71,7 @@ interface KenjinxNativeJna : Library {
     fun deviceReinitEmulation()
     fun deviceSignalEmulationClose()
 
+    fun detachWindow()
     // >>> Rendering-related additions for the toggle:
     fun deviceWaitForGpuDone(timeoutMs: Int)
     fun deviceRecreateSwapchain()
@@ -279,10 +280,10 @@ object KenjinxNative : KenjinxNativeJna by jnaInstance {
         } catch (_: Throwable) {}
     }
 
-    @JvmStatic
-    fun detachWindow() {
+    override fun detachWindow() {
         try { graphicsSetPresentEnabled(false) } catch (_: Throwable) {}
         try { deviceWaitForGpuDone(100) } catch (_: Throwable) {}
+        try { jnaInstance.detachWindow() } catch (_: Throwable) {}
         try { deviceSetWindowHandle(0) } catch (_: Throwable) {}
     }
 

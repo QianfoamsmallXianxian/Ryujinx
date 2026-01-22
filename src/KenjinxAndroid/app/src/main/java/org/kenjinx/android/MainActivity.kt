@@ -409,8 +409,8 @@ class MainActivity : BaseActivity() {
             setAudioForegroundState(false)
             if (MainActivity.mainViewModel?.rendererReady == true) {
                 try {
-                    KenjinxNative.graphicsSetPresentEnabled(false)
-                    Log.d(TAG_FG, "present=DISABLED (onTrimMemory:$level)")
+                    setPresentEnabled(false, "onTrimMemory:$level")
+                    KenjinxNative.detachWindow()
                 } catch (_: Throwable) {}
             } else {
                 Log.d(TAG_FG, "skip disable present (onTrimMemory) — rendererReady=${MainActivity.mainViewModel?.rendererReady}")

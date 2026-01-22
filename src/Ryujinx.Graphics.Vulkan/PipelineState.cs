@@ -2,12 +2,15 @@ using Ryujinx.Common.Memory;
 using Silk.NET.Vulkan;
 using System;
 using System.Numerics;
+using System.Threading;
 
 namespace Ryujinx.Graphics.Vulkan
 {
     struct PipelineState : IDisposable
     {
         private const int MaxDynamicStatesCount = 9;
+
+        private static readonly Lock _pipelineCreateLock = new();
 
         public PipelineUid Internal;
 
@@ -367,7 +370,10 @@ namespace Ryujinx.Graphics.Vulkan
                     pipelineCreateInfo.Stage.PSpecializationInfo = info;
                 }
 
-                gd.Api.CreateComputePipelines(device, cache, 1, &pipelineCreateInfo, null, &pipelineHandle).ThrowOnError();
+                lock (_pipelineCreateLock)
+                {
+                    gd.Api.CreateComputePipelines(device, cache, 1, &pipelineCreateInfo, null, &pipelineHandle).ThrowOnError();
+                }
             }
 
             pipeline = new Auto<DisposablePipeline>(new DisposablePipeline(gd.Api, device, pipelineHandle));
@@ -635,7 +641,12 @@ namespace Ryujinx.Graphics.Vulkan
                     RenderPass = renderPass,
                 };
 
-                Result result = gd.Api.CreateGraphicsPipelines(device, cache, 1, &pipelineCreateInfo, null, &pipelineHandle);
+                Result result;
+
+                lock (_pipelineCreateLock)
+                {
+                    result = gd.Api.CreateGraphicsPipelines(device, cache, 1, &pipelineCreateInfo, null, &pipelineHandle);
+                }
 
                 if (throwOnError)
                 {

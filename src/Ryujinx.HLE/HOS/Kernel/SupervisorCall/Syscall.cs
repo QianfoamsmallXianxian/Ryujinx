@@ -1887,12 +1887,16 @@ namespace Ryujinx.HLE.HOS.Kernel.SupervisorCall
                 }
 
                 Logger.Error?.Print(LogClass.KernelSvc, "The guest program broke execution!");
+                Logger.Error?.Print(
+                    LogClass.KernelSvc,
+                    $"SvcBreak reason=0x{reason:X16} pid={currentThread.Owner?.Pid} titleId=0x{currentThread.Owner?.TitleId:X16} name={currentThread.Owner?.Name} tid={currentThread.ThreadUid} pc=0x{currentThread.Context.Pc:X}"
+                );
                 Logger.Flush();
 
                 // TODO: Debug events.
                 currentThread.Owner.TerminateCurrentProcess();
-
-                throw new GuestBrokeExecutionException();
+                currentThread.Exit();
+                return;
             }
             else
             {

@@ -1263,17 +1263,30 @@ namespace Ryujinx.HLE.HOS.Kernel.Threading
             _schedulerWaitEvent.Wait();
             KernelStatic.SetKernelContext(KernelContext, this);
 
-            if (_customThreadStart != null)
+            try
             {
-                _customThreadStart();
+                if (_customThreadStart != null)
+                {
+                    _customThreadStart();
 
-                // Ensure that anything trying to join the HLE thread is unblocked.
-                Exit();
-                HandlePostSyscall();
+                    // Ensure that anything trying to join the HLE thread is unblocked.
+                    Exit();
+                    HandlePostSyscall();
+                }
+                else
+                {
+                    Owner.Context.Execute(Context, _entrypoint);
+                }
             }
-            else
+            catch (Ryujinx.HLE.Exceptions.GuestBrokeExecutionException)
             {
-                Owner.Context.Execute(Context, _entrypoint);
+                Logger.Warning?.Print(LogClass.Kernel, "Guest broke execution. Thread exiting.");
+                Exit();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error?.Print(LogClass.Kernel, $"Unhandled exception in guest thread: {ex}");
+                Exit();
             }
 
             Context.Dispose();

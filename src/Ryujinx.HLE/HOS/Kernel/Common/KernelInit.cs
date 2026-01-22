@@ -1,3 +1,4 @@
+using Ryujinx.Common.Logging;
 using Ryujinx.HLE.HOS.Kernel.Memory;
 using Ryujinx.Horizon.Common;
 using System;
@@ -31,8 +32,11 @@ namespace Ryujinx.HLE.HOS.Kernel.Common
             }
 
             ulong ramSize = KSystemControl.GetDramSize(size);
+            ulong memoryLimit = ramSize + 12288 * 1024 * 1024UL; // Add 12GB slack for System Resource and MapPhysicalMemory
 
-            EnsureSuccess(resourceLimit.SetLimitValue(LimitableResource.Memory, (long)ramSize));
+            Logger.Info?.Print(LogClass.Kernel, $"Initializing system resource limit: DRAM={ramSize / 1024 / 1024}MB, Total={memoryLimit / 1024 / 1024}MB");
+
+            EnsureSuccess(resourceLimit.SetLimitValue(LimitableResource.Memory, (long)memoryLimit));
             EnsureSuccess(resourceLimit.SetLimitValue(LimitableResource.Thread, 800));
             EnsureSuccess(resourceLimit.SetLimitValue(LimitableResource.Event, 700));
             EnsureSuccess(resourceLimit.SetLimitValue(LimitableResource.TransferMemory, 200));
@@ -47,8 +51,11 @@ namespace Ryujinx.HLE.HOS.Kernel.Common
 
         public static KMemoryRegionManager[] GetMemoryRegions(MemorySize size, MemoryArrange arrange)
         {
-            ulong poolEnd = KSystemControl.GetDramEndAddress(size);
-            ulong applicationPoolSize = KSystemControl.GetApplicationPoolSize(arrange);
+            ulong dramSize = KSystemControl.GetDramSize(size);
+            ulong slack = 12288 * 1024 * 1024UL;
+            ulong poolEnd = DramMemoryMap.DramBase + dramSize + slack;
+
+            ulong applicationPoolSize = KSystemControl.GetApplicationPoolSize(arrange) + slack;
             ulong appletPoolSize = KSystemControl.GetAppletPoolSize(arrange);
 
             MemoryRegion servicePool;

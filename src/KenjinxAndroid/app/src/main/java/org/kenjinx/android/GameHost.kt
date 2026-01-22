@@ -169,6 +169,7 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
 
     override fun surfaceDestroyed(holder: SurfaceHolder) {
         ghLog("surfaceDestroyed → shutdownBinding()")
+        try { KenjinxNative.detachWindow() } catch (_: Throwable) {}
         // Always bind and unbind (prevents leaks when swiping away tasks)
         shutdownBinding()
         // The actual emulator termination happens via close() / Exit Game
@@ -178,6 +179,7 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
         super.onWindowVisibilityChanged(visibility)
         if (visibility != android.view.View.VISIBLE) {
             ghLog("window not visible → shutdownBinding()")
+            try { KenjinxNative.detachWindow() } catch (_: Throwable) {}
             shutdownBinding()
         }
     }
@@ -290,7 +292,12 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
     }
 
     private fun runGame() {
-        KenjinxNative.graphicsRendererRunLoop()
+        mainViewModel.onEmulationStarted()
+        try {
+            KenjinxNative.graphicsRendererRunLoop()
+        } finally {
+            mainViewModel.onEmulationStopped()
+        }
         game?.close()
     }
 
@@ -307,7 +314,7 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
         try {
             if (emuBound && _startedViaService) {
                 emuBinder?.stopEmulation {
-                    try { KenjinxNative.deviceCloseEmulation() } catch (_: Throwable) {}
+                    // Close is handled in the service hard-close path.
                 }
             }
         } catch (_: Throwable) { }
@@ -315,6 +322,12 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
         // Fallback: Terminate local thread
         try { _updateThread?.join(200) } catch (_: Throwable) {}
         try { _renderingThreadWatcher?.join(200) } catch (_: Throwable) {}
+        try { _guestThread?.join(1000) } catch (_: Throwable) {}
+
+        if (!(emuBound && _startedViaService)) {
+            try { KenjinxNative.deviceCloseEmulation() } catch (_: Throwable) {}
+            mainViewModel.onEmulationStopped()
+        }
 
         // Release the bond
         shutdownBinding()
@@ -488,11 +501,13 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
 
         emuBinder?.startEmulation {
             try {
+                mainViewModel.onEmulationStarted()
                 KenjinxNative.graphicsRendererRunLoop()
             } catch (t: Throwable) {
                 Log.e("GameHost", "RunLoop crash in service", t)
             } finally {
                 _startedViaService = false
+                mainViewModel.onEmulationStopped()
             }
         }
         ghLog("RunLoop started in EmulationService")

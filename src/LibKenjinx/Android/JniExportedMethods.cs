@@ -321,7 +321,7 @@ namespace LibKenjinx
         [UnmanagedCallersOnly(EntryPoint = "deviceReloadFilesystem")]
         public static void JnaReloadFileSystem()
         {
-            Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
+            Logger.Trace?.Print(LogClass.Application, "Jni Function Call: deviceReloadFilesystem");
             SwitchDevice?.ReloadFileSystem();
         }
 
@@ -423,21 +423,21 @@ namespace LibKenjinx
         [UnmanagedCallersOnly(EntryPoint = "deviceSignalEmulationClose")]
         public static void JniSignalEmulationCloseNative()
         {
-            Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
+            Logger.Trace?.Print(LogClass.Application, "Jni Function Call: deviceSignalEmulationClose");
             SignalEmulationClose();
         }
 
         [UnmanagedCallersOnly(EntryPoint = "deviceCloseEmulation")]
         public static void JniCloseEmulationNative()
         {
-            Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
+            Logger.Trace?.Print(LogClass.Application, "Jni Function Call: deviceCloseEmulation");
             CloseEmulation();
         }
 
         [UnmanagedCallersOnly(EntryPoint = "deviceReinitEmulation")]
         public static void JniReinitEmulationNative()
         {
-            Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
+            Logger.Trace?.Print(LogClass.Application, "Jni Function Call: deviceReinitEmulation");
             ReinitEmulation();
         }
 
@@ -923,6 +923,7 @@ namespace LibKenjinx
         {
             try
             {
+                Logger.Trace?.Print(LogClass.Application, "[JNI] deviceRecreateSwapchain");
                 if (Renderer?.Window == null)
                 {
                     Logger.Warning?.Print(LogClass.Application, "[JNI] deviceRecreateSwapchain: Renderer.Window == null");
@@ -995,6 +996,7 @@ namespace LibKenjinx
         {
             try
             {
+                Logger.Trace?.Print(LogClass.Application, "[JNI] graphicsRendererRecreateSurface");
                 _ = (Renderer as VulkanRenderer)?.RecreateSurface();
             }
             catch (Exception ex)
@@ -1002,6 +1004,15 @@ namespace LibKenjinx
                 Logger.Warning?.Print(LogClass.Application, $"graphicsRendererRecreateSurface failed: {ex}");
             }
         }
+
+#if ANDROID
+        [UnmanagedCallersOnly(EntryPoint = "graphicsSetFullscreenStretch")]
+        public static void JniGraphicsSetFullscreenStretch(bool enable)
+        {
+            Logger.Trace?.Print(LogClass.Application, $"[JNI] graphicsSetFullscreenStretch({enable})");
+            ApplyFullscreenStretch(enable);
+        }
+#endif
 
         // Used by MainActivity/GameHost
         [UnmanagedCallersOnly(EntryPoint = "reattachWindowIfReady")]

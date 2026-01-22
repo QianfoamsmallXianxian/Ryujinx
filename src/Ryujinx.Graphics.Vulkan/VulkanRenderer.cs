@@ -11,6 +11,7 @@ using Silk.NET.Vulkan.Extensions.KHR;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Threading;
 using Format = Ryujinx.Graphics.GAL.Format;
 using PrimitiveTopology = Ryujinx.Graphics.GAL.PrimitiveTopology;
@@ -414,39 +415,41 @@ namespace Ryujinx.Graphics.Vulkan
                 properties.Limits.FramebufferDepthSampleCounts &
                 properties.Limits.FramebufferStencilSampleCounts;
 
+            bool isAdreno8xx = Vendor == Vendor.Qualcomm && (GpuRenderer.Contains("Adreno") && Regex.IsMatch(GpuRenderer, @"8[3-9]\d"));
+
             Capabilities = new HardwareCapabilities(
-                _physicalDevice.IsDeviceExtensionPresent("VK_EXT_index_type_uint8"),
-                supportsCustomBorderColor,
+                _physicalDevice.IsDeviceExtensionPresent("VK_EXT_index_type_uint8") && !isAdreno8xx,
+                supportsCustomBorderColor && !isAdreno8xx,
                 supportsBlendOperationAdvanced,
                 propertiesBlendOperationAdvanced.AdvancedBlendCorrelatedOverlap,
                 propertiesBlendOperationAdvanced.AdvancedBlendNonPremultipliedSrcColor,
                 propertiesBlendOperationAdvanced.AdvancedBlendNonPremultipliedDstColor,
                 _physicalDevice.IsDeviceExtensionPresent(KhrDrawIndirectCount.ExtensionName),
-                _physicalDevice.IsDeviceExtensionPresent("VK_EXT_fragment_shader_interlock"),
-                _physicalDevice.IsDeviceExtensionPresent("VK_NV_geometry_shader_passthrough"),
+                _physicalDevice.IsDeviceExtensionPresent("VK_EXT_fragment_shader_interlock") && !isAdreno8xx,
+                _physicalDevice.IsDeviceExtensionPresent("VK_NV_geometry_shader_passthrough") && !isAdreno8xx,
                 features2.Features.ShaderFloat64,
-                featuresShaderInt8.ShaderInt8,
-                _physicalDevice.IsDeviceExtensionPresent("VK_EXT_shader_stencil_export"),
+                featuresShaderInt8.ShaderInt8 && !isAdreno8xx,
+                _physicalDevice.IsDeviceExtensionPresent("VK_EXT_shader_stencil_export") && !isAdreno8xx,
                 features2.Features.ShaderStorageImageMultisample,
                 _physicalDevice.IsDeviceExtensionPresent(ExtConditionalRendering.ExtensionName),
-                _physicalDevice.IsDeviceExtensionPresent(ExtExtendedDynamicState.ExtensionName),
+                _physicalDevice.IsDeviceExtensionPresent(ExtExtendedDynamicState.ExtensionName) && !isAdreno8xx,
                 features2.Features.MultiViewport && !(IsMoltenVk && Vendor == Vendor.Amd), // Workaround for AMD on MoltenVK issue
-                featuresRobustness2.NullDescriptor || IsMoltenVk,
+                (featuresRobustness2.NullDescriptor || IsMoltenVk) && !isAdreno8xx,
                 supportsPushDescriptors && !IsMoltenVk,
                 propertiesPushDescriptor.MaxPushDescriptors,
-                featuresPrimitiveTopologyListRestart.PrimitiveTopologyListRestart,
-                featuresPrimitiveTopologyListRestart.PrimitiveTopologyPatchListRestart,
-                supportsTransformFeedback,
+                featuresPrimitiveTopologyListRestart.PrimitiveTopologyListRestart && !isAdreno8xx,
+                featuresPrimitiveTopologyListRestart.PrimitiveTopologyPatchListRestart && !isAdreno8xx,
+                supportsTransformFeedback && !isAdreno8xx,
                 propertiesTransformFeedback.TransformFeedbackQueries,
                 features2.Features.OcclusionQueryPrecise,
                 _physicalDevice.PhysicalDeviceFeatures.PipelineStatisticsQuery,
-                _physicalDevice.PhysicalDeviceFeatures.GeometryShader,
-                _physicalDevice.PhysicalDeviceFeatures.TessellationShader,
+                _physicalDevice.PhysicalDeviceFeatures.GeometryShader && !isAdreno8xx,
+                _physicalDevice.PhysicalDeviceFeatures.TessellationShader && !isAdreno8xx,
                 _physicalDevice.IsDeviceExtensionPresent("VK_NV_viewport_array2"),
-                _physicalDevice.IsDeviceExtensionPresent(ExtExternalMemoryHost.ExtensionName),
+                _physicalDevice.IsDeviceExtensionPresent(ExtExternalMemoryHost.ExtensionName) && !isAdreno8xx,
                 supportsDepthClipControl && featuresDepthClipControl.DepthClipControl,
-                supportsAttachmentFeedbackLoop && featuresAttachmentFeedbackLoop.AttachmentFeedbackLoopLayout,
-                supportsDynamicAttachmentFeedbackLoop && featuresDynamicAttachmentFeedbackLoop.AttachmentFeedbackLoopDynamicState,
+                supportsAttachmentFeedbackLoop && featuresAttachmentFeedbackLoop.AttachmentFeedbackLoopLayout && !isAdreno8xx,
+                supportsDynamicAttachmentFeedbackLoop && featuresDynamicAttachmentFeedbackLoop.AttachmentFeedbackLoopDynamicState && !isAdreno8xx,
                 propertiesSubgroup.SubgroupSize,
                 supportedSampleCounts,
                 portabilityFlags,
@@ -744,6 +747,8 @@ namespace Ryujinx.Graphics.Vulkan
                     SystemMemoryType.DedicatedMemory;
             }
 
+            bool isAdreno8xx = Vendor == Vendor.Qualcomm && (GpuRenderer.Contains("Adreno") && Regex.IsMatch(GpuRenderer, @"8[3-9]\d"));
+
             return new Capabilities(
                 api: TargetApi.Vulkan,
                 GpuVendor,
@@ -766,13 +771,13 @@ namespace Ryujinx.Graphics.Vulkan
                 supports5BitComponentFormat: supports5BitComponentFormat,
                 supportsSparseBuffer: features2.Features.SparseBinding && mainQueueProperties.QueueFlags.HasFlag(QueueFlags.SparseBindingBit),
                 supportsBlendEquationAdvanced: Capabilities.SupportsBlendEquationAdvanced,
-                supportsFragmentShaderInterlock: Capabilities.SupportsFragmentShaderInterlock,
+                supportsFragmentShaderInterlock: Capabilities.SupportsFragmentShaderInterlock && !isAdreno8xx,
                 supportsFragmentShaderOrderingIntel: false,
-                supportsGeometryShader: Capabilities.SupportsGeometryShader,
-                supportsGeometryShaderPassthrough: Capabilities.SupportsGeometryShaderPassthrough,
-                supportsTransformFeedback: Capabilities.SupportsTransformFeedback,
+                supportsGeometryShader: Capabilities.SupportsGeometryShader && !isAdreno8xx,
+                supportsGeometryShaderPassthrough: Capabilities.SupportsGeometryShaderPassthrough && !isAdreno8xx,
+                supportsTransformFeedback: Capabilities.SupportsTransformFeedback && !isAdreno8xx,
                 supportsImageLoadFormatted: features2.Features.ShaderStorageImageReadWithoutFormat,
-                supportsLayerVertexTessellation: featuresVk12.ShaderOutputLayer,
+                supportsLayerVertexTessellation: featuresVk12.ShaderOutputLayer && !isAdreno8xx,
                 supportsMismatchingViewFormat: true,
                 supportsCubemapView: !IsAmdGcn,
                 supportsNonConstantTextureOffset: false,
@@ -784,7 +789,7 @@ namespace Ryujinx.Graphics.Vulkan
                 supportsTextureGatherOffsets: features2.Features.ShaderImageGatherExtended && !IsMoltenVk,
                 supportsTextureShadowLod: false,
                 supportsVertexStoreAndAtomics: features2.Features.VertexPipelineStoresAndAtomics,
-                supportsViewportIndexVertexTessellation: featuresVk12.ShaderOutputViewportIndex,
+                supportsViewportIndexVertexTessellation: featuresVk12.ShaderOutputViewportIndex && !isAdreno8xx,
                 supportsViewportMask: Capabilities.SupportsViewportArray2,
                 supportsViewportSwizzle: false,
                 supportsIndirectParameters: true,
@@ -1062,11 +1067,16 @@ namespace Ryujinx.Graphics.Vulkan
         {
             lock (SurfaceLock)
             {
+                if (!_initialized)
+                {
+                    return;
+                }
+
                 try
                 {
                     ( _window as Window )?.SetSurfaceQueryAllowed(false);
 
-                    if (_surface.Handle != 0)
+                    if (_surface.Handle != 0 && SurfaceApi != null && _instance != null)
                     {
                         SurfaceApi.DestroySurface(_instance.Instance, _surface, null);
                         _surface = new SurfaceKHR(0);
@@ -1077,7 +1087,14 @@ namespace Ryujinx.Graphics.Vulkan
                     // still
                 }
 
-                ( _window as Window )?.OnSurfaceLost();
+                try
+                {
+                    ( _window as Window )?.OnSurfaceLost();
+                }
+                catch
+                {
+                    // ignore shutdown path exceptions
+                }
             }
         }
 
@@ -1085,14 +1102,33 @@ namespace Ryujinx.Graphics.Vulkan
         {
             PresentAllowed = enabled;
 
+            if (!_initialized)
+            {
+                return;
+            }
+
             if (!enabled)
             {
-                ( _window as Window )?.SetSurfaceQueryAllowed(false);
-                ReleaseSurface();
+                try
+                {
+                    ( _window as Window )?.SetSurfaceQueryAllowed(false);
+                    ReleaseSurface();
+                }
+                catch
+                {
+                    // ignore shutdown path exceptions
+                }
             }
             else
             {
-                _ = RecreateSurface();
+                try
+                {
+                    _ = RecreateSurface();
+                }
+                catch
+                {
+                    // ignore resume path exceptions
+                }
             }
         }
 

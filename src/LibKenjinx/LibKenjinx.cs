@@ -75,6 +75,11 @@ namespace LibKenjinx
 
                 Logger.Notice.Print(LogClass.Application, "Initializing...");
                 Logger.Notice.Print(LogClass.Application, $"Using base path: {AppDataManager.BaseDirPath}");
+#if ANDROID
+                Logger.Notice.Print(LogClass.Application, "Build flags: ANDROID enabled");
+#else
+                Logger.Warning?.Print(LogClass.Application, "Build flags: ANDROID disabled (unexpected for Android build)");
+#endif
                 AndroidFileSystem = VirtualFileSystem.CreateInstance();
                 SwitchDevice = new SwitchDevice(AndroidFileSystem);
             }
@@ -751,6 +756,7 @@ namespace LibKenjinx
 
     {
         private readonly SystemVersion _firmwareVersion;
+        private int _contextDisposeState;
         public VirtualFileSystem VirtualFileSystem { get; set; }
         public ContentManager ContentManager { get; set; }
         public AccountManager AccountManager { get; set; }
@@ -764,10 +770,17 @@ namespace LibKenjinx
 
         public bool EnableFsIntegrityChecks { get; set; }
 
-        internal void DisposeContext()
+        private void DisposeEmulationContext()
         {
-            if (EmulationContext == null)
+            if (System.Threading.Interlocked.Exchange(ref _contextDisposeState, 1) != 0)
+            {
                 return;
+            }
+
+            if (EmulationContext == null)
+            {
+                return;
+            }
 
             Logger.Info?.Print(LogClass.Application, "Disposing EmulationContext");
 
@@ -779,8 +792,13 @@ namespace LibKenjinx
             }
             catch (Exception ex)
             {
-                Logger.Error?.Print(LogClass.Application, $"Error disposing EmulationContext: {ex.Message}");
+                Logger.Error?.Print(LogClass.Application, $"Error disposing EmulationContext: {ex}");
             }
+        }
+
+        internal void DisposeContext()
+        {
+            DisposeEmulationContext();
         }
         public void Dispose()
         {
@@ -788,16 +806,7 @@ namespace LibKenjinx
 
             Logger.Info?.Print(LogClass.Application, "Disposing SwitchDevice");
 
-            try
-            {
-                EmulationContext?.Dispose();
-                EmulationContext?.DisposeGpu();
-                EmulationContext = null;
-            }
-            catch (Exception ex)
-            {
-                Logger.Error?.Print(LogClass.Application, $"Error disposing EmulationContext: {ex.Message}");
-            }
+            DisposeEmulationContext();
 
             try
             {

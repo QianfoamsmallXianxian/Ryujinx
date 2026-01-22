@@ -18,6 +18,7 @@ namespace Ryujinx.HLE
     static class MemoryConfigurationExtensions
     {
         private const ulong GiB = 1024 * 1024 * 1024;
+        private const ulong DRAMSlackSize = 12288 * 1024 * 1024UL;
 
 #pragma warning disable IDE0055 // Disable formatting
         public static MemoryArrange ToKernelMemoryArrange(this MemoryConfiguration configuration)
@@ -54,7 +55,7 @@ namespace Ryujinx.HLE
 
         public static ulong ToDramSize(this MemoryConfiguration configuration)
         {
-            return configuration switch
+            ulong size = configuration switch
             {
                 MemoryConfiguration.MemoryConfiguration4GiB or
                 MemoryConfiguration.MemoryConfiguration4GiBAppletDev or
@@ -66,6 +67,8 @@ namespace Ryujinx.HLE
                 MemoryConfiguration.MemoryConfiguration12GiB         => 12 * GiB,
                 _ => throw new AggregateException($"Invalid memory configuration \"{configuration}\"."),
             };
+
+            return size + DRAMSlackSize;
         }
 #pragma warning restore IDE0055
     }

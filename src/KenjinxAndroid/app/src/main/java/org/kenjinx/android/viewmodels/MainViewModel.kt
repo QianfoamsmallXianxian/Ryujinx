@@ -2,6 +2,7 @@ package org.kenjinx.android.viewmodels
 
 import android.annotation.SuppressLint
 import android.net.Uri
+import android.os.SystemClock
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.navigation.NavHostController
@@ -23,6 +24,7 @@ import org.kenjinx.android.KenjinxNative
 import org.kenjinx.android.PerformanceMonitor
 import org.kenjinx.android.SystemLanguage
 import org.kenjinx.android.UiHandler
+import android.util.Log
 import java.io.File
 import java.util.TimeZone
 
@@ -52,6 +54,8 @@ class MainViewModel(val activity: MainActivity) {
     private var showLoading: MutableState<Boolean>? = null
     private var refreshUser: MutableState<Boolean>? = null
     @Volatile var rendererReady: Boolean = false
+    @Volatile var emulationRunning: Boolean = false
+    @Volatile var emulationClosing: Boolean = false
 
     // Default Game Folder
     var defaultGameFolderUri: Uri? = null
@@ -84,13 +88,45 @@ class MainViewModel(val activity: MainActivity) {
     }
 
     fun closeGame() {
+        emulationClosing = true
         KenjinxNative.deviceSignalEmulationClose()
         gameHost?.close()
-        KenjinxNative.deviceCloseEmulation()
         motionSensorManager?.unregister()
         physicalControllerManager?.disconnect()
         motionSensorManager?.setControllerId(-1)
         rendererReady = false
+    }
+
+    internal fun onEmulationStarted() {
+        emulationRunning = true
+    }
+
+    internal fun onEmulationStopped() {
+        emulationRunning = false
+        emulationClosing = false
+    }
+
+    private fun waitForEmulationStop(timeoutMs: Long): Boolean {
+        if (!emulationRunning) {
+            emulationClosing = false
+            return true
+        }
+
+        val deadline = SystemClock.uptimeMillis() + timeoutMs
+        while (emulationRunning && SystemClock.uptimeMillis() < deadline) {
+            try { Thread.sleep(50) } catch (_: Throwable) {}
+        }
+
+        if (emulationRunning) {
+            Log.w("MainViewModel", "Emulation still running after timeout; forcing close.")
+            try { KenjinxNative.deviceCloseEmulation() } catch (_: Throwable) {}
+            emulationRunning = false
+            emulationClosing = false
+            return true
+        }
+
+        emulationClosing = false
+        return true
     }
 
     // ---- Load language/region from Preferences (Defaults: AmericanEnglish/USA) ----
@@ -108,6 +144,12 @@ class MainViewModel(val activity: MainActivity) {
     // -------------------------------------------------------------------------------
 
     fun loadGame(game: GameModel, overrideSettings: Boolean? = false, forceNceAndPptc: Boolean? = false): Int {
+        if (emulationClosing || emulationRunning) {
+            if (!waitForEmulationStop(5000)) {
+                return 0
+            }
+        }
+
         KenjinxNative.deviceReinitEmulation()
         MainActivity.mainViewModel?.activity?.uiHandler = UiHandler()
 

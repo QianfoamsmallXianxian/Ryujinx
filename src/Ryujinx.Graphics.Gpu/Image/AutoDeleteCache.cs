@@ -47,7 +47,7 @@ namespace Ryujinx.Graphics.Gpu.Image
     class AutoDeleteCache : IEnumerable<Texture>
     {
         private const int MinCountForDeletion = 32;
-        private const int MaxCapacity = 2048;
+        private const int MaxCapacity = 1024;
         private const ulong MiB = 1024 * 1024;
         private const ulong GiB = 1024 * 1024 * 1024;
         private ulong MaxTextureSizeCapacity = 4 * GiB;
@@ -59,7 +59,7 @@ namespace Ryujinx.Graphics.Gpu.Image
         private const ulong TextureSizeCapacity10GiB = 10 * GiB;
         private const ulong TextureSizeCapacity12GiB = 12 * GiB;
 
-        private const float MemoryScaleFactor = 0.50f;
+        private const float MemoryScaleFactor = 0.30f;
         private ulong _maxCacheMemoryUsage = DefaultTextureSizeCapacity;
 
         private readonly LinkedList<Texture> _textures;
@@ -90,10 +90,10 @@ namespace Ryujinx.Graphics.Gpu.Image
                 < 6 when MaximumGpuMemoryGiB < 6 || context.Capabilities.MaximumGpuMemory == 0 =>
                     DefaultTextureSizeCapacity,
                 < 6 => TextureSizeCapacity4GiB,
-                6 => TextureSizeCapacity6GiB,
-                8 => TextureSizeCapacity8GiB,
-                10 => TextureSizeCapacity10GiB,
-                _ => TextureSizeCapacity12GiB
+                6 => TextureSizeCapacity4GiB,
+                8 => TextureSizeCapacity6GiB,
+                10 => TextureSizeCapacity6GiB,
+                _ => TextureSizeCapacity8GiB
             };
 
             var cacheMemory = (ulong)(context.Capabilities.MaximumGpuMemory * MemoryScaleFactor);

@@ -4,9 +4,11 @@ using Ryujinx.Graphics.GAL;
 using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.EXT;
 using Silk.NET.Vulkan.Extensions.KHR;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 
 namespace Ryujinx.Graphics.Vulkan
 {
@@ -291,6 +293,61 @@ namespace Ryujinx.Graphics.Vulkan
 
             bool useRobustBufferAccess = VendorUtils.FromId(physicalDevice.PhysicalDeviceProperties.VendorID) == Vendor.Nvidia;
 
+            PhysicalDeviceVertexInputDynamicStateFeaturesEXT featuresVertexInputDynamicState = new()
+            {
+                SType = StructureType.PhysicalDeviceVertexInputDynamicStateFeaturesExt,
+            };
+
+            PhysicalDevicePrimitiveTopologyListRestartFeaturesEXT featuresPrimitiveTopologyListRestart = new()
+            {
+                SType = StructureType.PhysicalDevicePrimitiveTopologyListRestartFeaturesExt,
+            };
+
+            PhysicalDeviceRobustness2FeaturesEXT featuresRobustness2 = new()
+            {
+                SType = StructureType.PhysicalDeviceRobustness2FeaturesExt,
+            };
+
+            PhysicalDeviceCustomBorderColorFeaturesEXT featuresCustomBorderColor = new()
+            {
+                SType = StructureType.PhysicalDeviceCustomBorderColorFeaturesExt,
+            };
+
+            PhysicalDeviceDepthClipControlFeaturesEXT featuresDepthClipControl = new()
+            {
+                SType = StructureType.PhysicalDeviceDepthClipControlFeaturesExt,
+            };
+
+            PhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT featuresAttachmentFeedbackLoop = new()
+            {
+                SType = StructureType.PhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesExt,
+            };
+
+            PhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT featuresDynamicAttachmentFeedbackLoop = new()
+            {
+                SType = StructureType.PhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesExt,
+            };
+
+            PhysicalDeviceIndexTypeUint8FeaturesEXT featuresIndexU8 = new()
+            {
+                SType = StructureType.PhysicalDeviceIndexTypeUint8FeaturesExt,
+            };
+
+            PhysicalDeviceFragmentShaderInterlockFeaturesEXT featuresFragmentShaderInterlock = new()
+            {
+                SType = StructureType.PhysicalDeviceFragmentShaderInterlockFeaturesExt,
+            };
+
+            PhysicalDeviceShaderFloat16Int8FeaturesKHR featuresShaderInt8 = new()
+            {
+                SType = StructureType.PhysicalDeviceShaderFloat16Int8Features,
+            };
+
+            PhysicalDeviceTransformFeedbackFeaturesEXT featuresTransformFeedback = new()
+            {
+                SType = StructureType.PhysicalDeviceTransformFeedbackFeaturesExt,
+            };
+
             PhysicalDeviceFeatures2 features2 = new()
             {
                 SType = StructureType.PhysicalDeviceFeatures2,
@@ -382,6 +439,28 @@ namespace Ryujinx.Graphics.Vulkan
                 features2.PNext = &supportedFeaturesDynamicAttachmentFeedbackLoopLayout;
             }
 
+            PhysicalDeviceVertexInputDynamicStateFeaturesEXT supportedFeaturesVertexInputDynamicState = new()
+            {
+                SType = StructureType.PhysicalDeviceVertexInputDynamicStateFeaturesExt,
+                PNext = features2.PNext,
+            };
+
+            if (physicalDevice.IsDeviceExtensionPresent("VK_EXT_vertex_input_dynamic_state"))
+            {
+                features2.PNext = &supportedFeaturesVertexInputDynamicState;
+            }
+
+            PhysicalDeviceShaderFloat16Int8FeaturesKHR supportedFeaturesShaderInt8 = new()
+            {
+                SType = StructureType.PhysicalDeviceShaderFloat16Int8Features,
+                PNext = features2.PNext,
+            };
+
+            if (physicalDevice.IsDeviceExtensionPresent("VK_KHR_shader_float16_int8"))
+            {
+                features2.PNext = &supportedFeaturesShaderInt8;
+            }
+
             PhysicalDeviceVulkan12Features supportedPhysicalDeviceVulkan12Features = new()
             {
                 SType = StructureType.PhysicalDeviceVulkan12Features,
@@ -422,47 +501,45 @@ namespace Ryujinx.Graphics.Vulkan
 
             void* pExtendedFeatures = null;
 
-            PhysicalDeviceTransformFeedbackFeaturesEXT featuresTransformFeedback;
+            if (physicalDevice.IsDeviceExtensionPresent("VK_KHR_shader_float16_int8"))
+            {
+                featuresShaderInt8.PNext = pExtendedFeatures;
+                featuresShaderInt8.ShaderInt8 = supportedFeaturesShaderInt8.ShaderInt8;
+
+                pExtendedFeatures = &featuresShaderInt8;
+            }
 
             if (physicalDevice.IsDeviceExtensionPresent(ExtTransformFeedback.ExtensionName))
             {
-                featuresTransformFeedback = new PhysicalDeviceTransformFeedbackFeaturesEXT
-                {
-                    SType = StructureType.PhysicalDeviceTransformFeedbackFeaturesExt,
-                    PNext = pExtendedFeatures,
-                    TransformFeedback = supportedFeaturesTransformFeedback.TransformFeedback,
-                };
+                featuresTransformFeedback.PNext = pExtendedFeatures;
+                featuresTransformFeedback.TransformFeedback = supportedFeaturesTransformFeedback.TransformFeedback;
 
                 pExtendedFeatures = &featuresTransformFeedback;
             }
 
-            PhysicalDevicePrimitiveTopologyListRestartFeaturesEXT featuresPrimitiveTopologyListRestart;
-
             if (physicalDevice.IsDeviceExtensionPresent("VK_EXT_primitive_topology_list_restart"))
             {
-                featuresPrimitiveTopologyListRestart = new PhysicalDevicePrimitiveTopologyListRestartFeaturesEXT
-                {
-                    SType = StructureType.PhysicalDevicePrimitiveTopologyListRestartFeaturesExt,
-                    PNext = pExtendedFeatures,
-                    PrimitiveTopologyListRestart = supportedFeaturesPrimitiveTopologyListRestart.PrimitiveTopologyListRestart,
-                    PrimitiveTopologyPatchListRestart = supportedFeaturesPrimitiveTopologyListRestart.PrimitiveTopologyPatchListRestart,
-                };
+                featuresPrimitiveTopologyListRestart.PNext = pExtendedFeatures;
+                featuresPrimitiveTopologyListRestart.PrimitiveTopologyListRestart = supportedFeaturesPrimitiveTopologyListRestart.PrimitiveTopologyListRestart;
+                featuresPrimitiveTopologyListRestart.PrimitiveTopologyPatchListRestart = supportedFeaturesPrimitiveTopologyListRestart.PrimitiveTopologyPatchListRestart;
 
                 pExtendedFeatures = &featuresPrimitiveTopologyListRestart;
             }
 
-            PhysicalDeviceRobustness2FeaturesEXT featuresRobustness2;
-
             if (physicalDevice.IsDeviceExtensionPresent("VK_EXT_robustness2"))
             {
-                featuresRobustness2 = new PhysicalDeviceRobustness2FeaturesEXT
-                {
-                    SType = StructureType.PhysicalDeviceRobustness2FeaturesExt,
-                    PNext = pExtendedFeatures,
-                    NullDescriptor = supportedFeaturesRobustness2.NullDescriptor,
-                };
+                featuresRobustness2.PNext = pExtendedFeatures;
+                featuresRobustness2.NullDescriptor = supportedFeaturesRobustness2.NullDescriptor;
 
                 pExtendedFeatures = &featuresRobustness2;
+            }
+
+            if (physicalDevice.IsDeviceExtensionPresent("VK_EXT_vertex_input_dynamic_state"))
+            {
+                featuresVertexInputDynamicState.PNext = pExtendedFeatures;
+                featuresVertexInputDynamicState.VertexInputDynamicState = supportedFeaturesVertexInputDynamicState.VertexInputDynamicState;
+
+                pExtendedFeatures = &featuresVertexInputDynamicState;
             }
 
             var featuresExtendedDynamicState = new PhysicalDeviceExtendedDynamicStateFeaturesEXT
@@ -479,6 +556,10 @@ namespace Ryujinx.Graphics.Vulkan
                 SType = StructureType.PhysicalDeviceVulkan11Features,
                 PNext = pExtendedFeatures,
                 ShaderDrawParameters = supportedFeaturesVk11.ShaderDrawParameters,
+                StorageBuffer16BitAccess = supportedFeaturesVk11.StorageBuffer16BitAccess,
+                UniformAndStorageBuffer16BitAccess = supportedFeaturesVk11.UniformAndStorageBuffer16BitAccess,
+                StoragePushConstant16 = supportedFeaturesVk11.StoragePushConstant16,
+                StorageInputOutput16 = supportedFeaturesVk11.StorageInputOutput16,
             };
 
             pExtendedFeatures = &featuresVk11;
@@ -492,107 +573,132 @@ namespace Ryujinx.Graphics.Vulkan
                 UniformBufferStandardLayout = supportedPhysicalDeviceVulkan12Features.UniformBufferStandardLayout,
                 UniformAndStorageBuffer8BitAccess = supportedPhysicalDeviceVulkan12Features.UniformAndStorageBuffer8BitAccess,
                 StorageBuffer8BitAccess = supportedPhysicalDeviceVulkan12Features.StorageBuffer8BitAccess,
+                StoragePushConstant8 = supportedPhysicalDeviceVulkan12Features.StoragePushConstant8,
             };
 
             pExtendedFeatures = &featuresVk12;
 
-            PhysicalDeviceIndexTypeUint8FeaturesEXT featuresIndexU8;
-
             if (physicalDevice.IsDeviceExtensionPresent("VK_EXT_index_type_uint8"))
             {
-                featuresIndexU8 = new PhysicalDeviceIndexTypeUint8FeaturesEXT
-                {
-                    SType = StructureType.PhysicalDeviceIndexTypeUint8FeaturesExt,
-                    PNext = pExtendedFeatures,
-                    IndexTypeUint8 = true,
-                };
+                featuresIndexU8.PNext = pExtendedFeatures;
+                featuresIndexU8.IndexTypeUint8 = true;
 
                 pExtendedFeatures = &featuresIndexU8;
             }
 
-            PhysicalDeviceFragmentShaderInterlockFeaturesEXT featuresFragmentShaderInterlock;
-
             if (physicalDevice.IsDeviceExtensionPresent("VK_EXT_fragment_shader_interlock"))
             {
-                featuresFragmentShaderInterlock = new PhysicalDeviceFragmentShaderInterlockFeaturesEXT
-                {
-                    SType = StructureType.PhysicalDeviceFragmentShaderInterlockFeaturesExt,
-                    PNext = pExtendedFeatures,
-                    FragmentShaderPixelInterlock = true,
-                };
+                featuresFragmentShaderInterlock.PNext = pExtendedFeatures;
+                featuresFragmentShaderInterlock.FragmentShaderPixelInterlock = true;
 
                 pExtendedFeatures = &featuresFragmentShaderInterlock;
             }
-
-            PhysicalDeviceCustomBorderColorFeaturesEXT featuresCustomBorderColor;
 
             if (physicalDevice.IsDeviceExtensionPresent("VK_EXT_custom_border_color") &&
                 supportedFeaturesCustomBorderColor.CustomBorderColors &&
                 supportedFeaturesCustomBorderColor.CustomBorderColorWithoutFormat)
             {
-                featuresCustomBorderColor = new PhysicalDeviceCustomBorderColorFeaturesEXT
-                {
-                    SType = StructureType.PhysicalDeviceCustomBorderColorFeaturesExt,
-                    PNext = pExtendedFeatures,
-                    CustomBorderColors = true,
-                    CustomBorderColorWithoutFormat = true,
-                };
+                featuresCustomBorderColor.PNext = pExtendedFeatures;
+                featuresCustomBorderColor.CustomBorderColors = true;
+                featuresCustomBorderColor.CustomBorderColorWithoutFormat = true;
 
                 pExtendedFeatures = &featuresCustomBorderColor;
             }
 
-            PhysicalDeviceDepthClipControlFeaturesEXT featuresDepthClipControl;
-
             if (physicalDevice.IsDeviceExtensionPresent("VK_EXT_depth_clip_control") &&
                 supportedFeaturesDepthClipControl.DepthClipControl)
             {
-                featuresDepthClipControl = new PhysicalDeviceDepthClipControlFeaturesEXT
-                {
-                    SType = StructureType.PhysicalDeviceDepthClipControlFeaturesExt,
-                    PNext = pExtendedFeatures,
-                    DepthClipControl = true,
-                };
+                featuresDepthClipControl.PNext = pExtendedFeatures;
+                featuresDepthClipControl.DepthClipControl = true;
 
                 pExtendedFeatures = &featuresDepthClipControl;
             }
 
-            PhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT featuresAttachmentFeedbackLoopLayout;
-
             if (physicalDevice.IsDeviceExtensionPresent("VK_EXT_attachment_feedback_loop_layout") &&
                 supportedFeaturesAttachmentFeedbackLoopLayout.AttachmentFeedbackLoopLayout)
             {
-                featuresAttachmentFeedbackLoopLayout = new()
-                {
-                    SType = StructureType.PhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesExt,
-                    PNext = pExtendedFeatures,
-                    AttachmentFeedbackLoopLayout = true,
-                };
+                featuresAttachmentFeedbackLoop.PNext = pExtendedFeatures;
+                featuresAttachmentFeedbackLoop.AttachmentFeedbackLoopLayout = true;
 
-                pExtendedFeatures = &featuresAttachmentFeedbackLoopLayout;
+                pExtendedFeatures = &featuresAttachmentFeedbackLoop;
             }
-
-            PhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesEXT featuresDynamicAttachmentFeedbackLoopLayout;
 
             if (physicalDevice.IsDeviceExtensionPresent("VK_EXT_attachment_feedback_loop_dynamic_state") &&
                 supportedFeaturesDynamicAttachmentFeedbackLoopLayout.AttachmentFeedbackLoopDynamicState)
             {
-                featuresDynamicAttachmentFeedbackLoopLayout = new()
-                {
-                    SType = StructureType.PhysicalDeviceAttachmentFeedbackLoopDynamicStateFeaturesExt,
-                    PNext = pExtendedFeatures,
-                    AttachmentFeedbackLoopDynamicState = true,
-                };
+                featuresDynamicAttachmentFeedbackLoop.PNext = pExtendedFeatures;
+                featuresDynamicAttachmentFeedbackLoop.AttachmentFeedbackLoopDynamicState = true;
 
-                pExtendedFeatures = &featuresDynamicAttachmentFeedbackLoopLayout;
+                pExtendedFeatures = &featuresDynamicAttachmentFeedbackLoop;
             }
 
-            var enabledExtensions = _requiredExtensions.Union(_desirableExtensions.Intersect(physicalDevice.DeviceExtensions)).ToArray();
+            var enabledExtensions = _requiredExtensions.Union(_desirableExtensions.Intersect(physicalDevice.DeviceExtensions));
 
-            nint* ppEnabledExtensions = stackalloc nint[enabledExtensions.Length];
-
-            for (int i = 0; i < enabledExtensions.Length; i++)
+            if (VendorUtils.FromId(physicalDevice.PhysicalDeviceProperties.VendorID) == Vendor.Qualcomm &&
+                (physicalDevice.DeviceName.Contains("Adreno") && Regex.IsMatch(physicalDevice.DeviceName, @"8[3-9]\d")))
             {
-                ppEnabledExtensions[i] = Marshal.StringToHGlobalAnsi(enabledExtensions[i]);
+                enabledExtensions = enabledExtensions.Where(e =>
+                    e != "VK_KHR_shader_float_controls" &&
+                    e != "VK_KHR_shader_atomic_int64" &&
+                    e != "VK_KHR_16bit_storage" &&
+                    e != "VK_KHR_8bit_storage" &&
+                    e != "VK_EXT_vertex_input_dynamic_state" &&
+                    e != "VK_EXT_robustness2" &&
+                    e != "VK_EXT_custom_border_color" &&
+                    e != "VK_EXT_fragment_shader_interlock" &&
+                    e != "VK_EXT_shader_stencil_export" &&
+                    e != "VK_EXT_descriptor_indexing" &&
+                    e != "VK_EXT_external_memory_host" &&
+                    e != "VK_EXT_transform_feedback" &&
+                    e != "VK_EXT_extended_dynamic_state" &&
+                    e != "VK_EXT_attachment_feedback_loop_layout" &&
+                    e != "VK_EXT_attachment_feedback_loop_dynamic_state" &&
+                    e != "VK_EXT_index_type_uint8" &&
+                    e != "VK_EXT_primitive_topology_list_restart" &&
+                    e != "VK_EXT_4444_formats" &&
+                    e != "VK_KHR_maintenance2" &&
+                    e != "VK_KHR_shader_float16_int8");
+
+                features.ShaderInt64 = false;
+
+                featuresVk12.ShaderBufferInt64Atomics = false;
+                featuresVk12.ShaderSharedInt64Atomics = false;
+                featuresVk12.UniformAndStorageBuffer8BitAccess = false;
+                featuresVk12.StorageBuffer8BitAccess = false;
+                featuresVk12.StoragePushConstant8 = false;
+
+                featuresVk11.StorageBuffer16BitAccess = false;
+                featuresVk11.UniformAndStorageBuffer16BitAccess = false;
+                featuresVk11.StoragePushConstant16 = false;
+                featuresVk11.StorageInputOutput16 = false;
+
+                featuresVertexInputDynamicState.VertexInputDynamicState = false;
+                featuresRobustness2.NullDescriptor = false;
+                featuresCustomBorderColor.CustomBorderColors = false;
+                featuresCustomBorderColor.CustomBorderColorWithoutFormat = false;
+                featuresExtendedDynamicState.ExtendedDynamicState = false;
+
+                if (physicalDevice.IsDeviceExtensionPresent(ExtTransformFeedback.ExtensionName))
+                {
+                    featuresTransformFeedback.TransformFeedback = false;
+                }
+
+                featuresAttachmentFeedbackLoop.AttachmentFeedbackLoopLayout = false;
+                featuresDynamicAttachmentFeedbackLoop.AttachmentFeedbackLoopDynamicState = false;
+                featuresIndexU8.IndexTypeUint8 = false;
+                featuresPrimitiveTopologyListRestart.PrimitiveTopologyListRestart = false;
+                featuresPrimitiveTopologyListRestart.PrimitiveTopologyPatchListRestart = false;
+                featuresShaderInt8.ShaderInt8 = false;
+
+                Logger.Warning?.Print(LogClass.Gpu, "Disabling broken extensions for Snapdragon 8 Elite / Gen 5");
+            }
+
+            var finalEnabledExtensions = enabledExtensions.ToArray();
+            nint* ppEnabledExtensions = stackalloc nint[finalEnabledExtensions.Length];
+
+            for (int i = 0; i < finalEnabledExtensions.Length; i++)
+            {
+                ppEnabledExtensions[i] = Marshal.StringToHGlobalAnsi(finalEnabledExtensions[i]);
             }
 
             var deviceCreateInfo = new DeviceCreateInfo
@@ -602,13 +708,13 @@ namespace Ryujinx.Graphics.Vulkan
                 QueueCreateInfoCount = 1,
                 PQueueCreateInfos = &queueCreateInfo,
                 PpEnabledExtensionNames = (byte**)ppEnabledExtensions,
-                EnabledExtensionCount = (uint)enabledExtensions.Length,
+                EnabledExtensionCount = (uint)finalEnabledExtensions.Length,
                 PEnabledFeatures = &features,
             };
 
             api.CreateDevice(physicalDevice.PhysicalDevice, in deviceCreateInfo, null, out var device).ThrowOnError();
 
-            for (int i = 0; i < enabledExtensions.Length; i++)
+            for (int i = 0; i < finalEnabledExtensions.Length; i++)
             {
                 Marshal.FreeHGlobal(ppEnabledExtensions[i]);
             }

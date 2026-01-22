@@ -334,8 +334,11 @@ namespace Ryujinx.HLE.Loaders.Processes
             KResourceLimit resourceLimit = new(context);
 
             long applicationRgSize = (long)context.MemoryManager.MemoryRegions[(int)MemoryRegion.Application].Size;
+            long memoryLimit = applicationRgSize + 12288 * 1024 * 1024L; // Add 12GB slack for System Resource and MapPhysicalMemory
 
-            result = resourceLimit.SetLimitValue(LimitableResource.Memory, applicationRgSize);
+            Logger.Info?.Print(LogClass.Loader, $"Initializing process resource limit: ApplicationRegion={applicationRgSize / 1024 / 1024}MB, Total={memoryLimit / 1024 / 1024}MB");
+
+            result = resourceLimit.SetLimitValue(LimitableResource.Memory, memoryLimit);
 
             if (result.IsSuccess)
             {

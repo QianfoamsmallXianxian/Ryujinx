@@ -1,4 +1,5 @@
 using Ryujinx.Common;
+using Ryujinx.Common.Logging;
 using Ryujinx.HLE.HOS.Kernel.Threading;
 using Ryujinx.Horizon.Common;
 using System.Collections.Generic;
@@ -52,8 +53,9 @@ namespace Ryujinx.HLE.HOS.Kernel.Common
 
             lock (_lock)
             {
-                if (_current2[index] >= _limit[index])
+                if (_current2[index] >= _limit[index] && amount > 0)
                 {
+                    Logger.Warning?.Print(LogClass.Kernel, $"Resource limit {resource} reached! Current: {_current[index]}, Current2: {_current2[index]}, Limit: {_limit[index]}, Requested: {amount}");
                     return false;
                 }
 
@@ -86,6 +88,10 @@ namespace Ryujinx.HLE.HOS.Kernel.Common
                     }
 
                     success = true;
+                }
+                else
+                {
+                    Logger.Warning?.Print(LogClass.Kernel, $"Resource limit {resource} exceeded! Current: {_current[index]}, Current2: {_current2[index]}, Limit: {_limit[index]}, Requested: {amount}");
                 }
             }
 

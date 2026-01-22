@@ -5,6 +5,12 @@
     <LinkerFlavor Condition="'$(RuntimeIdentifier)'=='linux-bionic-arm64'">lld</LinkerFlavor>
     <DefineConstants>$(DefineConstants);FORCE_EXTERNAL_BASE_DIR</DefineConstants>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(RuntimeIdentifier)'=='linux-bionic-arm64'">
+    <DefineConstants>$(DefineConstants);ANDROID</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(RuntimeIdentifier)'=='linux-bionic-arm64'">
+    <Compile Remove="LibKenjinx.Native.cs" />
+  </ItemGroup>
   <PropertyGroup>
     <PublishAot>true</PublishAot>
     <PublishAotUsingRuntimePack>true</PublishAotUsingRuntimePack>

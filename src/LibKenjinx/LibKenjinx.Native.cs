@@ -13,24 +13,11 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
+#if !ANDROID
 namespace LibKenjinx
 {
     public static partial class LibKenjinx
     {
-        private unsafe static IntPtr CreateStringArray(List<string> strings)
-        {
-            uint size = (uint)(Marshal.SizeOf<IntPtr>() * (strings.Count + 1));
-            var array = (char**)Marshal.AllocHGlobal((int)size);
-            Unsafe.InitBlockUnaligned(array, 0, size);
-
-            for (int i = 0; i < strings.Count; i++)
-            {
-                array[i] = (char*)Marshal.StringToHGlobalAnsi(strings[i]);
-            }
-
-            return (nint)array;
-        }
-
         [UnmanagedCallersOnly(EntryPoint = "device_initialize")]
         public static bool InitializeDeviceNative(MemoryManagerMode memoryManagerMode,
                                                   bool useHypervisor,
@@ -469,28 +456,6 @@ namespace LibKenjinx
             CloseUser(userId);
         }
 
-        // ----------------------
-        // Stretch: Helper + Exports
-        // ----------------------
-
-        // central logic (managed)
-        private static void ApplyFullscreenStretch(bool enable)
-        {
-            var ar = enable ? AspectRatio.Stretched : AspectRatio.Fixed16x9;
-
-            // Retrieve, modify, write back struct
-            var cfg = GraphicsConfiguration;
-            cfg.AspectRatio = ar;
-            GraphicsConfiguration = cfg;
-
-            // Hot-Apply for running emulation
-            var dev = SwitchDevice?.EmulationContext;
-            if (dev != null)
-            {
-                try { dev.Configuration.AspectRatio = ar; } catch { }
-            }
-        }
-
         // CamelCase Export (JNA calls it here)
         [UnmanagedCallersOnly(EntryPoint = "graphicsSetFullscreenStretch")]
         public static void GraphicsSetFullscreenStretchNativeAlias(bool enable)
@@ -499,3 +464,4 @@ namespace LibKenjinx
         }
     }
 }
+#endif
