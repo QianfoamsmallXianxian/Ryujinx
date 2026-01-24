@@ -44,6 +44,11 @@ android {
             jniDebuggable false
         }
     }
+    androidComponents {
+        onVariants(selector().withBuildType("release")) {
+            packaging.dex.useLegacyPackaging.set(true)
+        }
+    }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_21
         targetCompatibility JavaVersion.VERSION_21
