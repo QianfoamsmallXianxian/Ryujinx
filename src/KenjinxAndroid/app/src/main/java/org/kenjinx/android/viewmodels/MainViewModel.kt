@@ -27,6 +27,8 @@ import org.kenjinx.android.UiHandler
 import android.util.Log
 import java.io.File
 import java.util.TimeZone
+import androidx.core.content.edit
+import androidx.core.net.toUri
 
 @SuppressLint("WrongConstant")
 class MainViewModel(val activity: MainActivity) {
@@ -62,7 +64,7 @@ class MainViewModel(val activity: MainActivity) {
         set(value) {
             field = value
             val prefs = PreferenceManager.getDefaultSharedPreferences(activity)
-            prefs.edit().putString("defaultGameFolderUri", value?.toString() ?: "").apply()
+            prefs.edit { putString("defaultGameFolderUri", value?.toString() ?: "") }
         }
     var gameHost: GameHost? = null
         set(value) {
@@ -79,7 +81,7 @@ class MainViewModel(val activity: MainActivity) {
         val prefs = PreferenceManager.getDefaultSharedPreferences(activity)
         val saved = prefs.getString("defaultGameFolderUri", "") ?: ""
         if (saved.isNotEmpty()) {
-            defaultGameFolderUri = Uri.parse(saved)
+            defaultGameFolderUri = saved.toUri()
         }
     }
 

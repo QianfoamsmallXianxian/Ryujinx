@@ -100,7 +100,7 @@ class UiHandler {
             if (inputText.value.isEmpty()) {
                 validation.value = "Must be between $minLength and $maxLength characters"
             } else {
-                return inputText.value.length < minLength || inputText.value.length > maxLength
+                return inputText.value.length !in minLength..maxLength
             }
             return false
         }
@@ -116,7 +116,7 @@ class UiHandler {
 
         fun submit() {
             if (type == 2) {
-                if (inputListener.value.length < minLength || inputListener.value.length > maxLength) return
+                if (inputListener.value.length !in minLength..maxLength) return
             }
             KenjinxNative.uiHandlerSetResponse(true, if (type == 2) inputListener.value else "")
             showMessageListener.value = false

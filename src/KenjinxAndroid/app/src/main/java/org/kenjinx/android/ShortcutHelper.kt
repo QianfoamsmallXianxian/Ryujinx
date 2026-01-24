@@ -6,12 +6,12 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.net.Uri
 import android.util.Base64
 import android.widget.Toast
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
+import androidx.core.net.toUri
 
 object ShortcutHelper {
 
@@ -33,7 +33,7 @@ object ShortcutHelper {
         gridIconBitmap: Bitmap? = null,
         gridIconBase64: String? = null
     ) {
-        val uri = runCatching { Uri.parse(bootPathUri) }.getOrNull()
+        val uri = runCatching { bootPathUri.toUri() }.getOrNull()
 
         // --- Select icon (Grid bitmap > Base64 > App icon)
         var icon = IconCompat.createWithResource(context, R.mipmap.ic_launcher)

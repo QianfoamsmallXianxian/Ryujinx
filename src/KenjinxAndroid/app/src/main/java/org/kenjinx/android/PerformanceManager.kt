@@ -1,10 +1,13 @@
 package org.kenjinx.android
 
 import android.content.Intent
+import android.os.Build
+import androidx.annotation.RequiresApi
 import kotlin.math.abs
 
 class PerformanceManager(private val activity: MainActivity) {
     companion object {
+        @RequiresApi(Build.VERSION_CODES.R)
         fun force60HzRefreshRate(enable: Boolean, activity: MainActivity) {
             // Hack for MIUI devices since they don't support the standard Android APIs
             try {
@@ -25,6 +28,7 @@ class PerformanceManager(private val activity: MainActivity) {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.R)
     fun setTurboMode(enable: Boolean) {
         NativeHelpers.instance.setTurboMode(enable)
         force60HzRefreshRate(enable, activity)

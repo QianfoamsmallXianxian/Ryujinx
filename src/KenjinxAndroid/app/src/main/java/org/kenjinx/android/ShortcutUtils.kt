@@ -1,5 +1,6 @@
 package org.kenjinx.android
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
@@ -16,9 +17,8 @@ import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import android.view.MotionEvent
-import android.view.View
 
+@SuppressLint("SourceLockedOrientationActivity")
 object ShortcutUtils {
 
     fun suggestLabelFromUri(uri: Uri): String {
@@ -47,7 +47,6 @@ object ShortcutUtils {
         iconBitmap: Bitmap? = null,
         onCompleted: (() -> Unit)? = null
     ): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return false
         val sm = activity.getSystemService(ShortcutManager::class.java) ?: return false
 
         val rw = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
@@ -118,7 +117,7 @@ object ShortcutUtils {
         }
         val filter = IntentFilter(ACTION_PIN_RESULT)
         if (Build.VERSION.SDK_INT >= 33) {
-            activity.registerReceiver(pinResultReceiver!!, filter, Context.RECEIVER_NOT_EXPORTED)
+            activity.registerReceiver(pinResultReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         } else {
             @Suppress("UnspecifiedRegisterReceiverFlag")
             activity.registerReceiver(pinResultReceiver, filter)

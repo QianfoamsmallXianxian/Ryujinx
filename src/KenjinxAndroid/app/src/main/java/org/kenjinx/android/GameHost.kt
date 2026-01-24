@@ -177,7 +177,7 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
 
     override fun onWindowVisibilityChanged(visibility: Int) {
         super.onWindowVisibilityChanged(visibility)
-        if (visibility != android.view.View.VISIBLE) {
+        if (visibility != VISIBLE) {
             ghLog("window not visible → shutdownBinding()")
             try { KenjinxNative.detachWindow() } catch (_: Throwable) {}
             shutdownBinding()
@@ -370,7 +370,7 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
         val isSideFlip = (old == 1 && rotation == 3) || (old == 3 && rotation == 1)
 
         if (isSideFlip) {
-            try { KenjinxNative.setSurfaceRotationByAndroidRotation(rotation ?: 0) } catch (_: Throwable) {}
+            try { KenjinxNative.setSurfaceRotationByAndroidRotation(rotation) } catch (_: Throwable) {}
             rebindNativeWindow(force = true)
             val now = android.os.SystemClock.uptimeMillis()
             if (now - lastKickAt >= 300L && _inputInitialized && MainActivity.mainViewModel?.rendererReady == true) {
@@ -466,12 +466,7 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
         val act = mainViewModel.activity
         val intent = Intent(act, EmulationService::class.java)
         try {
-            if (Build.VERSION.SDK_INT >= 26) {
-                act.startForegroundService(intent)
-            } else {
-                @Suppress("DEPRECATION")
-                act.startService(intent)
-            }
+            act.startForegroundService(intent)
         } catch (_: Throwable) { }
 
         try {

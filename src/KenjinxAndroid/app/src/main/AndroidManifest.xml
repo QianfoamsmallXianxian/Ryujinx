@@ -2,12 +2,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Android 11+ Package Visibility: was diese App sehen/ansprechen darf -->
+    <!-- Android 11+ Package Visibility: What this app is allowed to see/access -->
     <queries>
-        <!-- Falls andere Flavors/Starter beteiligt sind, hier sichtbar machen -->
+        <!-- If other flavors/starters are involved, make them visible here -->
         <package android:name="org.kenjinx.android"/>
 
-        <!-- Allgemein: LAUNCHER-Activities und ACTION_VIEW-Dateien auflösbar machen -->
+        <!-- General: Make LAUNCHER activities and ACTION_VIEW files resolvable -->
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />

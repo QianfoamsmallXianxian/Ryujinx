@@ -1,5 +1,6 @@
 package org.kenjinx.android.viewmodels
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import android.os.ParcelFileDescriptor
@@ -10,27 +11,21 @@ import org.kenjinx.android.KenjinxNative
 
 class GameModel(var file: DocumentFile, val context: Context) {
     private var updateDescriptor: ParcelFileDescriptor? = null
-    var type: FileType
+    var type: FileType = when {
+        (file.extension == "xci") -> FileType.Xci
+        (file.extension == "nsp") -> FileType.Nsp
+        (file.extension == "nro") -> FileType.Nro
+        else -> FileType.None
+    }
     var descriptor: ParcelFileDescriptor? = null
-    var fileName: String?
-    var fileBaseName: String?
+    var fileName = file.name
+    var fileBaseName: String? = fileName?.substringBeforeLast(".", fileName!!)
     var fileSize = 0.0
     var titleName: String? = null
     var titleId: String? = null
     var developer: String? = null
     var version: String? = null
     var icon: String? = null
-
-    init {
-        fileName = file.name
-        fileBaseName = fileName?.substringBeforeLast(".", fileName!!)
-        type = when {
-            (file.extension == "xci") -> FileType.Xci
-            (file.extension == "nsp") -> FileType.Nsp
-            (file.extension == "nro") -> FileType.Nro
-            else -> FileType.None
-        }
-    }
 
     fun getGameInfo() {
         val pid = open()
@@ -60,6 +55,7 @@ class GameModel(var file: DocumentFile, val context: Context) {
         return descriptor?.fd ?: 0
     }
 
+    @SuppressLint("UseKtx")
     fun openUpdate(): Int {
         if (titleId?.isNotEmpty() == true) {
             val vm = TitleUpdateViewModel(titleId ?: "")

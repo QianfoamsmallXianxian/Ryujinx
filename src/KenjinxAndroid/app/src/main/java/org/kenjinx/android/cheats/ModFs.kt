@@ -6,8 +6,6 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import android.util.Log
 import java.io.File
-import java.io.InputStream
-import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 
 /* -------- Paths -------- */

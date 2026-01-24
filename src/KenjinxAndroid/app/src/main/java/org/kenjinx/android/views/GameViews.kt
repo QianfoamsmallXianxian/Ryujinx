@@ -53,7 +53,6 @@ import org.kenjinx.android.viewmodels.VSyncMode
 import org.kenjinx.android.widgets.SimpleAlertDialog
 import java.util.Locale
 import kotlin.math.roundToInt
-import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -61,6 +60,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.ui.platform.LocalConfiguration
 import org.kenjinx.android.viewmodels.QuickSettings.VirtualControllerPreset
+import androidx.core.net.toUri
 
 
 class GameViews {
@@ -338,7 +338,7 @@ class GameViews {
                                                     Toast.makeText(mainViewModel.activity, "Slot 1 is empty.", Toast.LENGTH_SHORT).show()
                                                 } else {
                                                     try {
-                                                        val bytes = mainViewModel.activity.contentResolver.openInputStream(Uri.parse(u))?.use { it.readBytes() }
+                                                        val bytes = mainViewModel.activity.contentResolver.openInputStream(u.toUri())?.use { it.readBytes() }
                                                         if (bytes != null && bytes.isNotEmpty()) {
                                                             val ok = KenjinxNative.amiiboLoadBin(bytes, bytes.size)
                                                             if (ok) Toast.makeText(mainViewModel.activity, "Loaded: $name", Toast.LENGTH_SHORT).show()
@@ -346,7 +346,7 @@ class GameViews {
                                                         } else Toast.makeText(mainViewModel.activity, "File not readable.", Toast.LENGTH_SHORT).show()
                                                     } catch (t: Throwable) { Toast.makeText(mainViewModel.activity, "Error: ${t.message}", Toast.LENGTH_SHORT).show() }
                                                 }
-                                            }) { androidx.compose.material3.Text(qsLabel(QuickSettings(mainViewModel.activity).amiibo1Name, 1)) }
+                                            }) { Text(qsLabel(QuickSettings(mainViewModel.activity).amiibo1Name, 1)) }
 
                                             androidx.compose.material3.Button(onClick = {
                                                 val qs = QuickSettings(mainViewModel.activity)
@@ -356,7 +356,7 @@ class GameViews {
                                                     Toast.makeText(mainViewModel.activity, "Slot 2 is empty.", Toast.LENGTH_SHORT).show()
                                                 } else {
                                                     try {
-                                                        val bytes = mainViewModel.activity.contentResolver.openInputStream(Uri.parse(u))?.use { it.readBytes() }
+                                                        val bytes = mainViewModel.activity.contentResolver.openInputStream(u.toUri())?.use { it.readBytes() }
                                                         if (bytes != null && bytes.isNotEmpty()) {
                                                             val ok = KenjinxNative.amiiboLoadBin(bytes, bytes.size)
                                                             if (ok) Toast.makeText(mainViewModel.activity, "Loaded: $name", Toast.LENGTH_SHORT).show()
@@ -364,7 +364,7 @@ class GameViews {
                                                         } else Toast.makeText(mainViewModel.activity, "File not readable.", Toast.LENGTH_SHORT).show()
                                                     } catch (t: Throwable) { Toast.makeText(mainViewModel.activity, "Error: ${t.message}", Toast.LENGTH_SHORT).show() }
                                                 }
-                                            }) { androidx.compose.material3.Text(qsLabel(QuickSettings(mainViewModel.activity).amiibo2Name, 2)) }
+                                            }) { Text(qsLabel(QuickSettings(mainViewModel.activity).amiibo2Name, 2)) }
 
                                             androidx.compose.material3.Button(onClick = {
                                                 val qs = QuickSettings(mainViewModel.activity)
@@ -374,7 +374,7 @@ class GameViews {
                                                     Toast.makeText(mainViewModel.activity, "Slot 3 is empty.", Toast.LENGTH_SHORT).show()
                                                 } else {
                                                     try {
-                                                        val bytes = mainViewModel.activity.contentResolver.openInputStream(Uri.parse(u))?.use { it.readBytes() }
+                                                        val bytes = mainViewModel.activity.contentResolver.openInputStream(u.toUri())?.use { it.readBytes() }
                                                         if (bytes != null && bytes.isNotEmpty()) {
                                                             val ok = KenjinxNative.amiiboLoadBin(bytes, bytes.size)
                                                             if (ok) Toast.makeText(mainViewModel.activity, "Loaded: $name", Toast.LENGTH_SHORT).show()
@@ -382,7 +382,7 @@ class GameViews {
                                                         } else Toast.makeText(mainViewModel.activity, "File not readable.", Toast.LENGTH_SHORT).show()
                                                     } catch (t: Throwable) { Toast.makeText(mainViewModel.activity, "Error: ${t.message}", Toast.LENGTH_SHORT).show() }
                                                 }
-                                            }) { androidx.compose.material3.Text(qsLabel(QuickSettings(mainViewModel.activity).amiibo3Name, 3)) }
+                                            }) { Text(qsLabel(QuickSettings(mainViewModel.activity).amiibo3Name, 3)) }
                                         }
 
                                         Row(modifier = Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -394,7 +394,7 @@ class GameViews {
                                                     Toast.makeText(mainViewModel.activity, "Slot 4 is empty.", Toast.LENGTH_SHORT).show()
                                                 } else {
                                                     try {
-                                                        val bytes = mainViewModel.activity.contentResolver.openInputStream(Uri.parse(u))?.use { it.readBytes() }
+                                                        val bytes = mainViewModel.activity.contentResolver.openInputStream(u.toUri())?.use { it.readBytes() }
                                                         if (bytes != null && bytes.isNotEmpty()) {
                                                             val ok = KenjinxNative.amiiboLoadBin(bytes, bytes.size)
                                                             if (ok) Toast.makeText(mainViewModel.activity, "Loaded: $name", Toast.LENGTH_SHORT).show()
@@ -402,7 +402,7 @@ class GameViews {
                                                         } else Toast.makeText(mainViewModel.activity, "File not readable.", Toast.LENGTH_SHORT).show()
                                                     } catch (t: Throwable) { Toast.makeText(mainViewModel.activity, "Error: ${t.message}", Toast.LENGTH_SHORT).show() }
                                                 }
-                                            }) { androidx.compose.material3.Text(qsLabel(QuickSettings(mainViewModel.activity).amiibo4Name, 4)) }
+                                            }) { Text(qsLabel(QuickSettings(mainViewModel.activity).amiibo4Name, 4)) }
 
                                             androidx.compose.material3.Button(onClick = {
                                                 val qs = QuickSettings(mainViewModel.activity)
@@ -412,7 +412,7 @@ class GameViews {
                                                     Toast.makeText(mainViewModel.activity, "Slot 5 is empty.", Toast.LENGTH_SHORT).show()
                                                 } else {
                                                     try {
-                                                        val bytes = mainViewModel.activity.contentResolver.openInputStream(Uri.parse(u))?.use { it.readBytes() }
+                                                        val bytes = mainViewModel.activity.contentResolver.openInputStream(u.toUri())?.use { it.readBytes() }
                                                         if (bytes != null && bytes.isNotEmpty()) {
                                                             val ok = KenjinxNative.amiiboLoadBin(bytes, bytes.size)
                                                             if (ok) Toast.makeText(mainViewModel.activity, "Loaded: $name", Toast.LENGTH_SHORT).show()
@@ -420,12 +420,12 @@ class GameViews {
                                                         } else Toast.makeText(mainViewModel.activity, "File not readable.", Toast.LENGTH_SHORT).show()
                                                     } catch (t: Throwable) { Toast.makeText(mainViewModel.activity, "Error: ${t.message}", Toast.LENGTH_SHORT).show() }
                                                 }
-                                            }) { androidx.compose.material3.Text(qsLabel(QuickSettings(mainViewModel.activity).amiibo5Name, 5)) }
+                                            }) { Text(qsLabel(QuickSettings(mainViewModel.activity).amiibo5Name, 5)) }
 
                                             androidx.compose.material3.OutlinedButton(onClick = {
                                                 KenjinxNative.amiiboClear()
                                                 Toast.makeText(mainViewModel.activity, "Amiibo cleared", Toast.LENGTH_SHORT).show()
-                                            }) { androidx.compose.material3.Text("Clear") }
+                                            }) { Text("Clear") }
                                         }
                                     }
                                 }

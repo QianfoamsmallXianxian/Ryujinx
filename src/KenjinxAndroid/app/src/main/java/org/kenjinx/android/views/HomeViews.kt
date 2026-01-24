@@ -92,12 +92,12 @@ import org.kenjinx.android.viewmodels.HomeViewModel
 import org.kenjinx.android.viewmodels.QuickSettings
 import org.kenjinx.android.widgets.SimpleAlertDialog
 import org.kenjinx.android.ShortcutUtils
-import org.kenjinx.android.ShortcutWizardActivity
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.documentfile.provider.DocumentFile
 
 // Cheats
@@ -162,19 +162,19 @@ class HomeViews {
             var isFabVisible by remember { mutableStateOf(true) }
             val isNavigating = remember { mutableStateOf(false) }
 
-            // NEW: Amiibo slot picker state
+            // Amiibo slot picker state
             val showAmiiboSlotDialog = remember { mutableStateOf(false) }
             val pendingSlot = remember { mutableStateOf(1) }
 
-            // NEW: Cheats UI state
+            // Cheats UI state
             val openCheatsDialog = remember { mutableStateOf(false) }
             val cheatsForSelected = remember { mutableStateOf(listOf<CheatItem>()) }
             val enabledCheatKeys = remember { mutableStateOf(mutableSetOf<String>()) }
 
-            // NEW: Mods UI state
+            // Mods UI state
             val openModsDialog = remember { mutableStateOf(false) }
             val modsForSelected = remember { mutableStateOf(listOf<String>()) }
-            val modsImportProgress = remember { mutableStateOf(0f) }
+            val modsImportProgress = remember { mutableFloatStateOf(0f) }
             val modsImportBusy = remember { mutableStateOf(false) }
             val modsImportStatusText = remember { mutableStateOf("") }
 
@@ -182,8 +182,8 @@ class HomeViews {
             val openSavesDialog = remember { mutableStateOf(false) }
             val saveImportBusy = remember { mutableStateOf(false) }
             val saveExportBusy = remember { mutableStateOf(false) }
-            val saveImportProgress = remember { mutableStateOf(0f) }
-            val saveExportProgress = remember { mutableStateOf(0f) }
+            val saveImportProgress = remember { mutableFloatStateOf(0f) }
+            val saveExportProgress = remember { mutableFloatStateOf(0f) }
             val saveImportStatus = remember { mutableStateOf("") }
             val saveExportStatus = remember { mutableStateOf("") }
 
@@ -198,13 +198,13 @@ class HomeViews {
                 val tIdNow = viewModel.mainViewModel?.selected?.titleId.orEmpty()
                 if (uri != null && act != null && tIdNow.isNotEmpty()) {
                     saveImportBusy.value = true
-                    saveImportProgress.value = 0f
+                    saveImportProgress.floatValue = 0f
                     saveImportStatus.value = "Starting…"
 
                     thread {
                         val res = importSaveFromZip(act, uri) { prog ->
                             val frac = if (prog.total > 0) prog.bytes.toFloat() / prog.total else 0f
-                            saveImportProgress.value = frac.coerceIn(0f, 1f)
+                            saveImportProgress.floatValue = frac.coerceIn(0f, 1f)
                             saveImportStatus.value = "Importing: ${prog.currentEntry}"
                         }
                         saveImportBusy.value = false
@@ -223,13 +223,13 @@ class HomeViews {
                 val tIdNow = viewModel.mainViewModel?.selected?.titleId.orEmpty()
                 if (uri != null && act != null && tIdNow.isNotEmpty()) {
                     saveExportBusy.value = true
-                    saveExportProgress.value = 0f
+                    saveExportProgress.floatValue = 0f
                     saveExportStatus.value = "Starting…"
 
                     thread {
                         val res = exportSaveToZip(act, tIdNow, uri) { prog ->
                             val frac = if (prog.total > 0) prog.bytes.toFloat() / prog.total else 0f
-                            saveExportProgress.value = frac.coerceIn(0f, 1f)
+                            saveExportProgress.floatValue = frac.coerceIn(0f, 1f)
                             saveExportStatus.value = "Exporting: ${prog.currentPath}"
                         }
                         saveExportBusy.value = false
@@ -250,7 +250,7 @@ class HomeViews {
 
             val context = LocalContext.current
 
-            // NEW: Amiibo Launcher (OpenDocument)
+            // Amiibo Launcher (OpenDocument)
             val pickAmiiboLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.OpenDocument()
             ) { uri: Uri? ->
@@ -275,7 +275,7 @@ class HomeViews {
                 }
             }
 
-            // NEW: Cheats Import (.txt)
+            // Cheats Import (.txt)
             val importCheatLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.OpenDocument()
             ) { uri: Uri? ->
@@ -316,7 +316,7 @@ class HomeViews {
                     } catch (_: Exception) {}
 
                     modsImportBusy.value = true
-                    modsImportProgress.value = 0f
+                    modsImportProgress.floatValue = 0f
                     modsImportStatusText.value = "Starting…"
 
                     thread {
@@ -325,7 +325,7 @@ class HomeViews {
                             titleId,
                             uri
                         ) { prog ->
-                            modsImportProgress.value = prog.fraction
+                            modsImportProgress.floatValue = prog.fraction
                             modsImportStatusText.value = if (prog.currentEntry.isNotEmpty())
                                 "Copying: ${prog.currentEntry}"
                             else
@@ -642,7 +642,7 @@ class HomeViews {
 
                     // Amiibo slot chooser dialog (outside of game)
                     if (showAmiiboSlotDialog.value) {
-                        androidx.compose.material3.AlertDialog(
+                        AlertDialog(
                             onDismissRequest = { showAmiiboSlotDialog.value = false },
                             title = { Text("Import Amiibo") },
                             text = {
@@ -732,7 +732,7 @@ class HomeViews {
                                         if (viewModel.mainViewModel?.selected != null) {
 
                                             // Press the cheat buttons before starting (Run button).
-                                            val gmSel = viewModel.mainViewModel!!.selected!!
+                                            val gmSel = viewModel.mainViewModel.selected!!
                                             val tId = gmSel.titleId ?: ""
                                             val act = viewModel.activity
 
@@ -1125,7 +1125,7 @@ class HomeViews {
                                     .padding(top = 12.dp),
                                 horizontalArrangement = Arrangement.End
                             ) {
-                                androidx.compose.material3.TextButton(
+                                TextButton(
                                     onClick = { openSavesDialog.value = false }
                                 ) { Text("Close") }
                             }

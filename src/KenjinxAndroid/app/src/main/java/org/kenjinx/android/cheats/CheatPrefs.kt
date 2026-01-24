@@ -1,6 +1,7 @@
 package org.kenjinx.android.cheats
 
 import android.content.Context
+import androidx.core.content.edit
 
 class CheatPrefs(private val context: Context) {
     private fun key(titleId: String) = "cheats_$titleId"
@@ -11,6 +12,6 @@ class CheatPrefs(private val context: Context) {
     }
 
     fun setEnabled(titleId: String, keys: Set<String>) {
-        prefs.edit().putStringSet(key(titleId), keys.toSet()).apply()
+        prefs.edit { putStringSet(key(titleId), keys.toSet()) }
     }
 }

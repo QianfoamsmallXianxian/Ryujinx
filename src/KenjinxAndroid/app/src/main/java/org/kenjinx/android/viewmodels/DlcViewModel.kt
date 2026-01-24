@@ -212,11 +212,9 @@ class DlcViewModel(val titleId: String) {
     }
 
     var data: MutableList<DlcContainerList>? = null
-    private var jsonPath: String
+    private var jsonPath: String = MainActivity.AppPath + "/games/" + titleId.toLowerCase(Locale.current) + "/dlc.json"
 
     init {
-        jsonPath =
-            MainActivity.AppPath + "/games/" + titleId.toLowerCase(Locale.current) + "/dlc.json"
         storageHelper = MainActivity.StorageHelper!!
 
         reloadFromDisk()

@@ -5,10 +5,8 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
-import android.content.Context
 import android.content.Intent
 import android.os.Binder
-import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import org.kenjinx.android.MainActivity
@@ -138,10 +136,7 @@ class EmulationService : Service() {
 
     private fun buildNotification(): Notification {
         val openIntent = Intent(this, MainActivity::class.java)
-        val flags = if (Build.VERSION.SDK_INT >= 23)
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        else
-            PendingIntent.FLAG_UPDATE_CURRENT
+        val flags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         val pi = PendingIntent.getActivity(this, 0, openIntent, flags)
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
@@ -156,15 +151,13 @@ class EmulationService : Service() {
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= 26) {
-            val mgr = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            val ch = NotificationChannel(
-                CHANNEL_ID,
-                "Emulation",
-                NotificationManager.IMPORTANCE_LOW
-            )
-            ch.description = "Keeps the Emulation active."
-            mgr.createNotificationChannel(ch)
-        }
+        val mgr = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        val ch = NotificationChannel(
+            CHANNEL_ID,
+            "Emulation",
+            NotificationManager.IMPORTANCE_LOW
+        )
+        ch.description = "Keeps the Emulation active."
+        mgr.createNotificationChannel(ch)
     }
 }

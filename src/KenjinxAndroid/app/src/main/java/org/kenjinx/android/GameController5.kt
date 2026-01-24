@@ -18,7 +18,6 @@ import com.swordfish.radialgamepad.library.config.ButtonConfig
 import com.swordfish.radialgamepad.library.config.CrossConfig
 import com.swordfish.radialgamepad.library.config.CrossContentDescription
 import com.swordfish.radialgamepad.library.config.PrimaryDialConfig
-import com.swordfish.radialgamepad.library.config.RadialGamePadConfig
 import com.swordfish.radialgamepad.library.config.SecondaryDialConfig
 import com.swordfish.radialgamepad.library.event.Event
 import kotlinx.coroutines.flow.merge
@@ -178,12 +177,12 @@ class GameController5(var activity: Activity) : IGameController {
     }
 }
 
-private fun generateConfig5(isLeft: Boolean, useSwitchLayout: Boolean): RadialGamePadConfig {
+private fun generateConfig5(isLeft: Boolean, useSwitchLayout: Boolean): GamePadConfig {
     val distance = 0.3f
     val buttonScale = 1f
 
     if (isLeft) {
-        return RadialGamePadConfig(
+        return GamePadConfig(
             /* ringSegments = */ 12,
             /* Primary (Stick)  */
             // IMPORTANT: pressButtonId -> DUMMY_LEFT_STICK_PRESS_ID, so that double tap does not trigger L3
@@ -273,7 +272,7 @@ private fun generateConfig5(isLeft: Boolean, useSwitchLayout: Boolean): RadialGa
                 )
         )
     } else {
-        return RadialGamePadConfig(
+        return GamePadConfig(
             /* ringSegments = */ 12,
             /* Primary (ABXY) */
             PrimaryDialConfig.PrimaryButtons(

@@ -16,7 +16,7 @@ import java.io.File
 
 class TitleUpdateViewModel(val titleId: String) {
     private var canClose: MutableState<Boolean>? = null
-    private var basePath: String
+    private var basePath: String = MainActivity.AppPath + "/games/" + titleId.toLowerCase(Locale.current)
     private var updateJsonName = "updates.json"
     private var storageHelper: SimpleStorageHelper
     private var currentPaths: MutableList<String> = mutableListOf()
@@ -187,11 +187,9 @@ class TitleUpdateViewModel(val titleId: String) {
     }
 
     var data: TitleUpdateMetadata? = null
-    private var jsonPath: String
+    private var jsonPath: String = "${basePath}/${updateJsonName}"
 
     init {
-        basePath = MainActivity.AppPath + "/games/" + titleId.toLowerCase(Locale.current)
-        jsonPath = "${basePath}/${updateJsonName}"
 
         data = TitleUpdateMetadata()
         if (File(jsonPath).exists()) {

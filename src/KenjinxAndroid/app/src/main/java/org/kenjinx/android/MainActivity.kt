@@ -7,7 +7,6 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.WindowManager
 import android.content.Intent
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -43,7 +42,10 @@ import androidx.lifecycle.Lifecycle
 import android.content.BroadcastReceiver
 import android.content.IntentFilter
 import android.content.Context
+import android.os.Build
+import androidx.annotation.RequiresApi
 import org.kenjinx.android.service.EmulationService
+import androidx.core.content.edit
 
 class MainActivity : BaseActivity() {
     private var physicalControllerManager: PhysicalControllerManager =
@@ -151,7 +153,7 @@ class MainActivity : BaseActivity() {
         override fun run() {
             val isReallyResumed = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && isActive
             val hasFocusNow = hasWindowFocus()
-            val rendererReady = MainActivity.mainViewModel?.rendererReady == true
+            val rendererReady = mainViewModel?.rendererReady == true
 
             if (!isReallyResumed || !hasFocusNow || !rendererReady) {
                 handler.postDelayed(this, ENABLE_PRESENT_DELAY_MS)
@@ -231,6 +233,7 @@ class MainActivity : BaseActivity() {
         const val EXTRA_TITLE_ID = "titleId"
         const val EXTRA_TITLE_NAME = "titleName"
 
+        @RequiresApi(Build.VERSION_CODES.R)
         @JvmStatic
         fun frameEnded() {
             mainViewModel?.activity?.apply {
@@ -276,6 +279,7 @@ class MainActivity : BaseActivity() {
         _isInit = KenjinxNative.javaInitialize(appPath, JNIEnv.CURRENT)
     }
 
+    @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ensureNotificationPermission()
@@ -283,15 +287,9 @@ class MainActivity : BaseActivity() {
         motionSensorManager = MotionSensorManager(this)
         Thread.setDefaultUncaughtExceptionHandler(crashHandler)
 
-        if (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                !Environment.isExternalStorageManager()
-            } else {
-                !Environment.isExternalStorageLegacy()
-            }
+        if (!Environment.isExternalStorageManager()
         ) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                storageHelper?.storage?.requestFullStorageAccess()
-            }
+            storageHelper?.storage?.requestFullStorageAccess()
         }
 
         AppPath = this.getExternalFilesDir(null)!!.absolutePath
@@ -335,9 +333,7 @@ class MainActivity : BaseActivity() {
         }
 
         storedIntent = intent
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            rotLog("onCreate: initial display.rotation=${display?.rotation} → ${deg(display?.rotation)}°")
-        }
+        rotLog("onCreate: initial display.rotation=${display?.rotation} → ${deg(display?.rotation)}°")
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -379,13 +375,13 @@ class MainActivity : BaseActivity() {
         super.onStart()
         coldResetIfZombie("onStart")
 
-        if (isGameRunning && MainActivity.mainViewModel?.rendererReady == true) {
+        if (isGameRunning && mainViewModel?.rendererReady == true) {
             try {
                 KenjinxNative.graphicsSetPresentEnabled(true)
                 Log.d(TAG_FG, "present=ENABLED (onStart)")
             } catch (_: Throwable) {}
         } else {
-            Log.d(TAG_FG, "skip enable present (onStart) — rendererReady=${MainActivity.mainViewModel?.rendererReady}")
+            Log.d(TAG_FG, "skip enable present (onStart) — rendererReady=${mainViewModel?.rendererReady}")
             setPresentEnabled(false, "cold reset: onStart (no game)")
         }
     }
@@ -405,15 +401,15 @@ class MainActivity : BaseActivity() {
 
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
-        if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN && isGameRunning) {
+        if (level >= TRIM_MEMORY_UI_HIDDEN && isGameRunning) {
             setAudioForegroundState(false)
-            if (MainActivity.mainViewModel?.rendererReady == true) {
+            if (mainViewModel?.rendererReady == true) {
                 try {
                     setPresentEnabled(false, "onTrimMemory:$level")
                     KenjinxNative.detachWindow()
                 } catch (_: Throwable) {}
             } else {
-                Log.d(TAG_FG, "skip disable present (onTrimMemory) — rendererReady=${MainActivity.mainViewModel?.rendererReady}")
+                Log.d(TAG_FG, "skip disable present (onTrimMemory) — rendererReady=${mainViewModel?.rendererReady}")
             }
         }
     }
@@ -441,7 +437,7 @@ class MainActivity : BaseActivity() {
                 registerReceiver(
                     serviceStopReceiver,
                     IntentFilter(EmulationService.ACTION_STOPPED),
-                    Context.RECEIVER_EXPORTED
+                    RECEIVER_EXPORTED
                 )
             } else {
                 @Suppress("DEPRECATION")
@@ -495,6 +491,7 @@ class MainActivity : BaseActivity() {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.R)
     override fun onPause() {
         super.onPause()
         isActive = false
@@ -583,6 +580,7 @@ class MainActivity : BaseActivity() {
         try { KenjinxNative.setSurfaceRotationByAndroidRotation(rot) } catch (_: Throwable) {}
     }
 
+    @RequiresApi(Build.VERSION_CODES.R)
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         val rot = this.display?.rotation
@@ -614,7 +612,7 @@ class MainActivity : BaseActivity() {
     ) { /* optional: Log/Toast */ }
 
     private fun ensureNotificationPermission() {
-        if (android.os.Build.VERSION.SDK_INT >= 33) {
+        if (Build.VERSION.SDK_INT >= 33) {
             val granted = ContextCompat.checkSelfPermission(
                 this, Manifest.permission.POST_NOTIFICATIONS
             ) == PackageManager.PERMISSION_GRANTED
@@ -674,6 +672,7 @@ class MainActivity : BaseActivity() {
         } catch (_: Exception) { null }
     }
 
+    @RequiresApi(Build.VERSION_CODES.R)
     fun shutdownAndRestart() {
         val packageManager = packageManager
         val intent = packageManager.getLaunchIntentForPackage(packageName)
@@ -696,10 +695,10 @@ class MainActivity : BaseActivity() {
 
     private fun setEmuRunningFlag(value: Boolean) {
         try {
-            getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                .edit()
-                .putBoolean(KEY_EMU_RUNNING, value)
-                .apply()
+            getSharedPreferences(PREFS, MODE_PRIVATE)
+                .edit {
+                    putBoolean(KEY_EMU_RUNNING, value)
+                }
         } catch (_: Throwable) { }
     }
 
@@ -723,7 +722,7 @@ class MainActivity : BaseActivity() {
 
     private fun coldResetIfZombie(phase: String) {
         try {
-            val zombie = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            val zombie = getSharedPreferences(PREFS, MODE_PRIVATE)
                 .getBoolean(KEY_EMU_RUNNING, false)
             if (zombie) {
                 clearEmuRunningFlag()

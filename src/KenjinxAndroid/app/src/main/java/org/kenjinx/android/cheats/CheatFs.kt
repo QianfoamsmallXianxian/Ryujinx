@@ -30,7 +30,7 @@ private fun allCheatDirs(activity: Activity, titleId: String): List<File> {
 private fun parseCheatNames(text: String): List<String> {
     // Trim BOM, CRLF tolerant
     val clean = text.replace("\uFEFF", "")
-    val rx = Regex("""(?m)^\s*\[(.+?)\]\s*$""")
+    val rx = Regex("""(?m)^\s*\[(.+?)]\s*$""")
     return rx.findAll(clean)
         .map { it.groupValues[1].trim() }
         .filter { it.isNotEmpty() }

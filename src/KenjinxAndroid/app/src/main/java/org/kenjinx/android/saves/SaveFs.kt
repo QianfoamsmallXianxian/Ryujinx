@@ -246,7 +246,7 @@ fun importSaveFromZip(
     }
 
     if (titleIdFromZip == null) return ImportResult(false, "error importing save. missing TITLEID folder")
-    val tidZip = titleIdFromZip!!.lowercase(Locale.ROOT)
+    val tidZip = titleIdFromZip.lowercase(Locale.ROOT)
 
     // Sum the size only under /<TITLEID>/…
     runCatching {

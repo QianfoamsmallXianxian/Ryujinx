@@ -1,5 +1,6 @@
 package org.kenjinx.android
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
@@ -14,6 +15,7 @@ import android.util.Base64
 import androidx.documentfile.provider.DocumentFile
 import org.kenjinx.android.viewmodels.GameInfo
 
+@SuppressLint("SourceLockedOrientationActivity")
 class ShortcutWizardActivity : Activity() {
 
     private val REQ_PICK_GAME = 1

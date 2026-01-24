@@ -1,5 +1,6 @@
 package org.kenjinx.android
 
+import android.os.Build
 import com.sun.jna.JNIEnv
 import com.sun.jna.Library
 import com.sun.jna.Native
@@ -7,6 +8,7 @@ import org.kenjinx.android.viewmodels.GameInfo
 import java.util.Collections
 import android.view.Surface
 import android.util.Log
+import androidx.annotation.RequiresApi
 
 interface KenjinxNativeJna : Library {
     fun deviceInitialize(
@@ -173,7 +175,7 @@ object KenjinxNative : KenjinxNativeJna by jnaInstance {
         backendThreading: Int
     ): Boolean {
         val requested = backendThreading
-        val isQcom = "qcom".equals(android.os.Build.HARDWARE, true)
+        val isQcom = "qcom".equals(Build.HARDWARE, true)
 
         // Heuristic: On QCOM, when "Auto" is selected, first try single-threaded mode;
         // explicitly set values remain unchanged.
@@ -182,7 +184,7 @@ object KenjinxNative : KenjinxNativeJna by jnaInstance {
 
         Log.i(
             "KenjinxNative",
-            "graphicsInitialize: request=$requested firstChoice=$firstChoice hw=${android.os.Build.HARDWARE}"
+            "graphicsInitialize: request=$requested firstChoice=$firstChoice hw=${Build.HARDWARE}"
         )
 
         return try {
@@ -234,6 +236,7 @@ object KenjinxNative : KenjinxNativeJna by jnaInstance {
     }
     // ----------------------------------------------------
 
+    @RequiresApi(Build.VERSION_CODES.R)
     @JvmStatic
     fun frameEnded() = MainActivity.frameEnded()
 
