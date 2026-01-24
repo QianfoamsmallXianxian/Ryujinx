@@ -4,9 +4,7 @@ import android.content.SharedPreferences
 import androidx.compose.runtime.MutableState
 import androidx.documentfile.provider.DocumentFile
 import androidx.preference.PreferenceManager
-import com.anggrayudi.storage.callback.FileCallback
 import com.anggrayudi.storage.file.FileFullPath
-import com.anggrayudi.storage.file.copyFileTo
 import com.anggrayudi.storage.file.extension
 import com.anggrayudi.storage.file.getAbsolutePath
 import com.anggrayudi.storage.file.openInputStream
@@ -286,16 +284,18 @@ class SettingsViewModel(val activity: MainActivity) {
             installState.value = KeyInstallState.Install
             thread {
                 Thread.sleep(1000)
-                this.copyFileTo(
-                    activity,
-                    outputFolder,
-                    callback = object : FileCallback() {
-                        override fun onCompleted(result: Any) {
-                            KenjinxNative.deviceReloadFilesystem()
-                            installState.value = KeyInstallState.Done
+                try {
+                    this.openInputStream(activity)?.use { input ->
+                        outputFile.outputStream().use { output ->
+                            input.copyTo(output)
                         }
                     }
-                )
+
+                    KenjinxNative.deviceReloadFilesystem()
+                    installState.value = KeyInstallState.Done
+                } catch (e: Exception) {
+                    installState.value = KeyInstallState.Cancelled
+                }
             }
         }
     }

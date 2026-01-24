@@ -82,11 +82,23 @@ class HomeViewModel(
 
         thread {
             try {
-                for (file in folder.search(true, DocumentFileType.FILE)) {
-                    if (file.extension == "xci" || file.extension == "nsp" || file.extension == "nro")
-                        activity.let {
-                            loadedCache.add(GameModel(file, it))
+                val validExtensions = setOf("xci", "nsp", "nro")
+                val queue = mutableListOf(folder)
+
+                while (queue.isNotEmpty()) {
+                    val current = queue.removeAt(0)
+                    current.listFiles().forEach { file ->
+                        when {
+                            file.isFile && file.extension?.lowercase() in validExtensions -> {
+                                val game = GameModel(file, activity)
+
+                                if(!game.isUnknown()) {
+                                    loadedCache.add(game)
+                                }
+                            }
+                            file.isDirectory -> queue.add(file)
                         }
+                    }
                 }
 
                 loadedCache.sortWith { itemA, itemB ->
