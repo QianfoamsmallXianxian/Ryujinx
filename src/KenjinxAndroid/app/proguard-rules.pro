@@ -13,7 +13,6 @@
 -repackageclasses ''
 -keepattributes Exceptions,InnerClasses,Signature,*Annotation*
 -dontpreverify
--keep class ** { *; }
 -keep public class * extends android.app.Activity
 -keep public class * extends android.app.Application
 -keep public class * extends android.app.Service
