@@ -6,12 +6,12 @@
 #define KENJINXNATIVE_KENJINX_H
 
 #include <cassert>
+#include <cstdlib>
+#include <cstring>
 #include <dlfcn.h>
 #include <exception>
 #include <fcntl.h>
 #include <jni.h>
-#include <stdlib.h>
-#include <string.h>
 #include <string>
 
 #include <android/log.h>

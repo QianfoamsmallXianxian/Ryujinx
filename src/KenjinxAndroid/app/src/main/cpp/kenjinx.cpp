@@ -32,7 +32,7 @@ Java_org_kenjinx_android_NativeHelpers_getNativeWindow(
         jobject instance,
         jobject surface) {
     auto nativeWindow = ANativeWindow_fromSurface(env, surface);
-    return nativeWindow == NULL ? -1 : (jlong) nativeWindow;
+    return nativeWindow == nullptr ? -1 : (jlong) nativeWindow;
 }
 
 JNIEXPORT void JNICALL
@@ -42,7 +42,7 @@ Java_org_kenjinx_android_NativeHelpers_releaseNativeWindow(
         jlong window) {
     auto nativeWindow = (ANativeWindow *) window;
 
-    if (nativeWindow != NULL)
+    if (nativeWindow != nullptr)
         ANativeWindow_release(nativeWindow);
 }
 
@@ -75,7 +75,7 @@ Java_org_kenjinx_android_NativeHelpers_getCreateSurfacePtr(
 char *getStringPointer(
         JNIEnv *env,
         jstring jS) {
-    const char *cparam = env->GetStringUTFChars(jS, 0);
+    const char *cparam = env->GetStringUTFChars(jS, nullptr);
     auto len = env->GetStringUTFLength(jS);
     char *s = new char[len + 1]; //null terminator
     strcpy(s, cparam);

@@ -5,7 +5,7 @@ include(FetchContent)
 
 # Sets the minimum version of CMake required to build the native library.
 
-cmake_minimum_required(VERSION 3.22.1)
+cmake_minimum_required(VERSION 3.31.5)
 
 # Declares and names the project.
 
@@ -17,7 +17,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 FetchContent_Declare(
     adrenotools
     GIT_REPOSITORY https://github.com/bylaws/libadrenotools.git
-    GIT_TAG        deec5f75ee1a8ccbe32c8780b1d17284fc87b0f1 # v1.0-14-gdeec5f7
+    GIT_TAG        8fae8ce254dfc1344527e05301e43f37dea2df80
 )
 
 FetchContent_MakeAvailable(adrenotools)
@@ -70,7 +70,6 @@ cmake_path(ABSOLUTE_PATH JNI_PATH NORMALIZE)
 
 cmake_path(APPEND JNI_PATH libcrypto.so OUTPUT_VARIABLE LIBCRYPTO_JNI_PATH)
 cmake_path(APPEND JNI_PATH libssl.so OUTPUT_VARIABLE LIBSSL_JNI_PATH)
-
 
 # Add OpenAL
 add_subdirectory(libraries/openal)
