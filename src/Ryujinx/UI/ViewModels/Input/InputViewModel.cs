@@ -137,7 +137,7 @@ namespace Ryujinx.Ava.UI.ViewModels.Input
                     _controller = 0;
                 }
 
-                if (Controllers.Count > 0 && value < Controllers.Count && _controller > -1)
+                if (Controllers.Count > 0 && _controller < Controllers.Count && _controller > -1)
                 {
                     ControllerType controller = Controllers[_controller].Type;
 
@@ -424,7 +424,17 @@ namespace Ryujinx.Ava.UI.ViewModels.Input
 
                 if (Config != null && Controllers.ToList().FindIndex(x => x.Type == Config.ControllerType) != -1)
                 {
-                    Controller = Controllers.ToList().FindIndex(x => x.Type == Config.ControllerType);
+                    int controllerIndex = Controllers.ToList().FindIndex(x => x.Type == Config.ControllerType);
+
+                    // Avalonia bug: setting a newly instanced ComboBox to 0
+                    // causes the selected item to show up blank
+                    // Workaround: set the box to 1 and then 0
+                    if (controllerIndex == 0)
+                    {
+                        Controller = 1;
+                    }
+
+                    Controller = controllerIndex;
                 }
                 else
                 {
@@ -477,7 +487,6 @@ namespace Ryujinx.Ava.UI.ViewModels.Input
                 DeviceList.Clear();
                 Devices.Add((DeviceType.None, Disabled, LocaleManager.Instance[LocaleKeys.ControllerSettingsDeviceDisabled]));
 
-                int controllerNumber = 0;
                 foreach (string id in _mainWindow.InputManager.KeyboardDriver.GamepadsIds)
                 {
                     using IGamepad gamepad = _mainWindow.InputManager.KeyboardDriver.GetGamepad(id);
@@ -494,6 +503,7 @@ namespace Ryujinx.Ava.UI.ViewModels.Input
 
                     if (gamepad != null)
                     {
+                        int controllerNumber = 0;
                         string name = GetUniqueGamepadName(gamepad, ref controllerNumber);
                         Devices.Add((DeviceType.Controller, id, name));
                     }
