@@ -116,7 +116,6 @@ tasks.register('compileLibKenjinx', Exec) {
 
     if (configuration == "Release") {
         baseArgs.addAll([
-            "-p:OptimizationPreference=Speed",
             "-p:IlcOptimizationPreference=Speed",
             "-p:IlcOptimizationLevel=3",
             "-p:IlcFoldIdenticalMethodBodies=true",
