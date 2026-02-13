@@ -27,6 +27,6 @@ namespace Ryujinx.Common
 
         public static bool IsFlatHubBuild => IsValid && ReleaseChannelOwner.Equals(FlatHubChannelOwner);
 
-        public static string Version => (IsValid || !RuntimeFeature.IsDynamicCodeCompiled) ? (PlatformInfo.IsBionic ? "Bionic_2.0.3" : BuildVersion) : Assembly.GetEntryAssembly()!.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        public static string Version => (IsValid || !RuntimeFeature.IsDynamicCodeCompiled) ? (PlatformInfo.IsBionic ? "Bionic_2.1.0-pr.1" : BuildVersion) : Assembly.GetEntryAssembly()!.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
     }
 }
