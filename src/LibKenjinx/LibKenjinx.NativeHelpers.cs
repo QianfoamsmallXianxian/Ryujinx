@@ -9,9 +9,9 @@ namespace LibKenjinx
 {
     public static partial class LibKenjinx
     {
-        private unsafe static IntPtr CreateStringArray(List<string> strings)
+        private unsafe static nint CreateStringArray(List<string> strings)
         {
-            uint size = (uint)(Marshal.SizeOf<IntPtr>() * (strings.Count + 1));
+            uint size = (uint)(Marshal.SizeOf<nint>() * (strings.Count + 1));
             var array = (char**)Marshal.AllocHGlobal((int)size);
             Unsafe.InitBlockUnaligned(array, 0, size);
 

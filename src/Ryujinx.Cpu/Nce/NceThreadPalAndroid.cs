@@ -6,9 +6,9 @@ namespace Ryujinx.Cpu.Nce
     static class NceThreadPalAndroid
     {
         [DllImport("libc", SetLastError = true)]
-        private static extern int pthread_kill(IntPtr thread, int sig);
+        private static extern int pthread_kill(nint thread, int sig);
 
-        public static void SuspendThread(IntPtr handle)
+        public static void SuspendThread(nint handle)
         {
             int result = pthread_kill(handle, NceThreadPal.UnixSuspendSignal);
             if (result != 0)

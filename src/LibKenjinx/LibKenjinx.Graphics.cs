@@ -26,8 +26,8 @@ namespace LibKenjinx
         private static bool _enableGraphicsLogging;
 
         public delegate void SwapBuffersCallback();
-        public delegate IntPtr GetProcAddress(string name);
-        public delegate IntPtr CreateSurface(IntPtr instance);
+        public delegate nint GetProcAddress(string name);
+        public delegate nint CreateSurface(nint instance);
 
         public static IRenderer? Renderer { get; set; }
         public static GraphicsConfiguration GraphicsConfiguration { get; private set; }
@@ -278,10 +278,10 @@ namespace LibKenjinx
 
     public struct NativeGraphicsInterop
     {
-        public IntPtr GlGetProcAddress;
-        public IntPtr VkNativeContextLoader;
-        public IntPtr VkCreateSurface;
-        public IntPtr VkRequiredExtensions;
+        public nint GlGetProcAddress;
+        public nint VkNativeContextLoader;
+        public nint VkCreateSurface;
+        public nint VkRequiredExtensions;
         public int VkRequiredExtensionsCount;
     }
 }

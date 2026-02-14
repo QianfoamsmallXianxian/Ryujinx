@@ -6,7 +6,7 @@ namespace LibKenjinx.Jni.References
     public readonly struct JObjectLocalRef : IEquatable<JObjectLocalRef>
     {
 #pragma warning disable 0649
-        private readonly IntPtr _value;
+        private readonly nint _value;
 #pragma warning restore 0649
 
         #region Public Methods

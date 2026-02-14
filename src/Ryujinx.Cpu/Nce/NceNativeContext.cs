@@ -20,16 +20,16 @@ namespace Ryujinx.Cpu.Nce
             public uint Fpsr;
             public uint InManaged;
             public ulong HostSp;
-            public IntPtr HostThreadHandle;
+            public nint HostThreadHandle;
             public ulong TempStorage;
-            public IntPtr SvcCallHandler;
+            public nint SvcCallHandler;
         }
 
         private static NativeCtxStorage _dummyStorage = new();
 
         private readonly MemoryBlock _block;
 
-        public IntPtr BasePtr => _block.Pointer;
+        public nint BasePtr => _block.Pointer;
 
         public NceNativeContext()
         {

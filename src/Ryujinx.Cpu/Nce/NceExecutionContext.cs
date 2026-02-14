@@ -14,7 +14,7 @@ namespace Ryujinx.Cpu.Nce
         private readonly NceNativeContext _context;
         private readonly ExceptionCallbacks _exceptionCallbacks;
 
-        internal IntPtr NativeContextPtr => _context.BasePtr;
+        internal nint NativeContextPtr => _context.BasePtr;
 
         public ulong Pc => 0UL;
 
@@ -70,7 +70,7 @@ namespace Ryujinx.Cpu.Nce
         public NceExecutionContext(ExceptionCallbacks exceptionCallbacks)
         {
             _svcHandler = OnSupervisorCall;
-            IntPtr svcHandlerPtr = Marshal.GetFunctionPointerForDelegate(_svcHandler);
+            nint svcHandlerPtr = Marshal.GetFunctionPointerForDelegate(_svcHandler);
 
             _context = new NceNativeContext();
 
@@ -108,7 +108,7 @@ namespace Ryujinx.Cpu.Nce
 
         public void Exit()
         {
-            _context.GetStorage().HostThreadHandle = IntPtr.Zero;
+            _context.GetStorage().HostThreadHandle = nint.Zero;
 
             UnregisterAlternateStack();
         }
@@ -143,8 +143,8 @@ namespace Ryujinx.Cpu.Nce
 
         public void RequestInterrupt()
         {
-            IntPtr threadHandle = _context.GetStorage().HostThreadHandle;
-            if (threadHandle != IntPtr.Zero)
+            nint threadHandle = _context.GetStorage().HostThreadHandle;
+            if (threadHandle != nint.Zero)
             {
                 // Bit 0 set means that the thread is currently running managed code.
                 // Bit 1 set means that an interrupt was requested for the thread.

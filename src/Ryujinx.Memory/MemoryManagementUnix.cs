@@ -165,7 +165,7 @@ namespace Ryujinx.Memory
 
                 fixed (byte* pMemName = memName)
                 {
-                    fd = ASharedMemory_create((IntPtr)pMemName, (nuint)size);
+                    fd = ASharedMemory_create((nint)pMemName, (nuint)size);
                     if (fd <= 0)
                     {
                         throw new OutOfMemoryException();
@@ -173,7 +173,7 @@ namespace Ryujinx.Memory
                 }
 
                 // ASharedMemory_create handle ftruncate for us.
-                return (IntPtr)fd;
+                return (nint)fd;
             }
             else
             {

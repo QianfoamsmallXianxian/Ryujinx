@@ -26,7 +26,7 @@ namespace Ryujinx.Cpu.Nce
         /// <inheritdoc/>
         public bool UsesPrivateAllocations => false;
 
-        public IntPtr PageTablePointer => IntPtr.Zero;
+        public nint PageTablePointer => nint.Zero;
 
         public ulong ReservedSize => (ulong)_addressSpace.Pointer.ToInt64();
 
@@ -174,7 +174,7 @@ namespace Ryujinx.Cpu.Nce
             for (int i = 0; i < regions.Length; i++)
             {
                 var guestRegion = guestRegions[i];
-                IntPtr pointer = _backingMemory.GetPointer(guestRegion.Address, guestRegion.Size);
+                nint pointer = _backingMemory.GetPointer(guestRegion.Address, guestRegion.Size);
                 regions[i] = new HostMemoryRange((nuint)(ulong)pointer, guestRegion.Size);
             }
 

@@ -7,14 +7,14 @@ namespace LibKenjinx.Jni.Values
     public readonly struct JInvokeInterface
     {
 #pragma warning disable 0169
-        private readonly IntPtr _reserved0;
-        private readonly IntPtr _reserved1;
-        private readonly IntPtr _reserved2;
+        private readonly nint _reserved0;
+        private readonly nint _reserved1;
+        private readonly nint _reserved2;
 #pragma warning restore 0169
-        internal IntPtr DestroyJavaVMPointer { get; init; }
-        internal IntPtr AttachCurrentThreadPointer { get; init; }
-        internal IntPtr DetachCurrentThreadPointer { get; init; }
-        internal IntPtr GetEnvPointer { get; init; }
-        internal IntPtr AttachCurrentThreadAsDaemonPointer { get; init; }
+        internal nint DestroyJavaVMPointer { get; init; }
+        internal nint AttachCurrentThreadPointer { get; init; }
+        internal nint DetachCurrentThreadPointer { get; init; }
+        internal nint GetEnvPointer { get; init; }
+        internal nint AttachCurrentThreadAsDaemonPointer { get; init; }
     }
 }

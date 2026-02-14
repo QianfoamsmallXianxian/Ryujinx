@@ -28,17 +28,17 @@ namespace Ryujinx.Cpu.Signal
         public struct SigActionBionic
         {
             public int sa_flags;
-            public IntPtr sa_handler;
+            public nint sa_handler;
             public SigSet sa_mask;
-            public IntPtr sa_restorer;
+            public nint sa_restorer;
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 8)]
         public struct Stack
         {
-            public IntPtr ss_sp;
+            public nint ss_sp;
             public int ss_flags;
-            public IntPtr ss_size;
+            public nint ss_size;
         }
 
         private const int SIGSEGV = 11;
@@ -58,7 +58,7 @@ namespace Ryujinx.Cpu.Signal
         private static partial int sigaction(int signum, nint sigAction, out SigAction oldAction);
 
         [SupportedOSPlatform("android"), LibraryImport("libc", SetLastError = true)]
-        private static partial int sigaction(int signum, IntPtr sigAction, out SigActionBionic oldAction);
+        private static partial int sigaction(int signum, nint sigAction, out SigActionBionic oldAction);
 
         [LibraryImport("libc", SetLastError = true)]
         private static partial int sigemptyset(ref SigSet set);
@@ -152,13 +152,13 @@ namespace Ryujinx.Cpu.Signal
             return old;
         }
 
-        public static void RegisterAlternateStack(IntPtr stackPtr, ulong stackSize)
+        public static void RegisterAlternateStack(nint stackPtr, ulong stackSize)
         {
             Stack stack = new()
             {
                 ss_sp = stackPtr,
                 ss_flags = SS_AUTODISARM,
-                ss_size = (IntPtr)stackSize
+                ss_size = (nint)stackSize
             };
 
             int result = sigaltstack(ref stack, out _);
@@ -184,7 +184,7 @@ namespace Ryujinx.Cpu.Signal
             }
         }
 
-        public static void RegisterExceptionHandler(int sigNum, IntPtr action)
+        public static void RegisterExceptionHandler(int sigNum, nint action)
         {
             int result;
 
@@ -200,7 +200,7 @@ namespace Ryujinx.Cpu.Signal
 
                 result = sigaction(sigNum, ref sig, out SigActionBionic oldu);
 
-                if (oldu.sa_handler != IntPtr.Zero)
+                if (oldu.sa_handler != nint.Zero)
                 {
                     throw new InvalidOperationException($"SIG{sigNum} is already in use.");
                 }
@@ -222,7 +222,7 @@ namespace Ryujinx.Cpu.Signal
 
                 result = sigaction(sigNum, ref sig, out SigAction oldu);
 
-                if (oldu.sa_handler != IntPtr.Zero)
+                if (oldu.sa_handler != nint.Zero)
                 {
                     throw new InvalidOperationException($"SIG{sigNum} is already in use.");
                 }

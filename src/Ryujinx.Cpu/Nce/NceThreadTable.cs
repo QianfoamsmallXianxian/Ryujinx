@@ -10,10 +10,10 @@ namespace Ryujinx.Cpu.Nce
 
         private struct Entry
         {
-            public IntPtr ThreadId;
-            public IntPtr NativeContextPtr;
+            public nint ThreadId;
+            public nint NativeContextPtr;
 
-            public Entry(IntPtr threadId, IntPtr nativeContextPtr)
+            public Entry(nint threadId, nint nativeContextPtr)
             {
                 ThreadId = threadId;
                 NativeContextPtr = nativeContextPtr;
@@ -22,7 +22,7 @@ namespace Ryujinx.Cpu.Nce
 
         private static MemoryBlock _block;
 
-        public static IntPtr EntriesPointer => _block.Pointer + 8;
+        public static nint EntriesPointer => _block.Pointer + 8;
 
         static NceThreadTable()
         {
@@ -30,7 +30,7 @@ namespace Ryujinx.Cpu.Nce
             _block.Write(0UL, 0UL);
         }
 
-        public static int Register(IntPtr threadId, IntPtr nativeContextPtr)
+        public static int Register(nint threadId, nint nativeContextPtr)
         {
             Span<Entry> entries = GetStorage();
 
@@ -40,7 +40,7 @@ namespace Ryujinx.Cpu.Nce
 
                 for (int i = 0; i < MaxThreads; i++)
                 {
-                    if (entries[i].ThreadId == IntPtr.Zero)
+                    if (entries[i].ThreadId == nint.Zero)
                     {
                         entries[i] = new Entry(threadId, nativeContextPtr);
 
@@ -63,7 +63,7 @@ namespace Ryujinx.Cpu.Nce
 
             lock (_block)
             {
-                if (entries[tableIndex].ThreadId != IntPtr.Zero)
+                if (entries[tableIndex].ThreadId != nint.Zero)
                 {
                     entries[tableIndex] = default;
 
@@ -71,7 +71,7 @@ namespace Ryujinx.Cpu.Nce
 
                     for (int i = (int)currentThreadCount - 1; i >= 0; i--)
                     {
-                        if (entries[i].ThreadId != IntPtr.Zero)
+                        if (entries[i].ThreadId != nint.Zero)
                         {
                             break;
                         }

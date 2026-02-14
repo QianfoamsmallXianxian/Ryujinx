@@ -8,7 +8,7 @@ namespace LibKenjinx.Jni.Pointers;
 public readonly struct JavaVMRef : IEquatable<JavaVMRef>
 {
 #pragma warning disable 0649
-	private readonly IntPtr _value;
+	private readonly nint _value;
 #pragma warning restore 0649
 
 	#region Operators

@@ -292,10 +292,10 @@ namespace LibKenjinx
         [DllImport("libkenjinxjni")]
         internal extern static void setCurrentTransform(long native_window, int transform);
 
-        public delegate IntPtr JniCreateSurface(IntPtr native_surface, IntPtr instance);
+        public delegate nint JniCreateSurface(nint native_surface, nint instance);
 
         [UnmanagedCallersOnly(EntryPoint = "javaInitialize")]
-        public unsafe static bool JniInitialize(IntPtr jpathId, IntPtr jniEnv)
+        public unsafe static bool JniInitialize(nint jpathId, nint jniEnv)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             PlatformInfo.IsBionic = true;
@@ -339,7 +339,7 @@ namespace LibKenjinx
                                                     bool enableInternetAccess,
                                                     bool enableFsIntegrityChecks,
                                                     int fsGlobalAccessLogMode,
-                                                    IntPtr timeZonePtr,
+                                                    nint timeZonePtr,
                                                     bool ignoreMissingServices)
         {
             debug_break(4);
@@ -405,7 +405,7 @@ namespace LibKenjinx
         }
 
         [UnmanagedCallersOnly(EntryPoint = "deviceGetDlcContentList")]
-        public static IntPtr JniGetDlcContentListNative(IntPtr pathPtr, long titleId)
+        public static nint JniGetDlcContentListNative(nint pathPtr, long titleId)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             var list = GetDlcContentList(Marshal.PtrToStringAnsi(pathPtr) ?? "", (ulong)titleId);
@@ -414,7 +414,7 @@ namespace LibKenjinx
         }
 
         [UnmanagedCallersOnly(EntryPoint = "deviceGetDlcTitleId")]
-        public static long JniGetDlcTitleIdNative(IntPtr pathPtr, IntPtr ncaPath)
+        public static long JniGetDlcTitleIdNative(nint pathPtr, nint ncaPath)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             return Marshal.StringToHGlobalAnsi(GetDlcTitleId(Marshal.PtrToStringAnsi(pathPtr) ?? "", Marshal.PtrToStringAnsi(ncaPath) ?? ""));
@@ -457,13 +457,13 @@ namespace LibKenjinx
         }
 
         [UnmanagedCallersOnly(EntryPoint = "deviceVerifyFirmware")]
-        public static IntPtr JniVerifyFirmware(int descriptor, bool isXci)
+        public static nint JniVerifyFirmware(int descriptor, bool isXci)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
 
             var stream = OpenFile(descriptor);
 
-            IntPtr stringHandle = 0;
+            nint stringHandle = 0;
             string? version = "0.0";
 
             try
@@ -494,7 +494,7 @@ namespace LibKenjinx
         }
 
         [UnmanagedCallersOnly(EntryPoint = "deviceGetInstalledFirmwareVersion")]
-        public static IntPtr JniGetInstalledFirmwareVersion()
+        public static nint JniGetInstalledFirmwareVersion()
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
 
@@ -544,12 +544,12 @@ namespace LibKenjinx
 
             for (int i = 0; i < extensionsLength; i++)
             {
-                extensions.Add(Marshal.PtrToStringAnsi((IntPtr)extensionsArray[i]));
+                extensions.Add(Marshal.PtrToStringAnsi((nint)extensionsArray[i]));
             }
 
             if (driverHandle != 0)
             {
-                VulkanLoader = new VulkanLoader((IntPtr)driverHandle);
+                VulkanLoader = new VulkanLoader((nint)driverHandle);
             }
 
             CreateSurface createSurfaceFunc = instance =>
@@ -595,7 +595,7 @@ namespace LibKenjinx
                     return (nint)surface.Handle;
                 }
 
-                return IntPtr.Zero;
+                return nint.Zero;
             };
 
             return InitializeGraphicsRenderer(GraphicsBackend.Vulkan, createSurfaceFunc, extensions.ToArray());
@@ -638,7 +638,7 @@ namespace LibKenjinx
         }
 
         [UnmanagedCallersOnly(EntryPoint = "deviceGetGameInfo")]
-        public unsafe static void JniGetGameInfo(int fileDescriptor, IntPtr extension, IntPtr infoPtr)
+        public unsafe static void JniGetGameInfo(int fileDescriptor, nint extension, nint infoPtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             using var stream = OpenFile(fileDescriptor);
@@ -740,7 +740,7 @@ namespace LibKenjinx
         }
 
         [UnmanagedCallersOnly(EntryPoint = "userGetOpenedUser")]
-        public static IntPtr JniGetOpenedUser()
+        public static nint JniGetOpenedUser()
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             var userId = GetOpenedUser();
@@ -750,7 +750,7 @@ namespace LibKenjinx
         }
 
         [UnmanagedCallersOnly(EntryPoint = "userGetUserPicture")]
-        public static IntPtr JniGetUserPicture(IntPtr userIdPtr)
+        public static nint JniGetUserPicture(nint userIdPtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
@@ -759,7 +759,7 @@ namespace LibKenjinx
         }
 
         [UnmanagedCallersOnly(EntryPoint = "userSetUserPicture")]
-        public static void JniGetUserPicture(IntPtr userIdPtr, IntPtr picturePtr)
+        public static void JniGetUserPicture(nint userIdPtr, nint picturePtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
@@ -769,7 +769,7 @@ namespace LibKenjinx
         }
 
         [UnmanagedCallersOnly(EntryPoint = "userGetUserName")]
-        public static IntPtr JniGetUserName(IntPtr userIdPtr)
+        public static nint JniGetUserName(nint userIdPtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
@@ -778,7 +778,7 @@ namespace LibKenjinx
         }
 
         [UnmanagedCallersOnly(EntryPoint = "userSetUserName")]
-        public static void JniSetUserName(IntPtr userIdPtr, IntPtr userNamePtr)
+        public static void JniSetUserName(nint userIdPtr, nint userNamePtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
@@ -788,7 +788,7 @@ namespace LibKenjinx
         }
 
         [UnmanagedCallersOnly(EntryPoint = "userGetAllUsers")]
-        public static IntPtr JniGetAllUsers()
+        public static nint JniGetAllUsers()
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             var users = GetAllUsers();
@@ -797,7 +797,7 @@ namespace LibKenjinx
         }
 
         [UnmanagedCallersOnly(EntryPoint = "userAddUser")]
-        public static void JniAddUser(IntPtr userNamePtr, IntPtr picturePtr)
+        public static void JniAddUser(nint userNamePtr, nint picturePtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             var userName = Marshal.PtrToStringAnsi(userNamePtr) ?? "";
@@ -807,7 +807,7 @@ namespace LibKenjinx
         }
 
         [UnmanagedCallersOnly(EntryPoint = "userDeleteUser")]
-        public static void JniDeleteUser(IntPtr userIdPtr)
+        public static void JniDeleteUser(nint userIdPtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
@@ -838,13 +838,13 @@ namespace LibKenjinx
         }
 
         [UnmanagedCallersOnly(EntryPoint = "uiHandlerSetResponse")]
-        public static void JniSetUiHandlerResponse(bool isOkPressed, IntPtr input)
+        public static void JniSetUiHandlerResponse(bool isOkPressed, nint input)
         {
             SetUiHandlerResponse(isOkPressed, Marshal.PtrToStringAnsi(input) ?? "");
         }
 
         [UnmanagedCallersOnly(EntryPoint = "userOpenUser")]
-        public static void JniOpenUser(IntPtr userIdPtr)
+        public static void JniOpenUser(nint userIdPtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
@@ -853,7 +853,7 @@ namespace LibKenjinx
         }
 
         [UnmanagedCallersOnly(EntryPoint = "userCloseUser")]
-        public static void JniCloseUser(IntPtr userIdPtr)
+        public static void JniCloseUser(nint userIdPtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
@@ -1044,9 +1044,9 @@ namespace LibKenjinx
 
         // ===== Amiibo JNI Exports =====
         [UnmanagedCallersOnly(EntryPoint = "amiiboLoadBin")]
-        public static bool JniAmiiboLoadBin(IntPtr dataPtr, int length)
+        public static bool JniAmiiboLoadBin(nint dataPtr, int length)
         {
-            if (dataPtr == IntPtr.Zero || length <= 0) return false;
+            if (dataPtr == nint.Zero || length <= 0) return false;
             try
             {
                 byte[] buf = new byte[length];
@@ -1072,10 +1072,10 @@ namespace LibKenjinx
 
     {
         [LibraryImport("liblog", StringMarshalling = StringMarshalling.Utf8)]
-        private static partial void __android_log_print(LogLevel level, string? tag, string format, string args, IntPtr ptr);
+        private static partial void __android_log_print(LogLevel level, string? tag, string format, string args, nint ptr);
 
         internal static void AndroidLogPrint(LogLevel level, string? tag, string message) =>
-            __android_log_print(level, tag, "%s", message, IntPtr.Zero);
+            __android_log_print(level, tag, "%s", message, nint.Zero);
 
         internal enum LogLevel
         {

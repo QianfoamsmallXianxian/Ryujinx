@@ -31,7 +31,7 @@ namespace Ryujinx.Cpu.Jit
         /// <inheritdoc/>
         public bool UsesPrivateAllocations => false;
 
-        public IntPtr PageTablePointer => _addressSpace.Pointer;
+        public nint PageTablePointer => _addressSpace.Pointer;
 
         public MemoryManagerType Type => _unsafeMode ? MemoryManagerType.HostMappedUnsafe : MemoryManagerType.HostMapped;
 
@@ -186,7 +186,7 @@ namespace Ryujinx.Cpu.Jit
             for (int i = 0; i < regions.Length; i++)
             {
                 var guestRegion = guestRegions[i];
-                IntPtr pointer = _backingMemory.GetPointer(guestRegion.Address, guestRegion.Size);
+                nint pointer = _backingMemory.GetPointer(guestRegion.Address, guestRegion.Size);
                 regions[i] = new HostMemoryRange((nuint)(ulong)pointer, guestRegion.Size);
             }
 

@@ -6,7 +6,7 @@ namespace LibKenjinx.Jni.Values;
 internal readonly struct JavaVMValue : IEquatable<JavaVMValue>
 {
 #pragma warning disable 0649
-	private readonly IntPtr _value;
+	private readonly nint _value;
 #pragma warning restore 0649
 
 	#region Operators

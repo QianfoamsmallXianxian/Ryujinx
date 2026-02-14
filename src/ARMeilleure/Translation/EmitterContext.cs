@@ -100,7 +100,7 @@ namespace ARMeilleure.Translation
 #if ANDROID
             // For Android, use the Delegates class to get the function pointer
             int index = Delegates.GetDelegateIndex(info);
-            IntPtr funcPtr = Delegates.GetDelegateFuncPtrByIndex(index);
+            nint funcPtr = Delegates.GetDelegateFuncPtrByIndex(index);
 #else
             // For other platforms, use direct method handle approach
             nint funcPtr = info.MethodHandle.GetFunctionPointer();

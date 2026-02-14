@@ -58,8 +58,8 @@ namespace Ryujinx.Cpu.Nce
             }
         }
 
-        private delegate void ThreadStart(IntPtr nativeContextPtr);
-        private delegate IntPtr GetTpidrEl0();
+        private delegate void ThreadStart(nint nativeContextPtr);
+        private delegate nint GetTpidrEl0();
         private static MemoryBlock _codeBlock;
         private static ThreadStart _threadStart;
         private static GetTpidrEl0 _getTpidrEl0;
@@ -80,7 +80,7 @@ namespace Ryujinx.Cpu.Nce
 
             MemoryBlock codeBlock = null;
 
-            NativeSignalHandler.InitializeSignalHandler((IntPtr oldSignalHandlerSegfaultPtr, IntPtr signalHandlerPtr) =>
+            NativeSignalHandler.InitializeSignalHandler((nint oldSignalHandlerSegfaultPtr, nint signalHandlerPtr) =>
             {
                 uint[] ehWrapperCode = NcePatcher.GenerateWrapperExceptionHandler(oldSignalHandlerSegfaultPtr, signalHandlerPtr);
                 ulong ehWrapperCodeOffset = codeWriter.Write(ehWrapperCode);

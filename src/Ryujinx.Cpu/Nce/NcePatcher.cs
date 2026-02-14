@@ -425,7 +425,7 @@ namespace Ryujinx.Cpu.Nce
             return asm.GetCode();
         }
 
-        internal static uint[] GenerateWrapperExceptionHandler(IntPtr oldSignalHandlerSegfaultPtr, IntPtr signalHandlerPtr)
+        internal static uint[] GenerateWrapperExceptionHandler(nint oldSignalHandlerSegfaultPtr, nint signalHandlerPtr)
         {
             Assembler asm = new();
 

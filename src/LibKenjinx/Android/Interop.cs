@@ -190,11 +190,11 @@ namespace LibKenjinx.Android
 
             public void Dispose()
             {
-                if (Pointer != IntPtr.Zero)
+                if (Pointer != nint.Zero)
                 {
                     Marshal.FreeHGlobal(Pointer);
                 }
-                Pointer = IntPtr.Zero;
+                Pointer = nint.Zero;
             }
         }
 

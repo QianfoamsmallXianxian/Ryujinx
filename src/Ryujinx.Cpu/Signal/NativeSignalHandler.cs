@@ -128,7 +128,7 @@ namespace Ryujinx.Cpu.Signal
             }
         }
 
-        public static void InstallUnixAlternateStackForCurrentThread(IntPtr stackPtr, ulong stackSize)
+        public static void InstallUnixAlternateStackForCurrentThread(nint stackPtr, ulong stackSize)
         {
             UnixSignalHandlerRegistration.RegisterAlternateStack(stackPtr, stackSize);
         }
@@ -138,7 +138,7 @@ namespace Ryujinx.Cpu.Signal
             UnixSignalHandlerRegistration.UnregisterAlternateStack();
         }
 
-        public static void InstallUnixSignalHandler(int sigNum, IntPtr action)
+        public static void InstallUnixSignalHandler(int sigNum, nint action)
         {
             UnixSignalHandlerRegistration.RegisterExceptionHandler(sigNum, action);
         }

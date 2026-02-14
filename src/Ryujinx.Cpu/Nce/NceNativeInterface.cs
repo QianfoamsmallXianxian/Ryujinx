@@ -9,8 +9,8 @@ namespace Ryujinx.Cpu.Nce
         private delegate bool SuspendThreadHandlerDelegate();
         private static GetTickCounterDelegate _getTickCounter;
         private static SuspendThreadHandlerDelegate _suspendThreadHandler;
-        private static IntPtr _getTickCounterPtr;
-        private static IntPtr _suspendThreadHandlerPtr;
+        private static nint _getTickCounterPtr;
+        private static nint _suspendThreadHandlerPtr;
 
         [ThreadStatic]
         private static NceExecutionContext _context;
@@ -42,12 +42,12 @@ namespace Ryujinx.Cpu.Nce
             return _context.OnInterrupt();
         }
 
-        public static IntPtr GetTickCounterAccessFunctionPointer()
+        public static nint GetTickCounterAccessFunctionPointer()
         {
             return _getTickCounterPtr;
         }
 
-        public static IntPtr GetSuspendThreadHandlerFunctionPointer()
+        public static nint GetSuspendThreadHandlerFunctionPointer()
         {
             return _suspendThreadHandlerPtr;
         }

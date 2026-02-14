@@ -10,7 +10,7 @@ namespace Ryujinx.Cpu.Nce
 
         public static int UnixSuspendSignal => OperatingSystem.IsMacOS() ? SigUsr2MacOS : SigUsr2Linux;
 
-        public static IntPtr GetCurrentThreadHandle()
+        public static nint GetCurrentThreadHandle()
         {
             if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS() || PlatformInfo.IsBionic)
             {
@@ -22,7 +22,7 @@ namespace Ryujinx.Cpu.Nce
             }
         }
 
-        public static void SuspendThread(IntPtr handle)
+        public static void SuspendThread(nint handle)
         {
             if (PlatformInfo.IsBionic)
             {

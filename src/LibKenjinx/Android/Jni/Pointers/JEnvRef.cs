@@ -8,10 +8,10 @@ namespace LibKenjinx.Jni.Pointers
     public readonly struct JEnvRef : IEquatable<JEnvRef>
     {
 #pragma warning disable 0649
-        private readonly IntPtr _value;
+        private readonly nint _value;
 #pragma warning restore 0649
 
-        public JEnvRef(IntPtr val)
+        public JEnvRef(nint val)
         {
             _value = val;
         }

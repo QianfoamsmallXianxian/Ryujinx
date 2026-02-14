@@ -17,7 +17,7 @@ namespace LibKenjinx.Jni
             ref JavaVMValue value = ref javaVm.VirtualMachine;
             ref JInvokeInterface jInvoke = ref value.Functions;
 
-            IntPtr getEnvPtr = jInvoke.GetEnvPointer;
+            nint getEnvPtr = jInvoke.GetEnvPointer;
             GetEnvDelegate getEnv = getEnvPtr.GetUnsafeDelegate<GetEnvDelegate>()!;
 
             if (getEnv(javaVm, out JEnvRef jEnv, JniVersion) == JResult.Ok)
@@ -27,7 +27,7 @@ namespace LibKenjinx.Jni
             }
 
             JavaVMAttachArgs args = new() { Version = JniVersion, Name = threadName.ValuePointer, };
-            IntPtr attachCurrentThreadPtr = jInvoke.AttachCurrentThreadPointer;
+            nint attachCurrentThreadPtr = jInvoke.AttachCurrentThreadPointer;
             AttachCurrentThreadDelegate attachCurrentThread =
                 attachCurrentThreadPtr.GetUnsafeDelegate<AttachCurrentThreadDelegate>()!;
 
@@ -40,7 +40,7 @@ namespace LibKenjinx.Jni
             ref JInvokeInterface jInvoke = ref value.Functions;
 
             JavaVMAttachArgs args = new() { Version = JniVersion, Name = daemonName.ValuePointer, };
-            IntPtr attachCurrentThreadAsDaemonPtr = jInvoke.AttachCurrentThreadAsDaemonPointer;
+            nint attachCurrentThreadAsDaemonPtr = jInvoke.AttachCurrentThreadAsDaemonPointer;
             AttachCurrentThreadAsDaemonDelegate attachCurrentThreadAsDaemon =
                 attachCurrentThreadAsDaemonPtr.GetUnsafeDelegate<AttachCurrentThreadAsDaemonDelegate>()!;
 
@@ -51,7 +51,7 @@ namespace LibKenjinx.Jni
             ref JavaVMValue value = ref javaVm.VirtualMachine;
             ref JInvokeInterface jInvoke = ref value.Functions;
 
-            IntPtr detachCurrentThreadPtr = jInvoke.DetachCurrentThreadPointer;
+            nint detachCurrentThreadPtr = jInvoke.DetachCurrentThreadPointer;
             DetachCurrentThreadDelegate detachCurrentThread =
                 detachCurrentThreadPtr.GetUnsafeDelegate<DetachCurrentThreadDelegate>()!;
 
@@ -62,14 +62,14 @@ namespace LibKenjinx.Jni
             ref readonly JEnvValue value = ref jEnv.Environment;
             ref JNativeInterface jInterface = ref value.Functions;
 
-            IntPtr findClassPtr = jInterface.FindClassPointer;
+            nint findClassPtr = jInterface.FindClassPointer;
             FindClassDelegate findClass = findClassPtr.GetUnsafeDelegate<FindClassDelegate>()!;
             JClassLocalRef jClass = findClass(jEnv, className.ValuePointer);
 
             if (ExceptionCheck(jEnv))
                 return default;
 
-            IntPtr newGlobalRefPtr = jInterface.NewGlobalRefPointer;
+            nint newGlobalRefPtr = jInterface.NewGlobalRefPointer;
             NewGlobalRefDelegate newGlobalRef = newGlobalRefPtr.GetUnsafeDelegate<NewGlobalRefDelegate>()!;
 
             JGlobalRef jGlobal = newGlobalRef(jEnv, (JObjectLocalRef)jClass);
@@ -82,7 +82,7 @@ namespace LibKenjinx.Jni
             ref readonly JEnvValue value = ref jEnv.Environment;
             ref JNativeInterface jInterface = ref value.Functions;
 
-            IntPtr deleteLocalRefPtr = jInterface.DeleteLocalRefPointer;
+            nint deleteLocalRefPtr = jInterface.DeleteLocalRefPointer;
             DeleteLocalRefDelegate deleteLocalRef = deleteLocalRefPtr.GetUnsafeDelegate<DeleteLocalRefDelegate>()!;
 
             deleteLocalRef(jEnv, jObject);
@@ -92,7 +92,7 @@ namespace LibKenjinx.Jni
             ref readonly JEnvValue value = ref jEnv.Environment;
             ref JNativeInterface jInterface = ref value.Functions;
 
-            IntPtr deleteGlobalRefPtr = jInterface.DeleteGlobalRefPointer;
+            nint deleteGlobalRefPtr = jInterface.DeleteGlobalRefPointer;
             DeleteGlobalRefDelegate deleteGlobalRef = deleteGlobalRefPtr.GetUnsafeDelegate<DeleteGlobalRefDelegate>()!;
 
             deleteGlobalRef(jEnv, jObject);
@@ -102,7 +102,7 @@ namespace LibKenjinx.Jni
             ref readonly JEnvValue value = ref jEnv.Environment;
             ref JNativeInterface jInterface = ref value.Functions;
 
-            IntPtr deleteWeakGlobalRefPtr = jInterface.DeleteWeakGlobalRefPointer;
+            nint deleteWeakGlobalRefPtr = jInterface.DeleteWeakGlobalRefPointer;
             DeleteWeakGlobalRefDelegate deleteWeakGlobalRef =
                 deleteWeakGlobalRefPtr.GetUnsafeDelegate<DeleteWeakGlobalRefDelegate>()!;
 
@@ -113,7 +113,7 @@ namespace LibKenjinx.Jni
             ref readonly JEnvValue value = ref jEnv.Environment;
             ref JNativeInterface jInterface = ref value.Functions;
 
-            IntPtr newStringPtr = jInterface.NewStringPointer;
+            nint newStringPtr = jInterface.NewStringPointer;
             NewStringDelegate newString = newStringPtr.GetUnsafeDelegate<NewStringDelegate>()!;
             using IReadOnlyFixedMemory<Char>.IDisposable ctx = textValue.AsMemory().GetFixedContext();
             JStringLocalRef jString = newString(jEnv, ctx.ValuePointer, ctx.Values.Length);
@@ -125,7 +125,7 @@ namespace LibKenjinx.Jni
             ref readonly JEnvValue value = ref jEnv.Environment;
             ref JNativeInterface jInterface = ref value.Functions;
 
-            IntPtr newWeakGlobalRefPtr = jInterface.NewWeakGlobalRefPointer;
+            nint newWeakGlobalRefPtr = jInterface.NewWeakGlobalRefPointer;
             NewWeakGlobalRefDelegate newWeakGlobalRef = newWeakGlobalRefPtr.GetUnsafeDelegate<NewWeakGlobalRefDelegate>()!;
             JWeakRef jWeak = newWeakGlobalRef(jEnv, jObject);
 
@@ -136,13 +136,13 @@ namespace LibKenjinx.Jni
             ref readonly JEnvValue value = ref jEnv.Environment;
             ref JNativeInterface jInterface = ref value.Functions;
 
-            IntPtr exceptionCheckPtr = jInterface.ExceptionCheckPointer;
+            nint exceptionCheckPtr = jInterface.ExceptionCheckPointer;
             ExceptionCheckDelegate exceptionCheck = exceptionCheckPtr.GetUnsafeDelegate<ExceptionCheckDelegate>()!;
 
             if (!exceptionCheck(jEnv))
                 return false;
-            IntPtr exceptionDescribePtr = jInterface.ExceptionDescribePointer;
-            IntPtr exceptionClearPtr = jInterface.ExceptionClearPointer;
+            nint exceptionDescribePtr = jInterface.ExceptionDescribePointer;
+            nint exceptionClearPtr = jInterface.ExceptionClearPointer;
 
             ExceptionDescribeDelegate exceptionDescribe =
                 exceptionDescribePtr.GetUnsafeDelegate<ExceptionDescribeDelegate>()!;
@@ -157,7 +157,7 @@ namespace LibKenjinx.Jni
             ref readonly JEnvValue value = ref jEnv.Environment;
             ref JNativeInterface jInterface = ref value.Functions;
 
-            IntPtr getJavaVmPtr = jInterface.GetJavaVMPointer;
+            nint getJavaVmPtr = jInterface.GetJavaVMPointer;
             GetVirtualMachineDelegate getJavaVm = getJavaVmPtr.GetUnsafeDelegate<GetVirtualMachineDelegate>()!;
             return getJavaVm(jEnv, out JavaVMRef javaVm) == JResult.Ok ? javaVm : null;
         }
@@ -166,7 +166,7 @@ namespace LibKenjinx.Jni
             ref readonly JEnvValue value = ref jEnv.Environment;
             ref JNativeInterface jInterface = ref value.Functions;
 
-            IntPtr isSameObjectPtr = jInterface.IsSameObjectPointer;
+            nint isSameObjectPtr = jInterface.IsSameObjectPointer;
             IsSameObjectDelegate isSameObject = isSameObjectPtr.GetUnsafeDelegate<IsSameObjectDelegate>()!;
             JBoolean result = isSameObject(jEnv, (JObjectLocalRef)jWeak, default);
             return !ExceptionCheck(jEnv) ? !result : null;
@@ -177,7 +177,7 @@ namespace LibKenjinx.Jni
             ref readonly JEnvValue value = ref jEnv.Environment;
             ref JNativeInterface jInterface = ref value.Functions;
 
-            IntPtr getMethodIdPtr = jInterface.GetMethodIdPointer;
+            nint getMethodIdPtr = jInterface.GetMethodIdPointer;
             GetMethodIdDelegate getMethodId = getMethodIdPtr.GetUnsafeDelegate<GetMethodIdDelegate>()!;
             JMethodId methodId = getMethodId(jEnv, jClass, methodName.ValuePointer, descriptor.ValuePointer);
             return !ExceptionCheck(jEnv) ? methodId : null;
@@ -188,7 +188,7 @@ namespace LibKenjinx.Jni
             ref readonly JEnvValue value = ref jEnv.Environment;
             ref JNativeInterface jInterface = ref value.Functions;
 
-            IntPtr getStaticMethodIdPtr = jInterface.GetStaticMethodIdPointer;
+            nint getStaticMethodIdPtr = jInterface.GetStaticMethodIdPointer;
             GetStaticMethodIdDelegate getStaticMethodId =
                 getStaticMethodIdPtr.GetUnsafeDelegate<GetStaticMethodIdDelegate>()!;
             JMethodId jMethodId = getStaticMethodId(jEnv, jClass, methodName.ValuePointer, descriptor.ValuePointer);
@@ -200,7 +200,7 @@ namespace LibKenjinx.Jni
             ref readonly JEnvValue value = ref jEnv.Environment;
             ref JNativeInterface jInterface = ref value.Functions;
 
-            IntPtr callStaticVoidMethodPtr = jInterface.CallStaticVoidMethodAPointer;
+            nint callStaticVoidMethodPtr = jInterface.CallStaticVoidMethodAPointer;
             CallStaticVoidMethodADelegate callStaticVoidMethod =
                 callStaticVoidMethodPtr.GetUnsafeDelegate<CallStaticVoidMethodADelegate>()!;
 
@@ -213,7 +213,7 @@ namespace LibKenjinx.Jni
             ref readonly JEnvValue value = ref jEnv.Environment;
             ref JNativeInterface jInterface = ref value.Functions;
 
-            IntPtr callStaticObjectMethodPtr = jInterface.CallStaticObjectMethodAPointer;
+            nint callStaticObjectMethodPtr = jInterface.CallStaticObjectMethodAPointer;
             CallStaticObjectMethodADelegate callStaticObjectMethod =
                 callStaticObjectMethodPtr.GetUnsafeDelegate<CallStaticObjectMethodADelegate>()!;
 
@@ -227,7 +227,7 @@ namespace LibKenjinx.Jni
             ref readonly JEnvValue value = ref jEnv.Environment;
             ref JNativeInterface jInterface = ref value.Functions;
 
-            IntPtr callStaticLongMethodPtr = jInterface.CallStaticLongMethodAPointer;
+            nint callStaticLongMethodPtr = jInterface.CallStaticLongMethodAPointer;
             CallStaticLongMethodADelegate callStaticLongMethod =
                 callStaticLongMethodPtr.GetUnsafeDelegate<CallStaticLongMethodADelegate>()!;
 
@@ -240,7 +240,7 @@ namespace LibKenjinx.Jni
             ref readonly JEnvValue value = ref jEnv.Environment;
             ref JNativeInterface jInterface = ref value.Functions;
 
-            IntPtr callVoidMethodPtr = jInterface.CallVoidMethodAPointer;
+            nint callVoidMethodPtr = jInterface.CallVoidMethodAPointer;
             CallVoidMethodADelegate callVoidMethod = callVoidMethodPtr.GetUnsafeDelegate<CallVoidMethodADelegate>()!;
 
             using IReadOnlyFixedMemory<JValue>.IDisposable fArgs = args.AsMemory().GetFixedContext();

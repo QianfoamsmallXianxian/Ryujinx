@@ -8,27 +8,27 @@ namespace LibKenjinx
 {
     public class VulkanLoader : IDisposable
     {
-        private delegate IntPtr GetInstanceProcAddress(IntPtr instance, IntPtr name);
-        private delegate IntPtr GetDeviceProcAddress(IntPtr device, IntPtr name);
+        private delegate nint GetInstanceProcAddress(nint instance, nint name);
+        private delegate nint GetDeviceProcAddress(nint device, nint name);
 
-        private IntPtr _loadedLibrary = IntPtr.Zero;
+        private nint _loadedLibrary = nint.Zero;
         private GetInstanceProcAddress _getInstanceProcAddr;
         private GetDeviceProcAddress _getDeviceProcAddr;
 
         public void Dispose()
         {
-            if (_loadedLibrary != IntPtr.Zero)
+            if (_loadedLibrary != nint.Zero)
             {
                 NativeLibrary.Free(_loadedLibrary);
-                _loadedLibrary = IntPtr.Zero;
+                _loadedLibrary = nint.Zero;
             }
         }
 
-        public VulkanLoader(IntPtr driver)
+        public VulkanLoader(nint driver)
         {
             _loadedLibrary = driver;
 
-            if (_loadedLibrary != IntPtr.Zero)
+            if (_loadedLibrary != nint.Zero)
             {
                 var instanceGetProc = NativeLibrary.GetExport(_loadedLibrary, "vkGetInstanceProcAddr");
                 var deviceProc = NativeLibrary.GetExport(_loadedLibrary, "vkGetDeviceProcAddr");
@@ -41,7 +41,7 @@ namespace LibKenjinx
         public unsafe Vk GetApi()
         {
 
-            if (_loadedLibrary == IntPtr.Zero)
+            if (_loadedLibrary == nint.Zero)
             {
                 return Vk.GetApi();
             }
@@ -60,12 +60,12 @@ namespace LibKenjinx
 
                         if (ptr == default)
                         {
-                            ptr = _getInstanceProcAddr(IntPtr.Zero, xPtr);
+                            ptr = _getInstanceProcAddr(nint.Zero, xPtr);
 
                             if (ptr == default)
                             {
                                 var currentDevice = ret.CurrentDevice.GetValueOrDefault().Handle;
-                                if (currentDevice != IntPtr.Zero)
+                                if (currentDevice != nint.Zero)
                                 {
                                     ptr = _getDeviceProcAddr(currentDevice, xPtr);
                                 }

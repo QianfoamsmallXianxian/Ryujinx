@@ -91,7 +91,7 @@ namespace Ryujinx.Memory
         public static partial int shm_unlink(nint name);
 
         [DllImport("android")]
-        internal static extern int ASharedMemory_create(IntPtr name, nuint size);
+        internal static extern int ASharedMemory_create(nint name, nuint size);
 
         private static int MmapFlagsToSystemFlags(MmapFlags flags)
         {

@@ -6,7 +6,7 @@ namespace LibKenjinx.Jni.Identifiers
     public readonly struct JFieldId : IEquatable<JFieldId>
     {
 #pragma warning disable 0649
-        private readonly IntPtr _value;
+        private readonly nint _value;
 #pragma warning restore 0649
 
         #region Public Methods

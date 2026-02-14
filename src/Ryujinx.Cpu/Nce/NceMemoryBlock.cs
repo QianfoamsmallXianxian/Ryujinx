@@ -8,7 +8,7 @@ namespace Ryujinx.Cpu.Nce
     {
         private readonly MemoryBlock _impl;
 
-        public IntPtr Pointer => _impl.Pointer;
+        public nint Pointer => _impl.Pointer;
 
         public NceMemoryBlock(ulong size, MemoryAllocationFlags flags)
         {

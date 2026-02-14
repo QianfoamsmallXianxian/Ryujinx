@@ -205,12 +205,12 @@ internal delegate void ExceptionDescribeDelegate(JEnvRef env);
 internal delegate void ExceptionClearDelegate(JEnvRef env);
 internal delegate void FatalErrorDelegate(JEnvRef env, ReadOnlyValPtr<Byte> messageChars0);
 internal delegate JBoolean ExceptionCheckDelegate(JEnvRef env);
-internal delegate JObjectLocalRef NewDirectByteBufferDelegate(JEnvRef env, IntPtr address, Int64 capacity);
-internal delegate IntPtr GetDirectBufferAddressDelegate(JEnvRef env, JObjectLocalRef buffObj);
+internal delegate JObjectLocalRef NewDirectByteBufferDelegate(JEnvRef env, nint address, Int64 capacity);
+internal delegate nint GetDirectBufferAddressDelegate(JEnvRef env, JObjectLocalRef buffObj);
 internal delegate Int64 GetDirectBufferCapacityDelegate(JEnvRef env, JObjectLocalRef buffObj);
 
 internal delegate JClassLocalRef DefineClassDelegate(JEnvRef env, ReadOnlyValPtr<Byte> nameChars0,
-	JObjectLocalRef loader, IntPtr binaryData, Int32 len);
+	JObjectLocalRef loader, nint binaryData, Int32 len);
 
 internal delegate JClassLocalRef FindClassDelegate(JEnvRef env, ReadOnlyValPtr<Byte> nameChars0);
 

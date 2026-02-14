@@ -403,7 +403,7 @@ namespace ARMeilleure.Translation
 #if ANDROID
             if (_androidDelegates.TryGetValue(key, out Delegate del))
             {
-                IntPtr funcPtr = Marshal.GetFunctionPointerForDelegate(del);
+                nint funcPtr = Marshal.GetFunctionPointerForDelegate(del);
                 _delegates.Add(key, new DelegateInfo(funcPtr));
                 return;
             }
