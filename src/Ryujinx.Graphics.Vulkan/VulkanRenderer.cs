@@ -11,7 +11,6 @@ using Silk.NET.Vulkan.Extensions.KHR;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
 using System.Threading;
 using Format = Ryujinx.Graphics.GAL.Format;
 using PrimitiveTopology = Ryujinx.Graphics.GAL.PrimitiveTopology;
@@ -99,6 +98,10 @@ namespace Ryujinx.Graphics.Vulkan
         internal bool IsIntelWindows { get; private set; }
         internal bool IsAmdGcn { get; private set; }
         internal bool IsAmdRdna3 { get; private set; }
+        internal bool IsAdreno6xx { get; private set; }
+        internal bool IsAdreno7xx { get; private set; }
+        internal bool IsAdreno8xx { get; private set; }
+        internal bool IsFeedbackLoopDevice { get; private set; }
         internal bool IsNvidiaPreTuring { get; private set; }
         internal bool IsIntelArc { get; private set; }
         internal bool IsQualcommProprietary { get; private set; }
@@ -383,6 +386,12 @@ namespace Ryujinx.Graphics.Vulkan
                                                   // ROG Ally (X) Device IDs
                                                   || properties.DeviceID is 0x15BF or 0x15C8 or 0x150E);
 
+            IsAdreno6xx = Vendor == Vendor.Qualcomm && VendorUtils.Adreno6xxRegex().IsMatch(GpuRenderer);
+            IsAdreno7xx = Vendor == Vendor.Qualcomm && VendorUtils.Adreno7xxRegex().IsMatch(GpuRenderer);
+            IsAdreno8xx = Vendor == Vendor.Qualcomm && VendorUtils.Adreno8xxRegex().IsMatch(GpuRenderer);
+
+            IsFeedbackLoopDevice = IsAmdRdna3 || IsAdreno6xx || IsAdreno7xx;
+
             if (Vendor == Vendor.Nvidia)
             {
                 var match = VendorUtils.NvidiaConsumerClassRegex().Match(GpuRenderer);
@@ -415,41 +424,39 @@ namespace Ryujinx.Graphics.Vulkan
                 properties.Limits.FramebufferDepthSampleCounts &
                 properties.Limits.FramebufferStencilSampleCounts;
 
-            bool isAdreno8xx = Vendor == Vendor.Qualcomm && (GpuRenderer.Contains("Adreno") && Regex.IsMatch(GpuRenderer, @"8[3-9]\d"));
-
             Capabilities = new HardwareCapabilities(
-                _physicalDevice.IsDeviceExtensionPresent("VK_EXT_index_type_uint8") && !isAdreno8xx,
-                supportsCustomBorderColor && !isAdreno8xx,
+                _physicalDevice.IsDeviceExtensionPresent("VK_EXT_index_type_uint8") && !IsAdreno8xx,
+                supportsCustomBorderColor && !IsAdreno8xx,
                 supportsBlendOperationAdvanced,
                 propertiesBlendOperationAdvanced.AdvancedBlendCorrelatedOverlap,
                 propertiesBlendOperationAdvanced.AdvancedBlendNonPremultipliedSrcColor,
                 propertiesBlendOperationAdvanced.AdvancedBlendNonPremultipliedDstColor,
                 _physicalDevice.IsDeviceExtensionPresent(KhrDrawIndirectCount.ExtensionName),
-                _physicalDevice.IsDeviceExtensionPresent("VK_EXT_fragment_shader_interlock") && !isAdreno8xx,
-                _physicalDevice.IsDeviceExtensionPresent("VK_NV_geometry_shader_passthrough") && !isAdreno8xx,
+                _physicalDevice.IsDeviceExtensionPresent("VK_EXT_fragment_shader_interlock") && !IsAdreno8xx,
+                _physicalDevice.IsDeviceExtensionPresent("VK_NV_geometry_shader_passthrough") && !IsAdreno8xx,
                 features2.Features.ShaderFloat64,
-                featuresShaderInt8.ShaderInt8 && !isAdreno8xx,
-                _physicalDevice.IsDeviceExtensionPresent("VK_EXT_shader_stencil_export") && !isAdreno8xx,
+                featuresShaderInt8.ShaderInt8 && !IsAdreno8xx,
+                _physicalDevice.IsDeviceExtensionPresent("VK_EXT_shader_stencil_export") && !IsAdreno8xx,
                 features2.Features.ShaderStorageImageMultisample,
                 _physicalDevice.IsDeviceExtensionPresent(ExtConditionalRendering.ExtensionName),
-                _physicalDevice.IsDeviceExtensionPresent(ExtExtendedDynamicState.ExtensionName) && !isAdreno8xx,
+                _physicalDevice.IsDeviceExtensionPresent(ExtExtendedDynamicState.ExtensionName) && !IsAdreno8xx,
                 features2.Features.MultiViewport && !(IsMoltenVk && Vendor == Vendor.Amd), // Workaround for AMD on MoltenVK issue
-                (featuresRobustness2.NullDescriptor || IsMoltenVk) && !isAdreno8xx,
+                (featuresRobustness2.NullDescriptor || IsMoltenVk) && !IsAdreno8xx,
                 supportsPushDescriptors && !IsMoltenVk,
                 propertiesPushDescriptor.MaxPushDescriptors,
-                featuresPrimitiveTopologyListRestart.PrimitiveTopologyListRestart && !isAdreno8xx,
-                featuresPrimitiveTopologyListRestart.PrimitiveTopologyPatchListRestart && !isAdreno8xx,
-                supportsTransformFeedback && !isAdreno8xx,
+                featuresPrimitiveTopologyListRestart.PrimitiveTopologyListRestart && !IsAdreno8xx,
+                featuresPrimitiveTopologyListRestart.PrimitiveTopologyPatchListRestart && !IsAdreno8xx,
+                supportsTransformFeedback && !IsAdreno8xx,
                 propertiesTransformFeedback.TransformFeedbackQueries,
                 features2.Features.OcclusionQueryPrecise,
                 _physicalDevice.PhysicalDeviceFeatures.PipelineStatisticsQuery,
-                _physicalDevice.PhysicalDeviceFeatures.GeometryShader && !isAdreno8xx,
-                _physicalDevice.PhysicalDeviceFeatures.TessellationShader && !isAdreno8xx,
+                _physicalDevice.PhysicalDeviceFeatures.GeometryShader && !IsAdreno8xx,
+                _physicalDevice.PhysicalDeviceFeatures.TessellationShader && !IsAdreno8xx,
                 _physicalDevice.IsDeviceExtensionPresent("VK_NV_viewport_array2"),
-                _physicalDevice.IsDeviceExtensionPresent(ExtExternalMemoryHost.ExtensionName) && !isAdreno8xx,
+                _physicalDevice.IsDeviceExtensionPresent(ExtExternalMemoryHost.ExtensionName) && !IsAdreno8xx,
                 supportsDepthClipControl && featuresDepthClipControl.DepthClipControl,
-                supportsAttachmentFeedbackLoop && featuresAttachmentFeedbackLoop.AttachmentFeedbackLoopLayout && !isAdreno8xx,
-                supportsDynamicAttachmentFeedbackLoop && featuresDynamicAttachmentFeedbackLoop.AttachmentFeedbackLoopDynamicState && !isAdreno8xx,
+                supportsAttachmentFeedbackLoop && featuresAttachmentFeedbackLoop.AttachmentFeedbackLoopLayout && !IsAdreno8xx,
+                supportsDynamicAttachmentFeedbackLoop && featuresDynamicAttachmentFeedbackLoop.AttachmentFeedbackLoopDynamicState && !IsAdreno8xx,
                 propertiesSubgroup.SubgroupSize,
                 supportedSampleCounts,
                 portabilityFlags,
@@ -748,8 +755,6 @@ namespace Ryujinx.Graphics.Vulkan
                     SystemMemoryType.DedicatedMemory;
             }
 
-            bool isAdreno8xx = Vendor == Vendor.Qualcomm && (GpuRenderer.Contains("Adreno") && Regex.IsMatch(GpuRenderer, @"8[3-9]\d"));
-
             return new Capabilities(
                 api: TargetApi.Vulkan,
                 GpuVendor,
@@ -772,13 +777,13 @@ namespace Ryujinx.Graphics.Vulkan
                 supports5BitComponentFormat: supports5BitComponentFormat,
                 supportsSparseBuffer: features2.Features.SparseBinding && mainQueueProperties.QueueFlags.HasFlag(QueueFlags.SparseBindingBit),
                 supportsBlendEquationAdvanced: Capabilities.SupportsBlendEquationAdvanced,
-                supportsFragmentShaderInterlock: Capabilities.SupportsFragmentShaderInterlock && !isAdreno8xx,
+                supportsFragmentShaderInterlock: Capabilities.SupportsFragmentShaderInterlock && !IsAdreno8xx,
                 supportsFragmentShaderOrderingIntel: false,
-                supportsGeometryShader: Capabilities.SupportsGeometryShader && !isAdreno8xx,
-                supportsGeometryShaderPassthrough: Capabilities.SupportsGeometryShaderPassthrough && !isAdreno8xx,
-                supportsTransformFeedback: Capabilities.SupportsTransformFeedback && !isAdreno8xx,
+                supportsGeometryShader: Capabilities.SupportsGeometryShader && !IsAdreno8xx,
+                supportsGeometryShaderPassthrough: Capabilities.SupportsGeometryShaderPassthrough && !IsAdreno8xx,
+                supportsTransformFeedback: Capabilities.SupportsTransformFeedback && !IsAdreno8xx,
                 supportsImageLoadFormatted: features2.Features.ShaderStorageImageReadWithoutFormat,
-                supportsLayerVertexTessellation: featuresVk12.ShaderOutputLayer && !isAdreno8xx,
+                supportsLayerVertexTessellation: featuresVk12.ShaderOutputLayer && !IsAdreno8xx,
                 supportsMismatchingViewFormat: true,
                 supportsCubemapView: !IsAmdGcn,
                 supportsNonConstantTextureOffset: false,
@@ -790,7 +795,7 @@ namespace Ryujinx.Graphics.Vulkan
                 supportsTextureGatherOffsets: features2.Features.ShaderImageGatherExtended && !IsMoltenVk,
                 supportsTextureShadowLod: false,
                 supportsVertexStoreAndAtomics: features2.Features.VertexPipelineStoresAndAtomics,
-                supportsViewportIndexVertexTessellation: featuresVk12.ShaderOutputViewportIndex && !isAdreno8xx,
+                supportsViewportIndexVertexTessellation: featuresVk12.ShaderOutputViewportIndex && !IsAdreno8xx,
                 supportsViewportMask: Capabilities.SupportsViewportArray2,
                 supportsViewportSwizzle: false,
                 supportsIndirectParameters: true,

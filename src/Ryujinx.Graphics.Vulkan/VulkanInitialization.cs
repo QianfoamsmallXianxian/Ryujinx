@@ -4,11 +4,9 @@ using Ryujinx.Graphics.GAL;
 using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.EXT;
 using Silk.NET.Vulkan.Extensions.KHR;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
 
 namespace Ryujinx.Graphics.Vulkan
 {
@@ -654,7 +652,7 @@ namespace Ryujinx.Graphics.Vulkan
             var enabledExtensions = _requiredExtensions.Union(_desirableExtensions.Intersect(physicalDevice.DeviceExtensions));
 
             if (VendorUtils.FromId(physicalDevice.PhysicalDeviceProperties.VendorID) == Vendor.Qualcomm &&
-                (physicalDevice.DeviceName.Contains("Adreno") && Regex.IsMatch(physicalDevice.DeviceName, @"8[3-9]\d")))
+                (VendorUtils.Adreno8xxRegex().IsMatch(physicalDevice.DeviceName)))
             {
                 enabledExtensions = enabledExtensions.Where(e =>
                     e != "VK_KHR_shader_float_controls" &&
