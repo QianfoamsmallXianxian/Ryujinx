@@ -23,7 +23,8 @@ android {
 
         externalNativeBuild {
             cmake {
-                cppFlags "-std=c++20 -O3 -fno-math-errno -fno-trapping-math -fno-signed-zeros -ffinite-math-only -march=armv8-a"
+                cppFlags "-std=c++20 -O3",
+                    "-fno-math-errno -fno-trapping-math -fno-signed-zeros -ffinite-math-only"
                 arguments "-DANDROID_STL=c++_shared",
                     "-DCMAKE_BUILD_TYPE=Release",
                     "-DANDROID_ARM_NEON=TRUE",
@@ -34,17 +35,62 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // minifyEnabled false
+            // proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig = signingConfigs.debug
             debuggable false
             jniDebuggable false
         }
     }
 
+    def deviceFlavors = [
+        armv8  : "-march=armv8-a",
+        armv82 : "-march=armv8.2-a",
+        armv87 : "-march=armv8.7-a",
+        sd8eg5 : "-march=armv8.7-a+sve+sve2",
+    ]
+
+    flavorDimensions "appid", "device"
+    productFlavors {
+        mainline {
+            dimension "appid"
+            applicationId "org.kenjinx.android"
+            manifestPlaceholders = [applicationLabel: "@string/app_name"]
+        }
+       optimized {
+            dimension "appid"
+            applicationId "com.garena.game.codm"
+            manifestPlaceholders = [applicationLabel: "@string/app_name_optimized"]
+        }
+    }
+
+    deviceFlavors.each { name, flags ->
+        productFlavors.create(name) {
+            dimension "device"
+            externalNativeBuild {
+                cmake {
+                    cppFlags flags
+                }
+            }
+        }
+    }
+
     androidComponents {
-        onVariants(selector().withBuildType("release")) {
-            packaging.dex.useLegacyPackaging.set(true)
+        onVariants(selector().withBuildType("debug")) {
+            packaging.dex.useLegacyPackaging.set(false)
+        }
+        beforeVariants(selector().all()) { variant ->
+            def flavors = variant.productFlavors.collect { it.second }.toSet()
+
+            def invalidCombos = [
+                ["optimized", "armv8"],
+                ["optimized", "armv87"],
+                ["optimized", "sd8eg5"]
+            ]
+
+            if (invalidCombos.any { combo -> flavors.containsAll(combo) }) {
+                enable = false
+            }
         }
     }
 
@@ -62,6 +108,9 @@ android {
     packagingOptions {
         jniLibs {
             keepDebugSymbols += '**/libkenjinx.so'
+            useLegacyPackaging true
+        }
+        dex {
             useLegacyPackaging true
         }
         resources {

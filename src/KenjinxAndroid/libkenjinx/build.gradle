@@ -118,7 +118,6 @@ tasks.register('compileLibKenjinx', Exec) {
         baseArgs.addAll([
             "-p:IlcOptimizationPreference=Speed",
             "-p:IlcOptimizationLevel=3",
-            "-p:IlcFoldIdenticalMethodBodies=true",
             "-p:IlcGenerateStackTraceData=false",
             "-p:TrimMode=full",
             "-p:IlcTrimMetadata=true",
