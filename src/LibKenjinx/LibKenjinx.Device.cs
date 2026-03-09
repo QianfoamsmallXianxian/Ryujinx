@@ -54,12 +54,12 @@ namespace LibKenjinx
 
         public static void InstallFirmware(Stream stream, bool isXci)
         {
-            SwitchDevice?.ContentManager.InstallFirmware(stream, isXci);
+            SwitchDevice?.ContentManager?.InstallFirmware(stream, isXci);
         }
 
         public static string GetInstalledFirmwareVersion()
         {
-            var version = SwitchDevice?.ContentManager.GetCurrentFirmwareVersion();
+            var version = SwitchDevice?.ContentManager?.GetCurrentFirmwareVersion();
 
             if (version != null)
             {
@@ -71,7 +71,7 @@ namespace LibKenjinx
 
         public static SystemVersion? VerifyFirmware(Stream stream, bool isXci)
         {
-            return SwitchDevice?.ContentManager.VerifyFirmwarePackage(stream, isXci) ?? null;
+            return SwitchDevice?.ContentManager?.VerifyFirmwarePackage(stream, isXci) ?? null;
         }
 
         public static bool LoadApplication(Stream stream, FileType type, Stream? updateStream = null)

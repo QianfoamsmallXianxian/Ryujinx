@@ -523,7 +523,7 @@ namespace LibKenjinx
                         if (File.Exists(updatePath))
                         {
                             FileStream file = new(updatePath, FileMode.Open, FileAccess.Read);
-                            IFileSystem pfs = null;
+                            IFileSystem pfs;
 
                             if (Path.GetExtension(updatePath).ToLower() == ".xci")
                             {
@@ -616,8 +616,7 @@ namespace LibKenjinx
 
                 partitionFileSystem.OpenFile(ref ncaFile.Ref, ncaPath.ToU8Span(), OpenMode.Read).ThrowIfFailure();
 
-                Nca nca = TryOpenNca(ncaFile.Get.AsStorage(), ncaPath);
-                if (nca != null)
+                if (TryOpenNca(ncaFile.Get.AsStorage(), ncaPath) is { } nca)
                 {
                     return nca.Header.TitleId.ToString("X16");
                 }
@@ -627,7 +626,7 @@ namespace LibKenjinx
         }
 
 
-        private static Nca TryOpenNca(IStorage ncaStorage, string containerPath)
+        private static Nca? TryOpenNca(IStorage ncaStorage, string containerPath)
         {
             try
             {
@@ -661,7 +660,7 @@ namespace LibKenjinx
 
                 partitionFileSystem.OpenFile(ref ncaFile.Ref, fileEntry.FullPath.ToU8Span(), OpenMode.Read).ThrowIfFailure();
 
-                Nca nca = TryOpenNca(ncaFile.Get.AsStorage(), path);
+                Nca? nca = TryOpenNca(ncaFile.Get.AsStorage(), path);
                 if (nca == null)
                 {
                     continue;
@@ -698,7 +697,7 @@ namespace LibKenjinx
         }
 
         // ===== Amiibo Helpers (Kenjinx) =====
-        public static bool AmiiboLoadFromBytes(byte[] data)
+        public static bool AmiiboLoadFromBytes(byte[]? data)
         {
             if (data == null || data.Length == 0)
             {
@@ -755,13 +754,13 @@ namespace LibKenjinx
     public class SwitchDevice : IDisposable
 
     {
-        private readonly SystemVersion _firmwareVersion;
+        private readonly SystemVersion? _firmwareVersion;
         private int _contextDisposeState;
         public VirtualFileSystem VirtualFileSystem { get; set; }
-        public ContentManager ContentManager { get; set; }
-        public AccountManager AccountManager { get; set; }
-        public LibHacHorizonManager LibHacHorizonManager { get; set; }
-        public UserChannelPersistence UserChannelPersistence { get; set; }
+        public ContentManager? ContentManager { get; set; }
+        public AccountManager? AccountManager { get; set; }
+        public LibHacHorizonManager? LibHacHorizonManager { get; set; }
+        public UserChannelPersistence? UserChannelPersistence { get; set; }
         public InputManager? InputManager { get; set; }
         public Switch? EmulationContext { get; set; }
         public IHostUIHandler? HostUiHandler { get; set; }
@@ -949,7 +948,7 @@ namespace LibKenjinx
             // --- Prepare paths for the physical save directory (Android sandbox)
             string savesRoot = Path.Combine(
                 AppDataManager.BaseDirPath,
-                Ryujinx.HLE.FileSystem.VirtualFileSystem.UserNandPath,
+                VirtualFileSystem.UserNandPath,
                 "save"
             );
 
@@ -963,17 +962,24 @@ namespace LibKenjinx
             catch { /* ignore */ }
 
             // Call existing Horizon APIs to create/secure the saves
-            var rc = LibHacHorizonManager.RyujinxClient.Fs.EnsureApplicationCacheStorage(out _, out _, applicationId, in control);
-            if (rc.IsFailure())
+            if (LibHacHorizonManager != null)
             {
-                Logger.Error?.Print(LogClass.Application, $"Error calling EnsureApplicationCacheStorage. Result code {rc.ToStringWithName()}");
-            }
+                var rc = LibHacHorizonManager.RyujinxClient.Fs.EnsureApplicationCacheStorage(out _, out _, applicationId, in control);
+                if (rc.IsFailure())
+                {
+                    Logger.Error?.Print(LogClass.Application, $"Error calling EnsureApplicationCacheStorage. Result code {rc.ToStringWithName()}");
+                }
 
-            Uid userId = AccountManager.LastOpenedUser.UserId.ToLibHacUid();
-            rc = LibHacHorizonManager.RyujinxClient.Fs.EnsureApplicationSaveData(out _, applicationId, in control, in userId);
-            if (rc.IsFailure())
-            {
-                Logger.Error?.Print(LogClass.Application, $"Error calling EnsureApplicationSaveData. Result code {rc.ToStringWithName()}");
+                if (AccountManager != null)
+                {
+                    Uid userId = AccountManager.LastOpenedUser.UserId.ToLibHacUid();
+                    rc = LibHacHorizonManager.RyujinxClient.Fs.EnsureApplicationSaveData(out _, applicationId, in control, in userId);
+                }
+
+                if (rc.IsFailure())
+                {
+                    Logger.Error?.Print(LogClass.Application, $"Error calling EnsureApplicationSaveData. Result code {rc.ToStringWithName()}");
+                }
             }
 
             // Get the after-list of save dirs and calculate the difference
@@ -1013,7 +1019,10 @@ namespace LibKenjinx
                     File.WriteAllText(markerFile, $"{titleIdHex}\n{titleName}");
                 }
 
-                UpsertTitleMapNdjson(savesRoot, titleIdHex, titleName, createdSaveDirName);
+                if (createdSaveDirName != null)
+                {
+                    UpsertTitleMapNdjson(savesRoot, titleIdHex, titleName, createdSaveDirName);
+                }
             }
             catch (Exception ex)
             {
@@ -1038,7 +1047,7 @@ namespace LibKenjinx
         /// - Completely rewrites the file (no unlimited size increase)
         /// - NEVER overwrites the folder with an empty value; attempts to determine it via markers
         /// </summary>
-        private static void UpsertTitleMapNdjson(string savesRoot, string titleIdHex, string titleName, string createdFolder)
+        private static void UpsertTitleMapNdjson(string savesRoot, string? titleIdHex, string? titleName, string createdFolder)
         {
             Directory.CreateDirectory(savesRoot);
             string mapPath = Path.Combine(savesRoot, "titleid_map.ndjson");
@@ -1092,7 +1101,7 @@ namespace LibKenjinx
             string effectiveFolder = createdFolder;
             if (string.IsNullOrWhiteSpace(effectiveFolder))
             {
-                effectiveFolder = ResolveSaveFolderByMarker(savesRoot, titleIdLc);
+                effectiveFolder = ResolveSaveFolderByMarker(savesRoot, titleIdLc) ?? string.Empty;
             }
             if (string.IsNullOrWhiteSpace(effectiveFolder) && !string.IsNullOrWhiteSpace(existingFolder))
             {
@@ -1122,7 +1131,7 @@ namespace LibKenjinx
             string finalFolder = string.IsNullOrWhiteSpace(effectiveFolder) ? (existing.Folder ?? "") : effectiveFolder;
             string finalTs     = nowIso;
 
-            byTitleId[titleIdLc] = (finalName ?? "", finalFolder ?? "", finalTs);
+            byTitleId[titleIdLc] = (finalName, finalFolder, finalTs);
 
             // 5) rewrite file (stable: sort by titleId)
             try
@@ -1145,7 +1154,7 @@ namespace LibKenjinx
         /// <summary>
         /// Scans save subfolders for a TITLEID.txt whose first line equals the titleId; returns folder name or null.
         /// </summary>
-        private static string ResolveSaveFolderByMarker(string savesRoot, string titleIdLc)
+        private static string? ResolveSaveFolderByMarker(string savesRoot, string titleIdLc)
         {
             try
             {
@@ -1159,7 +1168,7 @@ namespace LibKenjinx
                     try
                     {
                         using var sr = new StreamReader(marker, Encoding.UTF8, true);
-                        string first = sr.ReadLine()?.Trim()?.ToLowerInvariant();
+                        string? first = sr.ReadLine()?.Trim().ToLowerInvariant();
                         if (first == titleIdLc)
                         {
                             return Path.GetFileName(dir);
@@ -1210,7 +1219,7 @@ namespace LibKenjinx
         {
             VirtualFileSystem.ReloadKeySet();
             ContentManager = new ContentManager(VirtualFileSystem);
-            AccountManager = new AccountManager(LibHacHorizonManager.RyujinxClient);
+            AccountManager = new AccountManager(LibHacHorizonManager?.RyujinxClient);
         }
     }
 

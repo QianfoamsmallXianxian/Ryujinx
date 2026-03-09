@@ -61,7 +61,7 @@ namespace LibKenjinx
         };
 
         // Try call method with single bool
-        private static bool TryCallBool(object target, string[] names, bool arg)
+        private static bool TryCallBool(object? target, string[] names, bool arg)
         {
             if (target == null) return false;
             var t = target.GetType();
@@ -77,7 +77,7 @@ namespace LibKenjinx
         }
 
         // Try call method with single float
-        private static bool TryCallFloat(object target, string[] names, float arg)
+        private static bool TryCallFloat(object? target, string[] names, float arg)
         {
             if (target == null) return false;
             var t = target.GetType();
@@ -93,7 +93,7 @@ namespace LibKenjinx
         }
 
         // Try set property (float/double)
-        private static bool TrySetFloatProp(object target, string[] names, float value)
+        private static bool TrySetFloatProp(object? target, string[] names, float value)
         {
             if (target == null) return false;
             var t = target.GetType();

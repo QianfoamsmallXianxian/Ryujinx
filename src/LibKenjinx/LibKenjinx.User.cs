@@ -8,7 +8,7 @@ namespace LibKenjinx
     {
         public static string GetOpenedUser()
         {
-            var lastProfile = SwitchDevice?.AccountManager.LastOpenedUser;
+            var lastProfile = SwitchDevice?.AccountManager?.LastOpenedUser;
 
             return lastProfile?.UserId.ToString() ?? "";
         }
@@ -17,7 +17,7 @@ namespace LibKenjinx
         {
             var uid = new UserId(userId);
 
-            var user = SwitchDevice?.AccountManager.GetAllUsers().FirstOrDefault(x => x.UserId == uid);
+            var user = SwitchDevice?.AccountManager?.GetAllUsers().FirstOrDefault(x => x.UserId == uid);
 
             if (user == null)
                 return "";
@@ -31,14 +31,14 @@ namespace LibKenjinx
         {
             var uid = new UserId(userId);
 
-            SwitchDevice?.AccountManager.SetUserImage(uid, Convert.FromBase64String(picture));
+            SwitchDevice?.AccountManager?.SetUserImage(uid, Convert.FromBase64String(picture));
         }
 
         public static string GetUserName(string userId)
         {
             var uid = new UserId(userId);
 
-            var user = SwitchDevice?.AccountManager.GetAllUsers().FirstOrDefault(x => x.UserId == uid);
+            var user = SwitchDevice?.AccountManager?.GetAllUsers().FirstOrDefault(x => x.UserId == uid);
 
             return user?.Name ?? "";
         }
@@ -47,36 +47,36 @@ namespace LibKenjinx
         {
             var uid = new UserId(userId);
 
-            SwitchDevice?.AccountManager.SetUserName(uid, name);
+            SwitchDevice?.AccountManager?.SetUserName(uid, name);
         }
 
         public static string[] GetAllUsers()
         {
-            return SwitchDevice?.AccountManager.GetAllUsers().Select(x => x.UserId.ToString()).ToArray() ??
+            return SwitchDevice?.AccountManager?.GetAllUsers().Select(x => x.UserId.ToString()).ToArray() ??
                    [];
         }
 
         public static void AddUser(string userName, string picture)
         {
-            SwitchDevice?.AccountManager.AddUser(userName, Convert.FromBase64String(picture));
+            SwitchDevice?.AccountManager?.AddUser(userName, Convert.FromBase64String(picture));
         }
 
         public static void DeleteUser(string userId)
         {
             var uid = new UserId(userId);
-            SwitchDevice?.AccountManager.DeleteUser(uid);
+            SwitchDevice?.AccountManager?.DeleteUser(uid);
         }
 
         public static void OpenUser(string userId)
         {
             var uid = new UserId(userId);
-            SwitchDevice?.AccountManager.OpenUser(uid);
+            SwitchDevice?.AccountManager?.OpenUser(uid);
         }
 
         public static void CloseUser(string userId)
         {
             var uid = new UserId(userId);
-            SwitchDevice?.AccountManager.CloseUser(uid);
+            SwitchDevice?.AccountManager?.CloseUser(uid);
         }
     }
 }

@@ -55,14 +55,14 @@ namespace LibKenjinx
                     byte* xp = (byte*)xPtr;
                     try
                     {
-                        nint ptr = default;
+                        nint ptr;
                         ptr = _getInstanceProcAddr(ret.CurrentInstance.GetValueOrDefault().Handle, xPtr);
 
-                        if (ptr == default)
+                        if (ptr == 0)
                         {
                             ptr = _getInstanceProcAddr(nint.Zero, xPtr);
 
-                            if (ptr == default)
+                            if (ptr == 0)
                             {
                                 var currentDevice = ret.CurrentDevice.GetValueOrDefault().Handle;
                                 if (currentDevice != nint.Zero)
@@ -70,7 +70,7 @@ namespace LibKenjinx
                                     ptr = _getDeviceProcAddr(currentDevice, xPtr);
                                 }
 
-                                if (ptr == default)
+                                if (ptr == 0)
                                 {
                                     Logger.Warning?.Print(LogClass.Gpu, $"Failed to get function pointer: {x}");
                                 }
