@@ -649,73 +649,13 @@ namespace Ryujinx.Graphics.Vulkan
 
             pExtendedFeatures = &featuresPageableDeviceLocalMemory;
 
-            var enabledExtensions = _requiredExtensions.Union(_desirableExtensions.Intersect(physicalDevice.DeviceExtensions));
+            var enabledExtensions = _requiredExtensions.Union(_desirableExtensions.Intersect(physicalDevice.DeviceExtensions)).ToArray();
 
-            if (VendorUtils.FromId(physicalDevice.PhysicalDeviceProperties.VendorID) == Vendor.Qualcomm &&
-                (VendorUtils.Adreno8xxRegex().IsMatch(physicalDevice.DeviceName)))
+            nint* ppEnabledExtensions = stackalloc nint[enabledExtensions.Length];
+
+            for (int i = 0; i < enabledExtensions.Length; i++)
             {
-                enabledExtensions = enabledExtensions.Where(e =>
-                    e != "VK_KHR_shader_float_controls" &&
-                    e != "VK_KHR_shader_atomic_int64" &&
-                    e != "VK_KHR_16bit_storage" &&
-                    e != "VK_KHR_8bit_storage" &&
-                    e != "VK_EXT_vertex_input_dynamic_state" &&
-                    e != "VK_EXT_robustness2" &&
-                    e != "VK_EXT_custom_border_color" &&
-                    e != "VK_EXT_fragment_shader_interlock" &&
-                    e != "VK_EXT_shader_stencil_export" &&
-                    e != "VK_EXT_descriptor_indexing" &&
-                    e != "VK_EXT_external_memory_host" &&
-                    e != "VK_EXT_transform_feedback" &&
-                    e != "VK_EXT_extended_dynamic_state" &&
-                    e != "VK_EXT_attachment_feedback_loop_layout" &&
-                    e != "VK_EXT_attachment_feedback_loop_dynamic_state" &&
-                    e != "VK_EXT_index_type_uint8" &&
-                    e != "VK_EXT_primitive_topology_list_restart" &&
-                    e != "VK_EXT_4444_formats" &&
-                    e != "VK_KHR_maintenance2" &&
-                    e != "VK_KHR_shader_float16_int8");
-
-                features.ShaderInt64 = false;
-
-                featuresVk12.ShaderBufferInt64Atomics = false;
-                featuresVk12.ShaderSharedInt64Atomics = false;
-                featuresVk12.UniformAndStorageBuffer8BitAccess = false;
-                featuresVk12.StorageBuffer8BitAccess = false;
-                featuresVk12.StoragePushConstant8 = false;
-
-                featuresVk11.StorageBuffer16BitAccess = false;
-                featuresVk11.UniformAndStorageBuffer16BitAccess = false;
-                featuresVk11.StoragePushConstant16 = false;
-                featuresVk11.StorageInputOutput16 = false;
-
-                featuresVertexInputDynamicState.VertexInputDynamicState = false;
-                featuresRobustness2.NullDescriptor = false;
-                featuresCustomBorderColor.CustomBorderColors = false;
-                featuresCustomBorderColor.CustomBorderColorWithoutFormat = false;
-                featuresExtendedDynamicState.ExtendedDynamicState = false;
-
-                if (physicalDevice.IsDeviceExtensionPresent(ExtTransformFeedback.ExtensionName))
-                {
-                    featuresTransformFeedback.TransformFeedback = false;
-                }
-
-                featuresAttachmentFeedbackLoop.AttachmentFeedbackLoopLayout = false;
-                featuresDynamicAttachmentFeedbackLoop.AttachmentFeedbackLoopDynamicState = false;
-                featuresIndexU8.IndexTypeUint8 = false;
-                featuresPrimitiveTopologyListRestart.PrimitiveTopologyListRestart = false;
-                featuresPrimitiveTopologyListRestart.PrimitiveTopologyPatchListRestart = false;
-                featuresShaderInt8.ShaderInt8 = false;
-
-                Logger.Warning?.Print(LogClass.Gpu, "Disabling broken extensions for Snapdragon 8 Elite / Gen 5");
-            }
-
-            var finalEnabledExtensions = enabledExtensions.ToArray();
-            nint* ppEnabledExtensions = stackalloc nint[finalEnabledExtensions.Length];
-
-            for (int i = 0; i < finalEnabledExtensions.Length; i++)
-            {
-                ppEnabledExtensions[i] = Marshal.StringToHGlobalAnsi(finalEnabledExtensions[i]);
+                ppEnabledExtensions[i] = Marshal.StringToHGlobalAnsi(enabledExtensions[i]);
             }
 
             var deviceCreateInfo = new DeviceCreateInfo
@@ -725,13 +665,13 @@ namespace Ryujinx.Graphics.Vulkan
                 QueueCreateInfoCount = 1,
                 PQueueCreateInfos = &queueCreateInfo,
                 PpEnabledExtensionNames = (byte**)ppEnabledExtensions,
-                EnabledExtensionCount = (uint)finalEnabledExtensions.Length,
+                EnabledExtensionCount = (uint)enabledExtensions.Length,
                 PEnabledFeatures = &features,
             };
 
             api.CreateDevice(physicalDevice.PhysicalDevice, in deviceCreateInfo, null, out var device).ThrowOnError();
 
-            for (int i = 0; i < finalEnabledExtensions.Length; i++)
+            for (int i = 0; i < enabledExtensions.Length; i++)
             {
                 Marshal.FreeHGlobal(ppEnabledExtensions[i]);
             }

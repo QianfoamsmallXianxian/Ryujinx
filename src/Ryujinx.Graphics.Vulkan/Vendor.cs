@@ -27,15 +27,15 @@ namespace Ryujinx.Graphics.Vulkan
         [GeneratedRegex("NVIDIA GeForce (R|G)?TX? (\\d{3}\\d?)M?")]
         public static partial Regex NvidiaConsumerClassRegex();
 
-        [GeneratedRegex(@"Adreno (\(TM\) )?([6-7][0-9]\dL?)")]
+        [GeneratedRegex(@"Adreno (\(TM\) )?(6[0-9]\dL?)")]
         public static partial Regex Adreno6xxRegex();
 
-        [GeneratedRegex(@"Adreno (\(TM\) )?([6-7][0-9]\dL?)")]
+        [GeneratedRegex(@"Adreno (\(TM\) )?(7[0-9]\dL?)")]
         public static partial Regex Adreno7xxRegex();
 
         [GeneratedRegex(@"Adreno (\(TM\) )?(8[0-9]\d)")]
         public static partial Regex Adreno8xxRegex();
-        
+
         public static Vendor FromId(uint id)
         {
             return id switch
