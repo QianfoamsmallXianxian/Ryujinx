@@ -1532,7 +1532,7 @@ namespace Ryujinx.Graphics.Vulkan
 
         private bool ChangeFeedbackLoop(FeedbackLoopAspects aspects)
         {
-            if (Gd.IsFeedbackLoopDevice && _feedbackLoop != aspects)
+            if (_feedbackLoop != aspects)
             {
                 if (Gd.Capabilities.SupportsDynamicAttachmentFeedbackLoop)
                 {
