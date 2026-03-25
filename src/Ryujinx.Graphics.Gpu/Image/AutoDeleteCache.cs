@@ -1,3 +1,4 @@
+using Ryujinx.Common;
 using Ryujinx.Common.Logging;
 using System;
 using System.Collections;
@@ -47,19 +48,18 @@ namespace Ryujinx.Graphics.Gpu.Image
     class AutoDeleteCache : IEnumerable<Texture>
     {
         private const int MinCountForDeletion = 32;
+#if ANDROID
         private const int MaxCapacity = 1024;
+#else
+        private const int MaxCapacity = 2048;
+#endif
         private const ulong MiB = 1024 * 1024;
         private const ulong GiB = 1024 * 1024 * 1024;
-        private ulong MaxTextureSizeCapacity = 4 * GiB;
+        private ulong MaxTextureSizeCapacity = 2 * GiB;
         private const ulong MinTextureSizeCapacity = 512 * MiB;
         private const ulong DefaultTextureSizeCapacity = 1 * GiB;
-        private const ulong TextureSizeCapacity4GiB = 2 * GiB;
-        private const ulong TextureSizeCapacity6GiB = 4 * GiB;
-        private const ulong TextureSizeCapacity8GiB = 6 * GiB;
-        private const ulong TextureSizeCapacity10GiB = 10 * GiB;
-        private const ulong TextureSizeCapacity12GiB = 12 * GiB;
 
-        private const float MemoryScaleFactor = 0.30f;
+        private const float MemoryScaleFactor = 0.50f;
         private ulong _maxCacheMemoryUsage = DefaultTextureSizeCapacity;
 
         private readonly LinkedList<Texture> _textures;
@@ -82,21 +82,14 @@ namespace Ryujinx.Graphics.Gpu.Image
         /// <param name="cpuMemorySize">The amount of physical CPU Memory available on the device.</param>
         public void Initialize(GpuContext context, ulong cpuMemorySize)
         {
-            var cpuMemorySizeGiB = cpuMemorySize / GiB;
-            var MaximumGpuMemoryGiB = context.Capabilities.MaximumGpuMemory / GiB;
+            ulong MaximumGpuMemory = context.Capabilities.MaximumGpuMemory;
+            ulong TextureSizeCapacity = cpuMemorySize - (2 * GiB);
 
-            MaxTextureSizeCapacity = cpuMemorySizeGiB switch
-            {
-                < 6 when MaximumGpuMemoryGiB < 6 || context.Capabilities.MaximumGpuMemory == 0 =>
-                    DefaultTextureSizeCapacity,
-                < 6 => TextureSizeCapacity4GiB,
-                6 => TextureSizeCapacity4GiB,
-                8 => TextureSizeCapacity6GiB,
-                10 => TextureSizeCapacity6GiB,
-                _ => TextureSizeCapacity8GiB
-            };
+            MaxTextureSizeCapacity = MaximumGpuMemory == 0 || cpuMemorySize < 6 * GiB && MaximumGpuMemory < 6 * GiB
+                    ? DefaultTextureSizeCapacity
+                    : TextureSizeCapacity;
 
-            var cacheMemory = (ulong)(context.Capabilities.MaximumGpuMemory * MemoryScaleFactor);
+            ulong cacheMemory = (ulong)(context.Capabilities.MaximumGpuMemory * MemoryScaleFactor);
 
             _maxCacheMemoryUsage = Math.Clamp(cacheMemory, MinTextureSizeCapacity, MaxTextureSizeCapacity);
 
@@ -173,10 +166,10 @@ namespace Ryujinx.Graphics.Gpu.Image
         /// </summary>
         private void RemoveLeastUsedTexture()
         {
-            if (_textures.First != null)
-            {
-                Texture oldestTexture = _textures.First.Value;
+            Texture oldestTexture = _textures.First?.Value;
 
+            if (oldestTexture != null)
+            {
                 _totalSize -= oldestTexture.Size;
 
                 if (!oldestTexture.CheckModified(false))
@@ -202,11 +195,11 @@ namespace Ryujinx.Graphics.Gpu.Image
         /// <param name="texture">The texture to be removed from the cache</param>
         /// <param name="flush">True to remove the texture if it was on the cache</param>
         /// <returns>True if the texture was found and removed, false otherwise</returns>
-        public bool Remove(Texture texture, bool flush)
+        public void Remove(Texture texture, bool flush)
         {
             if (texture.CacheNode == null)
             {
-                return false;
+                return;
             }
 
             // Remove our reference to this texture.
@@ -221,7 +214,7 @@ namespace Ryujinx.Graphics.Gpu.Image
 
             texture.CacheNode = null;
 
-            return texture.DecrementReferenceCount();
+            texture.DecrementReferenceCount();
         }
 
         /// <summary>
@@ -237,10 +230,8 @@ namespace Ryujinx.Graphics.Gpu.Image
                 {
                     return entry.Texture;
                 }
-                else
-                {
-                    _shortCacheLookup.Remove(descriptor);
-                }
+
+                _shortCacheLookup.Remove(descriptor);
             }
 
             return null;
