@@ -10,17 +10,17 @@ namespace Ryujinx.Ava.UI.ViewModels
 {
     public class AboutWindowViewModel : BaseModel, IDisposable
     {
-        private Bitmap _gitlabLogo;
+        private Bitmap _forgejoLogo;
         private Bitmap _discordLogo;
 
         private string _version;
 
-        public Bitmap GitLabLogo
+        public Bitmap ForgejoLogo
         {
-            get => _gitlabLogo;
+            get => _forgejoLogo;
             set
             {
-                _gitlabLogo = value;
+                _forgejoLogo = value;
                 OnPropertyChanged();
             }
         }
@@ -69,7 +69,7 @@ namespace Ryujinx.Ava.UI.ViewModels
             string basePath = "resm:Ryujinx.UI.Common.Resources.";
             string themeSuffix = isDarkTheme ? "Dark.png" : "Light.png";
 
-            GitLabLogo = LoadBitmap($"{basePath}Logo_GitLab_{themeSuffix}?assembly=Ryujinx.UI.Common");
+            ForgejoLogo = LoadBitmap($"{basePath}Logo_Forgejo.png?assembly=Ryujinx.UI.Common");
             DiscordLogo = LoadBitmap($"{basePath}Logo_Discord_{themeSuffix}?assembly=Ryujinx.UI.Common");
         }
 
