@@ -12,7 +12,7 @@ using LibHac.Tools.FsSystem.NcaUtils;
 using LibKenjinx.Android;
 using OpenTK.Audio.OpenAL;
 using Ryujinx.Audio.Backends.Dummy;
-using Ryujinx.Audio.Backends.SDL2;
+using Ryujinx.Audio.Backends.SDL3;
 using Ryujinx.Audio.Integration;
 using Ryujinx.Common.Configuration;
 using Ryujinx.Common.Logging;
@@ -96,7 +96,7 @@ namespace LibKenjinx
 
         public static void InitializeAudio()
         {
-            AudioDriver = new SDL2HardwareDeviceDriver();
+            AudioDriver = new SDL3HardwareDeviceDriver();
         }
 
         public static GameStats GetGameStats()
