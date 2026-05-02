@@ -2067,10 +2067,6 @@ namespace Ryujinx.Ava.UI.ViewModels
 
             Logger.RestartTime();
 
-            SelectedIcon ??= ApplicationLibrary.GetApplicationIcon(application.Path, ConfigurationState.Instance.System.Language, application.Id);
-
-            PrepareLoadScreen();
-
             RendererHostControl = new RendererHost();
 
             AppHost = new AppHost(
@@ -2085,17 +2081,33 @@ namespace Ryujinx.Ava.UI.ViewModels
                 this,
                 TopLevel);
 
-            if (!await AppHost.LoadGuestApplication())
+            CancellationTokenSource cts = new CancellationTokenSource();
+
+            try
             {
+                await AppHost.LoadGuestApplication(cts);
+            }
+            catch (OperationCanceledException exception)
+            {
+                Logger.Info?.Print(LogClass.Application,
+                    "LoadGuestApplication was interrupted !!! " + exception.Message);
                 AppHost.DisposeContext();
                 AppHost = null;
-
                 return;
+            }
+            finally
+            {
+                cts.Dispose();
             }
 
             CanUpdate = false;
 
             LoadHeading = application.Name;
+
+            SelectedIcon ??= ApplicationLibrary.GetApplicationIcon(application.Path,
+                ConfigurationState.Instance.System.Language, application.Id);
+
+            PrepareLoadScreen();
 
             if (string.IsNullOrWhiteSpace(application.Name))
             {
