@@ -341,6 +341,10 @@ namespace Ryujinx.Graphics.Shader
         {
             return true;
         }
+        bool QueryHostSupportsShaderNonUniformIndexing()
+        {
+            return false;
+        }
 
         /// <summary>
         /// Queries host GPU support for signed normalized buffer texture formats.

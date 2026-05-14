@@ -597,6 +597,8 @@ namespace Ryujinx.Graphics.Vulkan
                 UniformAndStorageBuffer8BitAccess = supportedPhysicalDeviceVulkan12Features.UniformAndStorageBuffer8BitAccess,
                 StorageBuffer8BitAccess = supportedPhysicalDeviceVulkan12Features.StorageBuffer8BitAccess,
                 StoragePushConstant8 = supportedPhysicalDeviceVulkan12Features.StoragePushConstant8,
+                ShaderSampledImageArrayNonUniformIndexing = supportedPhysicalDeviceVulkan12Features.ShaderSampledImageArrayNonUniformIndexing,
+                ShaderStorageImageArrayNonUniformIndexing = supportedPhysicalDeviceVulkan12Features.ShaderStorageImageArrayNonUniformIndexing,
             };
 
             pExtendedFeatures = &featuresVk12;
