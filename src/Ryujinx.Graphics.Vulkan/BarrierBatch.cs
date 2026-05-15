@@ -46,7 +46,14 @@ namespace Ryujinx.Graphics.Vulkan
 
         public static (AccessFlags Access, PipelineStageFlags Stages) GetSubpassAccessSuperset(VulkanRenderer gd)
         {
-            AccessFlags access = BufferAccess;
+            AccessFlags access = BufferAccess |
+                AccessFlags.ShaderReadBit |
+                AccessFlags.ShaderWriteBit |
+                AccessFlags.ColorAttachmentReadBit |
+                AccessFlags.ColorAttachmentWriteBit |
+                AccessFlags.DepthStencilAttachmentReadBit |
+                AccessFlags.DepthStencilAttachmentWriteBit;
+
             PipelineStageFlags stages = PipelineStageFlags.AllGraphicsBit;
 
             if (gd.TransformFeedbackApi != null)
@@ -58,7 +65,7 @@ namespace Ryujinx.Graphics.Vulkan
             return (access, stages);
         }
 
-        private readonly record struct StageFlags : IEquatable<StageFlags>
+        private readonly record struct StageFlags
         {
             public readonly PipelineStageFlags Source;
             public readonly PipelineStageFlags Dest;

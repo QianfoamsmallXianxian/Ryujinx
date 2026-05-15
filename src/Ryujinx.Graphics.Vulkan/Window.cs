@@ -351,7 +351,7 @@ namespace Ryujinx.Graphics.Vulkan
         {
             if (availableFormats == null || availableFormats.Length == 0)
             {
-                return new SurfaceFormatKHR(VkFormat.B8G8R8A8Unorm, (ColorSpaceKHR)0);
+                return new SurfaceFormatKHR(VkFormat.B8G8R8A8Unorm, 0);
             }
 
             if (availableFormats.Length == 1 && availableFormats[0].Format == VkFormat.Undefined)
@@ -559,14 +559,14 @@ namespace Ryujinx.Graphics.Vulkan
             {
                 if (_effect != null)
                 {
-                    var emptySems = Array.Empty<Silk.NET.Vulkan.Semaphore>();
-                    var waitStagesCO = new PipelineStageFlags[] { PipelineStageFlags.ColorAttachmentOutputBit };
+                    _gd.FlushAllCommands();
+                    var emptySems = Array.Empty<Semaphore>();
+                    var waitStagesCO = new[] { PipelineStageFlags.ColorAttachmentOutputBit };
                     _gd.CommandBufferPool.Return(
                         cbs,
                         emptySems,
                         waitStagesCO,
                         emptySems);
-                    _gd.FlushAllCommands();
                     cbs.GetFence().Wait();
                     cbs = _gd.CommandBufferPool.Rent();
                 }
@@ -642,10 +642,12 @@ namespace Ryujinx.Graphics.Vulkan
                     ImageLayout.PresentSrcKhr);
             }
 
-            var waitSems = new Silk.NET.Vulkan.Semaphore[] { _imageAvailableSemaphores[semaphoreIndex] };
-            var waitStages = new PipelineStageFlags[] { PipelineStageFlags.ColorAttachmentOutputBit }; // Important on Android
-            var signalSems = new Silk.NET.Vulkan.Semaphore[] { _renderFinishedSemaphores[semaphoreIndex] };
+            var waitSems = new[] { _imageAvailableSemaphores[semaphoreIndex] };
+            var waitStages = new[] { PipelineStageFlags.ColorAttachmentOutputBit }; // Important on Android
+            var signalSems = new[] { _renderFinishedSemaphores[semaphoreIndex] };
             _gd.CommandBufferPool.Return(cbs, waitSems, waitStages, signalSems);
+
+            _gd.FlushAllCommands();
 
             PresentOne(_gd, _renderFinishedSemaphores[semaphoreIndex], _swapchain, nextImage);
 
@@ -654,11 +656,11 @@ namespace Ryujinx.Graphics.Vulkan
 
         private static unsafe void PresentOne(
             VulkanRenderer gd,
-            Silk.NET.Vulkan.Semaphore signal,
+            Semaphore signal,
             SwapchainKHR swapchain,
             uint imageIndex)
         {
-            Silk.NET.Vulkan.Semaphore* pWait = stackalloc Silk.NET.Vulkan.Semaphore[1];
+            Semaphore* pWait = stackalloc Semaphore[1];
             SwapchainKHR* pSwap = stackalloc SwapchainKHR[1];
             uint* pImageIndex = stackalloc uint[1];
 
