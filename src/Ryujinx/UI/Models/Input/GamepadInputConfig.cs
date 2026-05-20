@@ -19,6 +19,7 @@ namespace Ryujinx.Ava.UI.Models.Input
 
         public float WeakRumble { get; set; }
         public float StrongRumble { get; set; }
+        public bool UseHDRumble { get; set; }
 
         public string Id { get; set; }
         public ControllerType ControllerType { get; set; }
@@ -482,6 +483,7 @@ namespace Ryujinx.Ava.UI.Models.Input
                     EnableRumble = controllerInput.Rumble.EnableRumble;
                     WeakRumble = controllerInput.Rumble.WeakRumble;
                     StrongRumble = controllerInput.Rumble.StrongRumble;
+                    UseHDRumble = controllerInput.Rumble.UseHDRumble;
                 }
             }
         }
@@ -539,6 +541,7 @@ namespace Ryujinx.Ava.UI.Models.Input
                     EnableRumble = EnableRumble,
                     WeakRumble = WeakRumble,
                     StrongRumble = StrongRumble,
+                    UseHDRumble = UseHDRumble,
                 },
                 Version = InputConfig.CurrentVersion,
                 DeadzoneLeft = DeadzoneLeft,

@@ -23,5 +23,16 @@ namespace Ryujinx.Ava.UI.ViewModels.Input
                 OnPropertyChanged();
             }
         }
+
+        private bool _enableHDRumble;
+        public bool EnableHDRumble
+        {
+            get => _enableHDRumble;
+            set
+            {
+                _enableHDRumble = value;
+                OnPropertyChanged();
+            }
+        }
     }
 }

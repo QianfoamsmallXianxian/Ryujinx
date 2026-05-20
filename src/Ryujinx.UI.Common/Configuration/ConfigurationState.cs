@@ -1323,6 +1323,7 @@ namespace Ryujinx.UI.Common.Configuration
                             EnableRumble = false,
                             StrongRumble = 1f,
                             WeakRumble = 1f,
+                            UseHDRumble = true
                         };
                     }
                 }
