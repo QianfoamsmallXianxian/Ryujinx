@@ -37,6 +37,7 @@ namespace Ryujinx.Ava
 
         private const uint MbIconwarning = 0x30;
 
+        [STAThread]
         public static void Main(string[] args)
         {
             Version = ReleaseInformation.Version;
