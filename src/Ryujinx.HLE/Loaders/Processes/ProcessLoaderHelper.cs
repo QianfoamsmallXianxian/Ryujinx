@@ -456,6 +456,7 @@ namespace Ryujinx.HLE.Loaders.Processes
                 allowCodeMemoryForJit,
                 processContextFactory.DiskCacheLoadState,
                 process.Pid,
+                programIndex,
                 meta.MainThreadPriority,
                 meta.MainThreadStackSize,
                 device.System.State.DesiredTitleLanguage);
