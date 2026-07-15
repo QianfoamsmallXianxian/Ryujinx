@@ -111,7 +111,7 @@ namespace Ryujinx.Ava.UI.Views.User
 
             var resizedBitmap = bitmap.Resize(new SKImageInfo(256, 256), SKFilterQuality.High);
 
-            using var streamJpg = new MemoryStream();
+            using MemoryStream streamJpg = new();
 
             if (resizedBitmap != null)
             {

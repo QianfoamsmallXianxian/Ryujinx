@@ -74,7 +74,7 @@ namespace Ryujinx.Cpu.Nce
 
             _context = new NceNativeContext();
 
-            ref var storage = ref _context.GetStorage();
+            ref NceNativeContext.NativeCtxStorage storage = ref _context.GetStorage();
             storage.SvcCallHandler = svcHandlerPtr;
             storage.InManaged = 1u;
             storage.CtrEl0 = 0x8444c004; // TODO: Get value from host CPU instead of using guest one?
@@ -99,7 +99,7 @@ namespace Ryujinx.Cpu.Nce
 
         public void SetStartAddress(ulong address)
         {
-            ref var storage = ref _context.GetStorage();
+            ref NceNativeContext.NativeCtxStorage storage = ref _context.GetStorage();
             storage.X[30] = address;
             storage.HostThreadHandle = NceThreadPal.GetCurrentThreadHandle();
 

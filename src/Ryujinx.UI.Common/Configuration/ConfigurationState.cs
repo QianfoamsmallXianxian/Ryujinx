@@ -1787,7 +1787,7 @@ namespace Ryujinx.UI.Common.Configuration
             bool didPathUpdate = false;
 
             { // Game dirs
-                foreach (var gameDir in UI.GameDirs.Value)
+                foreach (string gameDir in UI.GameDirs.Value)
                 {
                     if (Directory.Exists(gameDir))
                     {
@@ -1806,7 +1806,7 @@ namespace Ryujinx.UI.Common.Configuration
             existingDirs.Clear();
 
             { // Autoload dirs
-                foreach (var autoloadDir in UI.AutoloadDirs.Value)
+                foreach (string autoloadDir in UI.AutoloadDirs.Value)
                 {
                     if (Directory.Exists(autoloadDir))
                     {

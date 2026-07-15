@@ -163,17 +163,17 @@ namespace Ryujinx.Cpu.Nce
                 return Enumerable.Empty<HostMemoryRange>();
             }
 
-            var guestRegions = GetPhysicalRegionsImpl(va, size);
+            List<MemoryRange> guestRegions = GetPhysicalRegionsImpl(va, size);
             if (guestRegions == null)
             {
                 return null;
             }
 
-            var regions = new HostMemoryRange[guestRegions.Count];
+            HostMemoryRange[] regions = new HostMemoryRange[guestRegions.Count];
 
             for (int i = 0; i < regions.Length; i++)
             {
-                var guestRegion = guestRegions[i];
+                MemoryRange guestRegion = guestRegions[i];
                 nint pointer = _backingMemory.GetPointer(guestRegion.Address, guestRegion.Size);
                 regions[i] = new HostMemoryRange((nuint)(ulong)pointer, guestRegion.Size);
             }
@@ -201,7 +201,7 @@ namespace Ryujinx.Cpu.Nce
 
             int pages = GetPagesCount(va, (uint)size, out va);
 
-            var regions = new List<MemoryRange>();
+            List<MemoryRange> regions = new();
 
             ulong regionStart = GetPhysicalAddressInternal(va);
             ulong regionSize = PageSize;

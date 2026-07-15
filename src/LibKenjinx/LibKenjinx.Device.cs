@@ -59,7 +59,7 @@ namespace LibKenjinx
 
         public static string GetInstalledFirmwareVersion()
         {
-            var version = SwitchDevice?.ContentManager?.GetCurrentFirmwareVersion();
+            SystemVersion? version = SwitchDevice?.ContentManager?.GetCurrentFirmwareVersion();
 
             if (version != null)
             {
@@ -76,7 +76,7 @@ namespace LibKenjinx
 
         public static bool LoadApplication(Stream stream, FileType type, Stream? updateStream = null)
         {
-            var emulationContext = SwitchDevice?.EmulationContext;
+            Switch? emulationContext = SwitchDevice?.EmulationContext;
             
             return type switch
             {
@@ -97,7 +97,7 @@ namespace LibKenjinx
 
         public static bool LoadApplication(string? path)
         {
-            var emulationContext = SwitchDevice?.EmulationContext;
+            Switch? emulationContext = SwitchDevice?.EmulationContext;
 
             if (Directory.Exists(path))
             {
@@ -249,7 +249,7 @@ namespace LibKenjinx
 
         private static FileStream OpenFile(int descriptor)
         {
-            var safeHandle = new SafeFileHandle(descriptor, false);
+            SafeFileHandle safeHandle = new(descriptor, false);
 
             return new FileStream(safeHandle, FileAccess.ReadWrite);
         }

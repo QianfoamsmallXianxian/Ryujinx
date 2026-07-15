@@ -30,8 +30,8 @@ namespace LibKenjinx
 
             if (_loadedLibrary != nint.Zero)
             {
-                var instanceGetProc = NativeLibrary.GetExport(_loadedLibrary, "vkGetInstanceProcAddr");
-                var deviceProc = NativeLibrary.GetExport(_loadedLibrary, "vkGetDeviceProcAddr");
+                IntPtr instanceGetProc = NativeLibrary.GetExport(_loadedLibrary, "vkGetInstanceProcAddr");
+                IntPtr deviceProc = NativeLibrary.GetExport(_loadedLibrary, "vkGetDeviceProcAddr");
 
                 _getInstanceProcAddr = Marshal.GetDelegateForFunctionPointer<GetInstanceProcAddress>(instanceGetProc);
                 _getDeviceProcAddr = Marshal.GetDelegateForFunctionPointer<GetDeviceProcAddress>(deviceProc);
@@ -45,13 +45,13 @@ namespace LibKenjinx
             {
                 return Vk.GetApi();
             }
-            var ctx = new MultiNativeContext(new INativeContext[1]);
-            var ret = new Vk(ctx);
+            MultiNativeContext? ctx = new(new INativeContext[1]);
+            Vk ret = new Vk(ctx);
             ctx.Contexts[0] = new LamdaNativeContext
             (
                 x =>
                 {
-                    var xPtr = Marshal.StringToHGlobalAnsi(x);
+                    IntPtr xPtr = Marshal.StringToHGlobalAnsi(x);
                     byte* xp = (byte*)xPtr;
                     try
                     {
@@ -64,7 +64,7 @@ namespace LibKenjinx
 
                             if (ptr == 0)
                             {
-                                var currentDevice = ret.CurrentDevice.GetValueOrDefault().Handle;
+                                IntPtr currentDevice = ret.CurrentDevice.GetValueOrDefault().Handle;
                                 if (currentDevice != nint.Zero)
                                 {
                                     ptr = _getDeviceProcAddr(currentDevice, xPtr);

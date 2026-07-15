@@ -92,10 +92,10 @@ namespace LibKenjinx
 
         public static int ConnectGamepad(int index)
         {
-            var gamepad = _gamepadDriver?.GetGamepad(index);
+            IGamepad? gamepad = _gamepadDriver?.GetGamepad(index);
             if (gamepad != null)
             {
-                var config = CreateDefaultInputConfig();
+                InputConfig config = CreateDefaultInputConfig();
 
                 config.Id = gamepad.Id;
                 config.PlayerIndex = (PlayerIndex)index;
@@ -105,7 +105,7 @@ namespace LibKenjinx
 
             _npadManager?.ReloadConfiguration(_configs.Where(x => x != null).ToList(), false, false);
 
-            return int.TryParse(gamepad?.Id, out var idInt) ? idInt : -1;
+            return int.TryParse(gamepad?.Id, out int idInt) ? idInt : -1;
         }
 
         private static InputConfig CreateDefaultInputConfig()
@@ -356,7 +356,7 @@ namespace LibKenjinx
             if (disposing)
             {
                 // Simulate a full disconnect when disposing
-                var ids = GamepadsIds;
+                ReadOnlySpan<string> ids = GamepadsIds;
                 foreach (string id in ids)
                 {
                     OnGamepadDisconnected?.Invoke(id);
@@ -381,7 +381,7 @@ namespace LibKenjinx
 
         public void SetStickAxis(StickInputId stick, Vector2 axes, int deviceId)
         {
-            if(_gamePads.TryGetValue(deviceId, out var gamePad))
+            if(_gamePads.TryGetValue(deviceId, out VirtualGamepad? gamePad))
             {
                 gamePad.StickInputs[(int)stick] = axes;
             }
@@ -389,7 +389,7 @@ namespace LibKenjinx
 
         public void SetButtonPressed(GamepadButtonInputId button, int deviceId)
         {
-            if (_gamePads.TryGetValue(deviceId, out var gamePad))
+            if (_gamePads.TryGetValue(deviceId, out VirtualGamepad? gamePad))
             {
                 gamePad.ButtonInputs[(int)button] = true;
             }
@@ -397,7 +397,7 @@ namespace LibKenjinx
 
         public void SetButtonReleased(GamepadButtonInputId button, int deviceId)
         {
-            if (_gamePads.TryGetValue(deviceId, out var gamePad))
+            if (_gamePads.TryGetValue(deviceId, out VirtualGamepad? gamePad))
             {
                 gamePad.ButtonInputs[(int)button] = false;
             }
@@ -405,7 +405,7 @@ namespace LibKenjinx
 
         public void SetAccelerometerData(Vector3 accel, int deviceId)
         {
-            if (_gamePads.TryGetValue(deviceId, out var gamePad))
+            if (_gamePads.TryGetValue(deviceId, out VirtualGamepad? gamePad))
             {
                 gamePad.Accelerometer = accel;
             }
@@ -413,7 +413,7 @@ namespace LibKenjinx
 
         public void SetGryoData(Vector3 gyro, int deviceId)
         {
-            if (_gamePads.TryGetValue(deviceId, out var gamePad))
+            if (_gamePads.TryGetValue(deviceId, out VirtualGamepad? gamePad))
             {
                 gamePad.Gyro = gyro;
             }
@@ -458,7 +458,7 @@ namespace LibKenjinx
 
         public (float, float) GetStick(StickInputId inputId)
         {
-            var v = _stickInputs[(int)inputId];
+            Vector2 v = _stickInputs[(int)inputId];
 
             return (v.X, v.Y);
         }
@@ -496,7 +496,7 @@ namespace LibKenjinx
         {
             GamepadStateSnapshot result = default;
 
-            foreach (var button in Enum.GetValues<GamepadButtonInputId>())
+            foreach (GamepadButtonInputId button in Enum.GetValues<GamepadButtonInputId>())
             {
                 // Do not touch state of button already pressed
                 if (button != GamepadButtonInputId.Count && !result.IsPressed(button))

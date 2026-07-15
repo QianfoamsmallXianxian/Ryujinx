@@ -1230,9 +1230,9 @@ namespace Ryujinx.Ava.UI.ViewModels
                         appsCopy = new List<ApplicationData>(Applications);
                     }
 
-                    var tempApplications = new List<ApplicationData>();
+                    List<ApplicationData> tempApplications = new();
 
-                    foreach (var app in appsCopy)
+                    foreach (ApplicationData app in appsCopy)
                     {
                         if (Filter(app))
                         {
@@ -1242,7 +1242,7 @@ namespace Ryujinx.Ava.UI.ViewModels
 
                     tempApplications.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
 
-                    foreach (var application in tempApplications)
+                    foreach (ApplicationData application in tempApplications)
                     {
                         try
                         {
@@ -1655,9 +1655,9 @@ namespace Ryujinx.Ava.UI.ViewModels
             if (result.Count > 0)
             {
                 var dirs = result.Select(it => it.Path.LocalPath).ToList();
-                var numAdded = onDirsSelected(dirs, out int numRemoved);
+                int numAdded = onDirsSelected(dirs, out int numRemoved);
 
-                var msg = String.Join("\r\n", new string[] {
+                string msg = String.Join("\r\n", new string[] {
                     string.Format(LocaleManager.Instance[localeMessageRemovedKey], numRemoved),
                     string.Format(LocaleManager.Instance[localeMessageAddedKey], numAdded)
                 });
@@ -1689,17 +1689,17 @@ namespace Ryujinx.Ava.UI.ViewModels
 
         public void LoadConfigurableHotKeys()
         {
-            if (AvaloniaKeyboardMappingHelper.TryGetAvaKey((Key)ConfigurationState.Instance.Hid.Hotkeys.Value.ShowUI, out var showUiKey))
+            if (AvaloniaKeyboardMappingHelper.TryGetAvaKey((Key)ConfigurationState.Instance.Hid.Hotkeys.Value.ShowUI, out Avalonia.Input.Key showUiKey))
             {
                 ShowUiKey = new KeyGesture(showUiKey);
             }
 
-            if (AvaloniaKeyboardMappingHelper.TryGetAvaKey((Key)ConfigurationState.Instance.Hid.Hotkeys.Value.Screenshot, out var screenshotKey))
+            if (AvaloniaKeyboardMappingHelper.TryGetAvaKey((Key)ConfigurationState.Instance.Hid.Hotkeys.Value.Screenshot, out Avalonia.Input.Key screenshotKey))
             {
                 ScreenshotKey = new KeyGesture(screenshotKey);
             }
 
-            if (AvaloniaKeyboardMappingHelper.TryGetAvaKey((Key)ConfigurationState.Instance.Hid.Hotkeys.Value.Pause, out var pauseKey))
+            if (AvaloniaKeyboardMappingHelper.TryGetAvaKey((Key)ConfigurationState.Instance.Hid.Hotkeys.Value.Pause, out Avalonia.Input.Key pauseKey))
             {
                 PauseKey = new KeyGesture(pauseKey);
             }
@@ -2081,7 +2081,7 @@ namespace Ryujinx.Ava.UI.ViewModels
                 this,
                 TopLevel);
 
-            CancellationTokenSource cts = new CancellationTokenSource();
+            CancellationTokenSource cts = new();
 
             try
             {
@@ -2370,16 +2370,16 @@ namespace Ryujinx.Ava.UI.ViewModels
                 return;
             }
 
-            var trimmer = new XCIFileTrimmer(filename, new XCIFileTrimmerMainWindowLog(this));
+            XCIFileTrimmer trimmer = new(filename, new XCIFileTrimmerMainWindowLog(this));
 
             if (trimmer.CanBeTrimmed)
             {
-                var savings = (double)trimmer.DiskSpaceSavingsB / 1024.0 / 1024.0;
-                var currentFileSize = (double)trimmer.FileSizeB / 1024.0 / 1024.0;
-                var cartDataSize = (double)trimmer.DataSizeB / 1024.0 / 1024.0;
+                double savings = (double)trimmer.DiskSpaceSavingsB / 1024.0 / 1024.0;
+                double currentFileSize = (double)trimmer.FileSizeB / 1024.0 / 1024.0;
+                double cartDataSize = (double)trimmer.DataSizeB / 1024.0 / 1024.0;
                 string secondaryText = LocaleManager.Instance.UpdateAndGetDynamicValue(LocaleKeys.TrimXCIFileDialogSecondaryText, currentFileSize, cartDataSize, savings);
 
-                var result = await ContentDialogHelper.CreateConfirmationDialog(
+                UserResult result = await ContentDialogHelper.CreateConfirmationDialog(
                     LocaleManager.Instance[LocaleKeys.TrimXCIFileDialogPrimaryText],
                     secondaryText,
                     LocaleManager.Instance[LocaleKeys.Continue],

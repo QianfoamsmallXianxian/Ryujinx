@@ -125,7 +125,7 @@ namespace Ryujinx.HLE.HOS.Services.Nv.NvDrvServices.NvHostAsGpu.Types
 
         public void Close()
         {
-            foreach (var map in _maps.Values)
+            foreach (Range map in _maps.Values)
             {
                 Gmm.Unmap(map.Start, map.End - map.Start);
             }

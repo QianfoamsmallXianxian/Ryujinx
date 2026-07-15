@@ -1,5 +1,6 @@
 // State class for the library
 using Gommon;
+using LibHac;
 using LibHac.Account;
 using LibHac.Common;
 using LibHac.Common.Keys;
@@ -18,6 +19,7 @@ using Ryujinx.Common.Configuration;
 using Ryujinx.Common.Logging;
 using Ryujinx.Common.Logging.Targets;
 using Ryujinx.Common.Utilities;
+using Ryujinx.Graphics.GAL;
 using Ryujinx.Graphics.GAL.Multithreading;
 using Ryujinx.HLE;
 using Ryujinx.HLE.Kenjinx;
@@ -38,7 +40,9 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
+using ApplicationId = LibHac.Ncm.ApplicationId;
 using Path = System.IO.Path;
+using VSyncMode = Ryujinx.Common.Configuration.VSyncMode;
 
 namespace LibKenjinx
 {
@@ -105,7 +109,7 @@ namespace LibKenjinx
             {
                 return new GameStats();
             }
-            var context = SwitchDevice.EmulationContext;
+            Switch? context = SwitchDevice.EmulationContext;
 
             return new GameStats
             {
@@ -124,7 +128,7 @@ namespace LibKenjinx
 
             Logger.Info?.Print(LogClass.Application, $"Getting game info for file: {file}");
 
-            using var stream = File.Open(file, FileMode.Open);
+            using FileStream stream = File.Open(file, FileMode.Open);
 
             return GetGameInfo(stream, new FileInfo(file).Extension.Remove('.'));
         }
@@ -160,7 +164,7 @@ namespace LibKenjinx
                         }
                         else
                         {
-                            var pfsTemp = new PartitionFileSystem();
+                            PartitionFileSystem pfsTemp = new();
                             pfsTemp.Initialize(gameStream.AsStorage()).ThrowIfFailure();
                             pfs = pfsTemp;
 
@@ -256,7 +260,7 @@ namespace LibKenjinx
                                         continue;
                                     }
 
-                                    using var icon = new UniqueRef<IFile>();
+                                    using UniqueRef<IFile> icon = new();
 
                                     controlFs?.OpenFile(ref icon.Ref, entry.FullPath.ToU8Span(), OpenMode.Read).ThrowIfFailure();
 
@@ -434,7 +438,7 @@ namespace LibKenjinx
 
                 foreach (DirectoryEntryEx fileEntry in pfs.EnumerateEntries("/", "*.nca"))
                 {
-                    using var ncaFile = new UniqueRef<IFile>();
+                    using UniqueRef<IFile> ncaFile = new();
 
                     pfs.OpenFile(ref ncaFile.Ref, fileEntry.FullPath.ToU8Span(), OpenMode.Read).ThrowIfFailure();
 
@@ -531,7 +535,7 @@ namespace LibKenjinx
                             }
                             else
                             {
-                                var pfsTemp = new PartitionFileSystem();
+                                PartitionFileSystem pfsTemp = new();
 
                                 pfsTemp.Initialize(file.AsStorage()).ThrowIfFailure();
                                 pfs = pfsTemp;
@@ -554,7 +558,7 @@ namespace LibKenjinx
 
                 foreach (DirectoryEntryEx fileEntry in pfs.EnumerateEntries("/", "*.nca"))
                 {
-                    using var ncaFile = new UniqueRef<IFile>();
+                    using UniqueRef<IFile> ncaFile = new();
 
                     pfs.OpenFile(ref ncaFile.Ref, fileEntry.FullPath.ToU8Span(), OpenMode.Read).ThrowIfFailure();
 
@@ -656,7 +660,7 @@ namespace LibKenjinx
 
             foreach (DirectoryEntryEx fileEntry in partitionFileSystem.EnumerateEntries("/", "*.nca"))
             {
-                using var ncaFile = new UniqueRef<IFile>();
+                using UniqueRef<IFile> ncaFile = new();
 
                 partitionFileSystem.OpenFile(ref ncaFile.Ref, fileEntry.FullPath.ToU8Span(), OpenMode.Read).ThrowIfFailure();
 
@@ -705,7 +709,7 @@ namespace LibKenjinx
                 return false;
             }
 
-            var dev = SwitchDevice?.EmulationContext;
+            Switch? dev = SwitchDevice?.EmulationContext;
             if (dev == null)
             {
                 Logger.Warning?.Print(LogClass.Service, "[Amiibo] Load aborted: no active EmulationContext.");
@@ -714,7 +718,7 @@ namespace LibKenjinx
 
             try
             {
-                var ok = AmiiboBridge.TryLoadVirtualAmiibo(dev, data, out string msg);
+                bool ok = AmiiboBridge.TryLoadVirtualAmiibo(dev, data, out string msg);
                 if (ok)
                     Logger.Info?.Print(LogClass.Service, $"[Amiibo] Loaded {data.Length} bytes. {msg}");
                 else
@@ -730,7 +734,7 @@ namespace LibKenjinx
 
         public static void AmiiboClear()
         {
-            var dev = SwitchDevice?.EmulationContext;
+            Switch? dev = SwitchDevice?.EmulationContext;
             if (dev == null)
             {
                 Logger.Warning?.Print(LogClass.Service, "[Amiibo] Clear aborted: no active EmulationContext.");
@@ -879,7 +883,7 @@ namespace LibKenjinx
                 return false;
             }
 
-            var renderer = LibKenjinx.Renderer;
+            IRenderer renderer = LibKenjinx.Renderer;
             BackendThreading threadingMode = LibKenjinx.GraphicsConfiguration.BackendThreading;
 
             bool threadedGAL = threadingMode == BackendThreading.On || (threadingMode == BackendThreading.Auto && renderer.PreferThreading);
@@ -931,7 +935,7 @@ namespace LibKenjinx
 
         public void CreateSaveDir(ulong titleId, BlitStruct<LibHac.Ns.ApplicationControlProperty> nacpData)
         {
-            var applicationId = new LibHac.Ncm.ApplicationId(titleId);
+            ApplicationId applicationId = new(titleId);
 
             Logger.Info?.Print(LogClass.Application, $"Ensuring required savedata exists for title id: {titleId}.");
 
@@ -964,7 +968,7 @@ namespace LibKenjinx
             // Call existing Horizon APIs to create/secure the saves
             if (LibHacHorizonManager != null)
             {
-                var rc = LibHacHorizonManager.RyujinxClient.Fs.EnsureApplicationCacheStorage(out _, out _, applicationId, in control);
+                Result rc = LibHacHorizonManager.RyujinxClient.Fs.EnsureApplicationCacheStorage(out _, out _, applicationId, in control);
                 if (rc.IsFailure())
                 {
                     Logger.Error?.Print(LogClass.Application, $"Error calling EnsureApplicationCacheStorage. Result code {rc.ToStringWithName()}");
@@ -988,10 +992,10 @@ namespace LibKenjinx
             {
                 Directory.CreateDirectory(savesRoot);
 
-                var after = Directory.GetDirectories(savesRoot);
-                var beforeSet = new HashSet<string>(before, StringComparer.OrdinalIgnoreCase);
+                string[] after = Directory.GetDirectories(savesRoot);
+                HashSet<string> beforeSet = new(before, StringComparer.OrdinalIgnoreCase);
 
-                foreach (var d in after)
+                foreach (string d in after)
                 {
                     if (!beforeSet.Contains(d))
                     {
@@ -1053,28 +1057,28 @@ namespace LibKenjinx
             string mapPath = Path.Combine(savesRoot, "titleid_map.ndjson");
 
             // titleId (lowercase) -> (Name, Folder, Timestamp)
-            var byTitleId = new Dictionary<string, (string Name, string Folder, string Timestamp)>(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, (string Name, string Folder, string Timestamp)> byTitleId = new(StringComparer.OrdinalIgnoreCase);
 
             // Read existing file
             try
             {
                 if (File.Exists(mapPath))
                 {
-                    foreach (var line in File.ReadLines(mapPath, Encoding.UTF8))
+                    foreach (string line in File.ReadLines(mapPath, Encoding.UTF8))
                     {
                         if (string.IsNullOrWhiteSpace(line)) continue;
 
                         try
                         {
-                            using var doc = JsonDocument.Parse(line);
-                            var root = doc.RootElement;
+                            using JsonDocument doc = JsonDocument.Parse(line);
+                            JsonElement root = doc.RootElement;
 
-                            string tid = root.TryGetProperty("titleId", out var tidEl) ? (tidEl.GetString() ?? "").Trim() : "";
+                            string tid = root.TryGetProperty("titleId", out JsonElement tidEl) ? (tidEl.GetString() ?? "").Trim() : "";
                             if (string.IsNullOrEmpty(tid)) continue;
 
-                            string name    = root.TryGetProperty("name", out var nameEl)       ? (nameEl.GetString()    ?? "") : "";
-                            string folder  = root.TryGetProperty("folder", out var folderEl)   ? (folderEl.GetString()  ?? "") : "";
-                            string ts      = root.TryGetProperty("timestamp", out var tsEl)    ? (tsEl.GetString()      ?? "") : "";
+                            string name    = root.TryGetProperty("name", out JsonElement nameEl)       ? (nameEl.GetString()    ?? "") : "";
+                            string folder  = root.TryGetProperty("folder", out JsonElement folderEl)   ? (folderEl.GetString()  ?? "") : "";
+                            string ts      = root.TryGetProperty("timestamp", out JsonElement tsEl)    ? (tsEl.GetString()      ?? "") : "";
 
                             byTitleId[tid.ToLowerInvariant()] = (name, folder, ts);
                         }
@@ -1090,11 +1094,11 @@ namespace LibKenjinx
                 byTitleId.Clear();
             }
 
-            var nowIso   = DateTime.UtcNow.ToString("O");
-            var titleIdLc = (titleIdHex ?? string.Empty).ToLowerInvariant();
+            string nowIso   = DateTime.UtcNow.ToString("O");
+            string titleIdLc = (titleIdHex ?? string.Empty).ToLowerInvariant();
 
             // 1) take existing folder if known
-            byTitleId.TryGetValue(titleIdLc, out var existing);
+            byTitleId.TryGetValue(titleIdLc, out (string Name, string Folder, string Timestamp) existing);
             string existingFolder = existing.Folder ?? "";
 
             // 2) figure out effective folder
@@ -1136,7 +1140,7 @@ namespace LibKenjinx
             // 5) rewrite file (stable: sort by titleId)
             try
             {
-                var ordered = byTitleId
+                IEnumerable<string> ordered = byTitleId
                     .OrderBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase)
                     .Select(kv =>
                         $"{{\"titleId\":\"{EscapeJson(kv.Key)}\",\"name\":\"{EscapeJson(kv.Value.Name)}\"," +
@@ -1160,14 +1164,14 @@ namespace LibKenjinx
             {
                 if (!Directory.Exists(savesRoot)) return null;
 
-                foreach (var dir in Directory.GetDirectories(savesRoot))
+                foreach (string dir in Directory.GetDirectories(savesRoot))
                 {
                     string marker = Path.Combine(dir, "TITLEID.txt");
                     if (!File.Exists(marker)) continue;
 
                     try
                     {
-                        using var sr = new StreamReader(marker, Encoding.UTF8, true);
+                        using StreamReader sr = new(marker, Encoding.UTF8, true);
                         string? first = sr.ReadLine()?.Trim().ToLowerInvariant();
                         if (first == titleIdLc)
                         {
@@ -1199,7 +1203,7 @@ namespace LibKenjinx
                 int idx = (int)Language.AmericanEnglish;
                 if (control.Title.Length > idx)
                 {
-                    var s = control.Title[idx].NameString.ToString();
+                    string? s = control.Title[idx].NameString.ToString();
                     if (!string.IsNullOrWhiteSpace(s)) return s;
                 }
 

@@ -631,7 +631,7 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
                 return result;
             }
 
-            using var _ = new OnScopeExit(() => pageList.DecrementPagesReferenceCount(Context.MemoryManager));
+            using OnScopeExit _ = new(() => pageList.DecrementPagesReferenceCount(Context.MemoryManager));
 
             return MapPages(address, pageList, permission, MemoryMapFlags.Private);
         }
@@ -783,7 +783,7 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
 
                     Result result = region.AllocatePages(out KPageList pageList, pagesCount);
 
-                    using var _ = new OnScopeExit(() => pageList.DecrementPagesReferenceCount(Context.MemoryManager));
+                    using OnScopeExit _ = new(() => pageList.DecrementPagesReferenceCount(Context.MemoryManager));
 
                     void CleanUpForError()
                     {
@@ -1355,7 +1355,7 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
 
                 Result result = region.AllocatePages(out KPageList pageList, remainingPages);
 
-                using var _ = new OnScopeExit(() => pageList.DecrementPagesReferenceCount(Context.MemoryManager));
+                using OnScopeExit _ = new(() => pageList.DecrementPagesReferenceCount(Context.MemoryManager));
 
                 void CleanUpForError()
                 {
@@ -1887,7 +1887,7 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
             ulong dstLastPagePa = 0;
             ulong currentVa = va;
 
-            using var _ = new OnScopeExit(() =>
+            using OnScopeExit _ = new(() =>
             {
                 if (dstFirstPagePa != 0)
                 {
@@ -1948,7 +1948,7 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
                     Context.Memory.Fill(GetDramAddressFromPa(dstFirstPagePa), unusedSizeBefore, (byte)_ipcFillValue);
 
                     ulong copySize = addressRounded <= endAddr ? addressRounded - address : size;
-                    var data = srcPageTable.GetReadOnlySequence(addressTruncated + unusedSizeBefore, (int)copySize);
+                    ReadOnlySequence<byte> data = srcPageTable.GetReadOnlySequence(addressTruncated + unusedSizeBefore, (int)copySize);
 
                     ((IWritableBlock)Context.Memory).Write(GetDramAddressFromPa(dstFirstPagePa + unusedSizeBefore), data);
 
@@ -2014,7 +2014,7 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
                 if (send)
                 {
                     ulong copySize = endAddr - endAddrTruncated;
-                    var data = srcPageTable.GetReadOnlySequence(endAddrTruncated, (int)copySize);
+                    ReadOnlySequence<byte> data = srcPageTable.GetReadOnlySequence(endAddrTruncated, (int)copySize);
 
                     ((IWritableBlock)Context.Memory).Write(GetDramAddressFromPa(dstLastPagePa), data);
 

@@ -18,11 +18,11 @@ namespace Ryujinx.UI.Common.Helper
             iconPath += ".ico";
 
             MemoryStream iconDataStream = new(iconData);
-            using var image = SKBitmap.Decode(iconDataStream);
+            using SKBitmap image = SKBitmap.Decode(iconDataStream);
             image.Resize(new SKImageInfo(128, 128), SKFilterQuality.High);
             SaveBitmapAsIcon(image, iconPath);
 
-            var shortcut = Shortcut.CreateShortcut(basePath, GetArgsString(applicationFilePath, applicationId), iconPath, 0);
+            Shortcut shortcut = Shortcut.CreateShortcut(basePath, GetArgsString(applicationFilePath, applicationId), iconPath, 0);
             shortcut.StringData.NameString = cleanedAppName;
             shortcut.WriteToFile(Path.Combine(desktopPath, cleanedAppName + ".lnk"));
         }
@@ -31,12 +31,12 @@ namespace Ryujinx.UI.Common.Helper
         private static void CreateShortcutLinux(string applicationFilePath, string applicationId, byte[] iconData, string iconPath, string desktopPath, string cleanedAppName)
         {
             string basePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Ryujinx.sh");
-            var desktopFile = EmbeddedResources.ReadAllText("Ryujinx.UI.Common/shortcut-template.desktop");
+            string desktopFile = EmbeddedResources.ReadAllText("Ryujinx.UI.Common/shortcut-template.desktop");
             iconPath += ".png";
 
-            var image = SKBitmap.Decode(iconData);
+            SKBitmap image = SKBitmap.Decode(iconData);
             using var data = image.Encode(SKEncodedImageFormat.Png, 100);
-            using var file = File.OpenWrite(iconPath);
+            using FileStream file = File.OpenWrite(iconPath);
             data.SaveTo(file);
 
             using StreamWriter outputFile = new(Path.Combine(desktopPath, cleanedAppName + ".desktop"));
@@ -47,8 +47,8 @@ namespace Ryujinx.UI.Common.Helper
         private static void CreateShortcutMacos(string appFilePath, string applicationId, byte[] iconData, string desktopPath, string cleanedAppName)
         {
             string basePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Ryujinx");
-            var plistFile = EmbeddedResources.ReadAllText("Ryujinx.UI.Common/shortcut-template.plist");
-            var shortcutScript = EmbeddedResources.ReadAllText("Ryujinx.UI.Common/shortcut-launch-script.sh");
+            string plistFile = EmbeddedResources.ReadAllText("Ryujinx.UI.Common/shortcut-template.plist");
+            string shortcutScript = EmbeddedResources.ReadAllText("Ryujinx.UI.Common/shortcut-launch-script.sh");
             // Macos .App folder
             string contentFolderPath = Path.Combine("/Applications", cleanedAppName + ".app", "Contents");
             string scriptFolderPath = Path.Combine(contentFolderPath, "MacOS");
@@ -77,9 +77,9 @@ namespace Ryujinx.UI.Common.Helper
             }
 
             const string IconName = "icon.png";
-            var image = SKBitmap.Decode(iconData);
+            SKBitmap image = SKBitmap.Decode(iconData);
             using var data = image.Encode(SKEncodedImageFormat.Png, 100);
-            using var file = File.OpenWrite(Path.Combine(resourceFolderPath, IconName));
+            using FileStream file = File.OpenWrite(Path.Combine(resourceFolderPath, IconName));
             data.SaveTo(file);
 
             // plist file
@@ -124,7 +124,7 @@ namespace Ryujinx.UI.Common.Helper
         private static string GetArgsString(string appFilePath, string applicationId)
         {
             // args are first defined as a list, for easier adjustments in the future
-            var argsList = new List<string>();
+            List<string> argsList = new();
 
             if (!string.IsNullOrEmpty(CommandLineState.BaseDirPathArg))
             {

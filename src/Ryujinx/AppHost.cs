@@ -235,8 +235,8 @@ namespace Ryujinx.Ava
 
                 var point = e.GetCurrentPoint(window).Position;
                 var bounds = RendererHost.EmbeddedWindow.Bounds;
-                var windowYOffset = bounds.Y + window.MenuBarHeight;
-                var windowYLimit = (int)window.Bounds.Height - window.StatusBarHeight - 1;
+                double windowYOffset = bounds.Y + window.MenuBarHeight;
+                double windowYLimit = (int)window.Bounds.Height - window.StatusBarHeight - 1;
 
                 if (!_viewModel.ShowMenuAndStatusBar)
                 {
@@ -262,8 +262,8 @@ namespace Ryujinx.Ava
             {
                 var point = e.GetCurrentPoint(window).Position;
                 var bounds = RendererHost.EmbeddedWindow.Bounds;
-                var windowYOffset = bounds.Y + window.MenuBarHeight;
-                var windowYLimit = (int)window.Bounds.Height - window.StatusBarHeight - 1;
+                double windowYOffset = bounds.Y + window.MenuBarHeight;
+                double windowYLimit = (int)window.Bounds.Height - window.StatusBarHeight - 1;
 
                 if (!_viewModel.ShowMenuAndStatusBar)
                 {
@@ -462,7 +462,7 @@ namespace Ryujinx.Ava
         private void SaveBitmapAsPng(SKBitmap bitmap, string path)
         {
             using var data = bitmap.Encode(SKEncodedImageFormat.Png, 100);
-            using var stream = File.OpenWrite(path);
+            using FileStream stream = File.OpenWrite(path);
 
             data.SaveTo(stream);
         }
@@ -922,7 +922,7 @@ namespace Ryujinx.Ava
 
             BackendThreading threadingMode = ConfigurationState.Instance.Graphics.BackendThreading;
 
-            var isGALThreaded = threadingMode == BackendThreading.On || (threadingMode == BackendThreading.Auto && renderer.PreferThreading);
+            bool isGALThreaded = threadingMode == BackendThreading.On || (threadingMode == BackendThreading.Auto && renderer.PreferThreading);
             if (isGALThreaded)
             {
                 renderer = new ThreadedRenderer(renderer);
@@ -931,7 +931,7 @@ namespace Ryujinx.Ava
             Logger.Info?.PrintMsg(LogClass.Gpu, $"Backend Threading ({threadingMode}): {isGALThreaded}");
 
             // Initialize Configuration.
-            var memoryConfiguration = ConfigurationState.Instance.System.DramSize.Value;
+            MemoryConfiguration memoryConfiguration = ConfigurationState.Instance.System.DramSize.Value;
 
             HLEConfiguration configuration = new(VirtualFileSystem,
                                                      _viewModel.LibHacHorizonManager,
@@ -971,7 +971,7 @@ namespace Ryujinx.Ava
 
         private static IHardwareDeviceDriver InitializeAudio()
         {
-            var availableBackends = new List<AudioBackend>
+            List<AudioBackend> availableBackends = new()
             {
                 AudioBackend.SDL3,
                 AudioBackend.SoundIo,

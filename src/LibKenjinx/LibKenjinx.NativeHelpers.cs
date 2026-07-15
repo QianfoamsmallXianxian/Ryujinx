@@ -1,4 +1,5 @@
 using Ryujinx.Common.Configuration;
+using Ryujinx.HLE;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +13,7 @@ namespace LibKenjinx
         private unsafe static nint CreateStringArray(List<string> strings)
         {
             uint size = (uint)(Marshal.SizeOf<nint>() * (strings.Count + 1));
-            var array = (char**)Marshal.AllocHGlobal((int)size);
+            char** array = (char**)Marshal.AllocHGlobal((int)size);
             Unsafe.InitBlockUnaligned(array, 0, size);
 
             for (int i = 0; i < strings.Count; i++)
@@ -25,13 +26,13 @@ namespace LibKenjinx
 
         private static void ApplyFullscreenStretch(bool enable)
         {
-            var ar = enable ? AspectRatio.Stretched : AspectRatio.Fixed16x9;
+            AspectRatio ar = enable ? AspectRatio.Stretched : AspectRatio.Fixed16x9;
 
-            var cfg = GraphicsConfiguration;
+            GraphicsConfiguration cfg = GraphicsConfiguration;
             cfg.AspectRatio = ar;
             GraphicsConfiguration = cfg;
 
-            var dev = SwitchDevice?.EmulationContext;
+            Switch? dev = SwitchDevice?.EmulationContext;
             if (dev != null)
             {
                 try { dev.Configuration.AspectRatio = ar; } catch { }

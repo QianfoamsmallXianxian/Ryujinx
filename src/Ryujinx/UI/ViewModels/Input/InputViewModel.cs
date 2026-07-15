@@ -225,7 +225,7 @@ namespace Ryujinx.Ava.UI.ViewModels.Input
                     return;
                 }
 
-                var selected = Devices[_device].Type;
+                DeviceType selected = Devices[_device].Type;
 
                 if (selected != DeviceType.None)
                 {
@@ -315,7 +315,7 @@ namespace Ryujinx.Ava.UI.ViewModels.Input
             }
             else
             {
-                var type = DeviceType.None;
+                DeviceType type = DeviceType.None;
 
                 if (Config is StandardKeyboardInputConfig)
                 {
@@ -327,7 +327,7 @@ namespace Ryujinx.Ava.UI.ViewModels.Input
                     type = DeviceType.Controller;
                 }
 
-                var item = Devices.FirstOrDefault(x => x.Type == type && x.Id == Config.Id);
+                (DeviceType Type, string Id, string Name) item = Devices.FirstOrDefault(x => x.Type == type && x.Id == Config.Id);
                 if (item != default)
                 {
                     Device = Devices.ToList().FindIndex(x => x.Id == item.Id);
@@ -347,7 +347,7 @@ namespace Ryujinx.Ava.UI.ViewModels.Input
             }
 
             string id = GetCurrentGamepadId();
-            var type = Devices[Device].Type;
+            DeviceType type = Devices[Device].Type;
 
             if (type == DeviceType.None)
             {
@@ -395,7 +395,7 @@ namespace Ryujinx.Ava.UI.ViewModels.Input
                 return string.Empty;
             }
 
-            var device = Devices[Device];
+            (DeviceType Type, string Id, string Name) device = Devices[Device];
 
             if (device.Type == DeviceType.None)
             {
@@ -517,7 +517,7 @@ namespace Ryujinx.Ava.UI.ViewModels.Input
         private string GetProfileBasePath()
         {
             string path = AppDataManager.ProfilesDirPath;
-            var type = Devices[Device == -1 ? 0 : Device].Type;
+            DeviceType type = Devices[Device == -1 ? 0 : Device].Type;
 
             if (type == DeviceType.Keyboard)
             {
@@ -557,7 +557,7 @@ namespace Ryujinx.Ava.UI.ViewModels.Input
 
         public InputConfig LoadDefaultConfiguration()
         {
-            var activeDevice = Devices.FirstOrDefault();
+            (DeviceType Type, string Id, string Name) activeDevice = Devices.FirstOrDefault();
 
             if (Devices.Count > 0 && Device < Devices.Count && Device >= 0)
             {
@@ -857,20 +857,20 @@ namespace Ryujinx.Ava.UI.ViewModels.Input
             }
             else
             {
-                var device = Devices[Device];
+                (DeviceType Type, string Id, string Name) device = Devices[Device];
 
                 if (device.Type == DeviceType.Keyboard)
                 {
-                    var inputConfig = ((KeyboardInputViewModel)ConfigViewModel).Config;
+                    KeyboardInputConfig inputConfig = ((KeyboardInputViewModel)ConfigViewModel).Config;
                     inputConfig.Id = device.Id;
                 }
                 else
                 {
-                    var inputConfig = ((ControllerInputViewModel)ConfigViewModel).Config;
+                    GamepadInputConfig inputConfig = ((ControllerInputViewModel)ConfigViewModel).Config;
                     inputConfig.Id = device.Id.Split(" ")[0];
                 }
 
-                var config = !IsController
+                InputConfig config = !IsController
                     ? ((KeyboardInputViewModel)ConfigViewModel).Config.GetConfig()
                     : ((ControllerInputViewModel)ConfigViewModel).Config.GetConfig();
                 config.ControllerType = Controllers[_controller].Type;

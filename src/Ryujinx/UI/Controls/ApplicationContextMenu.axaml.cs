@@ -34,7 +34,7 @@ namespace Ryujinx.Ava.UI.Controls
 
         public void ToggleFavorite_Click(object sender, RoutedEventArgs args)
         {
-            var viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
+            MainWindowViewModel viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
 
             if (viewModel?.SelectedApplication != null)
             {
@@ -59,14 +59,14 @@ namespace Ryujinx.Ava.UI.Controls
 
         public void OpenDeviceSaveDirectory_Click(object sender, RoutedEventArgs args)
         {
-            var viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
+            MainWindowViewModel viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
 
             OpenSaveDirectory(viewModel, SaveDataType.Device, default);
         }
 
         public void OpenBcatSaveDirectory_Click(object sender, RoutedEventArgs args)
         {
-            var viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
+            MainWindowViewModel viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
 
             OpenSaveDirectory(viewModel, SaveDataType.Bcat, default);
         }
@@ -75,7 +75,7 @@ namespace Ryujinx.Ava.UI.Controls
         {
             if (viewModel?.SelectedApplication != null)
             {
-                var saveDataFilter = SaveDataFilter.Make(viewModel.SelectedApplication.Id, saveDataType, userId, saveDataId: default, index: default);
+                SaveDataFilter saveDataFilter = SaveDataFilter.Make(viewModel.SelectedApplication.Id, saveDataType, userId, saveDataId: default, index: default);
 
                 ApplicationHelper.OpenSaveDir(in saveDataFilter, viewModel.SelectedApplication.Id, viewModel.SelectedApplication.ControlHolder, viewModel.SelectedApplication.Name);
             }
@@ -83,7 +83,7 @@ namespace Ryujinx.Ava.UI.Controls
 
         public async void OpenTitleUpdateManager_Click(object sender, RoutedEventArgs args)
         {
-            var viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
+            MainWindowViewModel viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
 
             if (viewModel?.SelectedApplication != null)
             {
@@ -93,7 +93,7 @@ namespace Ryujinx.Ava.UI.Controls
 
         public async void OpenDownloadableContentManager_Click(object sender, RoutedEventArgs args)
         {
-            var viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
+            MainWindowViewModel viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
 
             if (viewModel?.SelectedApplication != null)
             {
@@ -103,7 +103,7 @@ namespace Ryujinx.Ava.UI.Controls
 
         public async void OpenCheatManager_Click(object sender, RoutedEventArgs args)
         {
-            var viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
+            MainWindowViewModel viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
 
             if (viewModel?.SelectedApplication != null)
             {
@@ -117,7 +117,7 @@ namespace Ryujinx.Ava.UI.Controls
 
         public void OpenModsDirectory_Click(object sender, RoutedEventArgs args)
         {
-            var viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
+            MainWindowViewModel viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
 
             if (viewModel?.SelectedApplication != null)
             {
@@ -130,7 +130,7 @@ namespace Ryujinx.Ava.UI.Controls
 
         public void OpenSdModsDirectory_Click(object sender, RoutedEventArgs args)
         {
-            var viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
+            MainWindowViewModel viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
 
             if (viewModel?.SelectedApplication != null)
             {
@@ -143,7 +143,7 @@ namespace Ryujinx.Ava.UI.Controls
 
         public async void OpenModManager_Click(object sender, RoutedEventArgs args)
         {
-            var viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
+            MainWindowViewModel viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
 
             if (viewModel?.SelectedApplication != null)
             {
@@ -157,7 +157,7 @@ namespace Ryujinx.Ava.UI.Controls
 
         public async void PurgePtcCache_Click(object sender, RoutedEventArgs args)
         {
-            var viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
+            MainWindowViewModel viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
 
             if (viewModel?.SelectedApplication != null)
             {
@@ -251,7 +251,7 @@ namespace Ryujinx.Ava.UI.Controls
 
         public async void PurgeShaderCache_Click(object sender, RoutedEventArgs args)
         {
-            var viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
+            MainWindowViewModel viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
 
             if (viewModel?.SelectedApplication != null)
             {
@@ -308,7 +308,7 @@ namespace Ryujinx.Ava.UI.Controls
 
         public void OpenPtcDirectory_Click(object sender, RoutedEventArgs args)
         {
-            var viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
+            MainWindowViewModel viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
 
             if (viewModel?.SelectedApplication != null)
             {
@@ -329,7 +329,7 @@ namespace Ryujinx.Ava.UI.Controls
 
         public void OpenShaderCacheDirectory_Click(object sender, RoutedEventArgs args)
         {
-            var viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
+            MainWindowViewModel viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
 
             if (viewModel?.SelectedApplication != null)
             {
@@ -346,7 +346,7 @@ namespace Ryujinx.Ava.UI.Controls
 
         public async void ExtractApplicationExeFs_Click(object sender, RoutedEventArgs args)
         {
-            var viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
+            MainWindowViewModel viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
 
             if (viewModel?.SelectedApplication != null)
             {
@@ -360,7 +360,7 @@ namespace Ryujinx.Ava.UI.Controls
 
         public async void ExtractApplicationRomFs_Click(object sender, RoutedEventArgs args)
         {
-            var viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
+            MainWindowViewModel viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
 
             if (viewModel?.SelectedApplication != null)
             {
@@ -374,7 +374,7 @@ namespace Ryujinx.Ava.UI.Controls
 
         public async void ExtractApplicationLogo_Click(object sender, RoutedEventArgs args)
         {
-            var viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
+            MainWindowViewModel viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
 
             if (viewModel?.SelectedApplication is { } selectedApp)
             {
@@ -407,7 +407,7 @@ namespace Ryujinx.Ava.UI.Controls
 
         public void CreateApplicationShortcut_Click(object sender, RoutedEventArgs args)
         {
-            var viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
+            MainWindowViewModel viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
 
             if (viewModel?.SelectedApplication != null)
             {
@@ -418,7 +418,7 @@ namespace Ryujinx.Ava.UI.Controls
 
         public async void RunApplication_Click(object sender, RoutedEventArgs args)
         {
-            var viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
+            MainWindowViewModel viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
 
             if (viewModel?.SelectedApplication != null)
             {
@@ -428,7 +428,7 @@ namespace Ryujinx.Ava.UI.Controls
 
         public async void TrimXCI_Click(object sender, RoutedEventArgs args)
         {
-            var viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
+            MainWindowViewModel viewModel = (sender as MenuItem)?.DataContext as MainWindowViewModel;
 
             if (viewModel?.SelectedApplication != null)
             {

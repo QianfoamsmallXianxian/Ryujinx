@@ -66,7 +66,7 @@ namespace Ryujinx.Ava.UI.Views.User
         {
             if (ViewModel.SelectedImage != null)
             {
-                using var streamJpg = new MemoryStream();
+                using MemoryStream streamJpg = new();
                 using var bitmap = SKBitmap.Decode(ViewModel.SelectedImage);
                 using var newBitmap = new SKBitmap(bitmap.Width, bitmap.Height);
 

@@ -121,7 +121,7 @@ namespace Ryujinx.Ava.UI.Helpers
 
                 startedDeferring = true;
 
-                var deferral = args.GetDeferral();
+                ContentDialogButtonClickDeferral deferral = args.GetDeferral();
 
                 sender.PrimaryButtonClick -= DeferClose;
 

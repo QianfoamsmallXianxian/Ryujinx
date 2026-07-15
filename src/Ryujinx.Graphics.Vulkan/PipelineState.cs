@@ -335,12 +335,12 @@ namespace Ryujinx.Graphics.Vulkan
             ShaderCollection program,
             PipelineCache cache)
         {
-            if (program.TryGetComputePipeline(ref SpecializationData, out var pipeline))
+            if (program.TryGetComputePipeline(ref SpecializationData, out Auto<DisposablePipeline> pipeline))
             {
                 return pipeline;
             }
 
-            var pipelineCreateInfo = new ComputePipelineCreateInfo
+            ComputePipelineCreateInfo pipelineCreateInfo = new()
             {
                 SType = StructureType.ComputePipelineCreateInfo,
                 Stage = Stages[0],
@@ -352,7 +352,7 @@ namespace Ryujinx.Graphics.Vulkan
 
             bool hasSpec = program.SpecDescriptions != null;
 
-            var desc = hasSpec ? program.SpecDescriptions[0] : SpecDescription.Empty;
+            SpecDescription desc = hasSpec ? program.SpecDescriptions[0] : SpecDescription.Empty;
 
             if (hasSpec && SpecializationData.Length < (int)desc.Info.DataSize)
             {
@@ -391,7 +391,7 @@ namespace Ryujinx.Graphics.Vulkan
             RenderPass renderPass,
             bool throwOnError = false)
         {
-            if (program.TryGetGraphicsPipeline(ref Internal, out var pipeline))
+            if (program.TryGetGraphicsPipeline(ref Internal, out Auto<DisposablePipeline> pipeline))
             {
                 return pipeline;
             }
@@ -410,7 +410,7 @@ namespace Ryujinx.Graphics.Vulkan
             fixed (VertexInputBindingDescription* pVertexBindingDescriptions = &Internal.VertexBindingDescriptions[0])
             fixed (PipelineColorBlendAttachmentState* pColorBlendAttachmentState = &Internal.ColorBlendAttachmentState[0])
             {
-                var vertexInputState = new PipelineVertexInputStateCreateInfo
+                PipelineVertexInputStateCreateInfo vertexInputState = new()
                 {
                     SType = StructureType.PipelineVertexInputStateCreateInfo,
                     VertexAttributeDescriptionCount = VertexAttributeDescriptionsCount,
@@ -447,20 +447,20 @@ namespace Ryujinx.Graphics.Vulkan
 
                 primitiveRestartEnable &= topologySupportsRestart;
 
-                var inputAssemblyState = new PipelineInputAssemblyStateCreateInfo
+                PipelineInputAssemblyStateCreateInfo inputAssemblyState = new()
                 {
                     SType = StructureType.PipelineInputAssemblyStateCreateInfo,
                     PrimitiveRestartEnable = primitiveRestartEnable,
                     Topology = HasTessellationControlShader ? PrimitiveTopology.PatchList : Topology,
                 };
 
-                var tessellationState = new PipelineTessellationStateCreateInfo
+                PipelineTessellationStateCreateInfo tessellationState = new()
                 {
                     SType = StructureType.PipelineTessellationStateCreateInfo,
                     PatchControlPoints = PatchControlPoints,
                 };
 
-                var rasterizationState = new PipelineRasterizationStateCreateInfo
+                PipelineRasterizationStateCreateInfo rasterizationState = new()
                 {
                     SType = StructureType.PipelineRasterizationStateCreateInfo,
                     DepthClampEnable = DepthClampEnable,
@@ -472,7 +472,7 @@ namespace Ryujinx.Graphics.Vulkan
                     DepthBiasEnable = DepthBiasEnable,
                 };
 
-                var viewportState = new PipelineViewportStateCreateInfo
+                PipelineViewportStateCreateInfo viewportState = new()
                 {
                     SType = StructureType.PipelineViewportStateCreateInfo,
                     ViewportCount = ViewportsCount,
@@ -490,7 +490,7 @@ namespace Ryujinx.Graphics.Vulkan
                     viewportState.PNext = &viewportDepthClipControlState;
                 }
 
-                var multisampleState = new PipelineMultisampleStateCreateInfo
+                PipelineMultisampleStateCreateInfo multisampleState = new()
                 {
                     SType = StructureType.PipelineMultisampleStateCreateInfo,
                     SampleShadingEnable = false,
@@ -500,19 +500,19 @@ namespace Ryujinx.Graphics.Vulkan
                     AlphaToOneEnable = AlphaToOneEnable,
                 };
 
-                var stencilFront = new StencilOpState(
+                StencilOpState stencilFront = new(
                     StencilFrontFailOp,
                     StencilFrontPassOp,
                     StencilFrontDepthFailOp,
                     StencilFrontCompareOp);
 
-                var stencilBack = new StencilOpState(
+                StencilOpState stencilBack = new(
                     StencilBackFailOp,
                     StencilBackPassOp,
                     StencilBackDepthFailOp,
                     StencilBackCompareOp);
 
-                var depthStencilState = new PipelineDepthStencilStateCreateInfo
+                PipelineDepthStencilStateCreateInfo depthStencilState = new()
                 {
                     SType = StructureType.PipelineDepthStencilStateCreateInfo,
                     DepthTestEnable = DepthTestEnable,
@@ -549,7 +549,7 @@ namespace Ryujinx.Graphics.Vulkan
                 // so we need to force disable them here.
                 bool logicOpEnable = LogicOpEnable && (gd.Vendor == Vendor.Nvidia || Internal.LogicOpsAllowed);
 
-                var colorBlendState = new PipelineColorBlendStateCreateInfo
+                PipelineColorBlendStateCreateInfo colorBlendState = new()
                 {
                     SType = StructureType.PipelineColorBlendStateCreateInfo,
                     LogicOpEnable = logicOpEnable,
@@ -598,7 +598,7 @@ namespace Ryujinx.Graphics.Vulkan
                     dynamicStates[dynamicStatesCount++] = DynamicState.AttachmentFeedbackLoopEnableExt;
                 }
 
-                var pipelineDynamicStateCreateInfo = new PipelineDynamicStateCreateInfo
+                PipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo = new()
                 {
                     SType = StructureType.PipelineDynamicStateCreateInfo,
                     DynamicStateCount = (uint)dynamicStatesCount,
@@ -622,7 +622,7 @@ namespace Ryujinx.Graphics.Vulkan
                     }
                 }
 
-                var pipelineCreateInfo = new GraphicsPipelineCreateInfo
+                GraphicsPipelineCreateInfo pipelineCreateInfo = new()
                 {
                     SType = StructureType.GraphicsPipelineCreateInfo,
                     Flags = flags,
@@ -692,12 +692,12 @@ namespace Ryujinx.Graphics.Vulkan
 
             for (int index = 0; index < VertexAttributeDescriptionsCount; index++)
             {
-                var attribute = vertexAttributeDescriptionsSpan[index];
+                VertexInputAttributeDescription attribute = vertexAttributeDescriptionsSpan[index];
                 int vbIndex = GetVertexBufferIndex(attribute.Binding);
 
                 if (vbIndex >= 0)
                 {
-                    ref var vb = ref vertexBindingDescriptionsSpan[vbIndex];
+                    ref VertexInputBindingDescription vb = ref vertexBindingDescriptionsSpan[vbIndex];
 
                     Format format = attribute.Format;
 

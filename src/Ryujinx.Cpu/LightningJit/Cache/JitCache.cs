@@ -262,7 +262,7 @@ namespace Ryujinx.Cpu.LightningJit.Cache
                 {
                     entry = _cacheEntries[index];
 
-                    if (Optimizations.CacheEviction && _entryUsageStats.TryGetValue(offset, out var stats))
+                    if (Optimizations.CacheEviction && _entryUsageStats.TryGetValue(offset, out EntryUsageStats stats))
                     {
                         stats.UpdateUsage();
                     }

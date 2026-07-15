@@ -49,7 +49,7 @@ namespace Ryujinx.Ava.UI.Helpers
 
         private static string Format(AvaLogLevel level, string area, string template, object source, object[] v)
         {
-            var result = new StringBuilder();
+            StringBuilder result = new();
             var r = new CharacterReader(template.AsSpan());
             int i = 0;
 

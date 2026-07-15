@@ -16,7 +16,7 @@ namespace Ryujinx.Cpu.Nce
         {
             NceCpuCodePatch codePatch = new();
 
-            var textUint = MemoryMarshal.Cast<byte, uint>(textSection);
+            ReadOnlySpan<uint> textUint = MemoryMarshal.Cast<byte, uint>(textSection);
 
             for (int i = 0; i < textUint.Length; i++)
             {

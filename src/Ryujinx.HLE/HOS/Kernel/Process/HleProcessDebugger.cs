@@ -1,3 +1,4 @@
+using Ryujinx.Cpu;
 using Ryujinx.HLE.HOS.Diagnostics.Demangler;
 using Ryujinx.HLE.HOS.Kernel.Memory;
 using Ryujinx.HLE.HOS.Kernel.Threading;
@@ -50,7 +51,7 @@ namespace Ryujinx.HLE.HOS.Kernel.Process
         {
             EnsureLoaded();
 
-            var context = thread.Context;
+            IExecutionContext context = thread.Context;
 
             StringBuilder trace = new();
 
@@ -112,13 +113,13 @@ namespace Ryujinx.HLE.HOS.Kernel.Process
         {
             EnsureLoaded();
 
-            var context = thread.Context;
+            IExecutionContext context = thread.Context;
 
             StringBuilder sb = new();
 
             string GetReg(int x)
             {
-                var v = x == 32 ? context.Pc : context.GetX(x);
+                ulong v = x == 32 ? context.Pc : context.GetX(x);
                 if (!AnalyzePointer(out PointerInfo info, v, thread))
                 {
                     return $"0x{v:x16}";
@@ -253,7 +254,7 @@ namespace Ryujinx.HLE.HOS.Kernel.Process
         {
             moduleName = string.Empty;
 
-            var rodataStart = image.BaseAddress + image.Size;
+            ulong rodataStart = image.BaseAddress + image.Size;
 
             KMemoryInfo roInfo = _owner.MemoryManager.QueryMemory(rodataStart);
             if (roInfo.Permission != KMemoryPermission.Read)
@@ -261,7 +262,7 @@ namespace Ryujinx.HLE.HOS.Kernel.Process
                 return false;
             }
 
-            var rwdataStart = roInfo.Address + roInfo.Size;
+            ulong rwdataStart = roInfo.Address + roInfo.Size;
             
             KMemoryInfo.Pool.Release(roInfo);
 
@@ -293,7 +294,7 @@ namespace Ryujinx.HLE.HOS.Kernel.Process
                 }
 
                 pathLength = Math.Min(pathLength, rodataBuf.Length - 8);
-                var pathBuf = rodataBuf.Slice(8, pathLength);
+                Span<byte> pathBuf = rodataBuf.Slice(8, pathLength);
                 int lastSlash = pathBuf.LastIndexOfAny(new byte[] { (byte)'\\', (byte)'/' });
 
                 moduleName = Encoding.ASCII.GetString(pathBuf.Slice(lastSlash + 1).TrimEnd((byte)0));
@@ -311,7 +312,7 @@ namespace Ryujinx.HLE.HOS.Kernel.Process
             info = default;
 
             ulong sp = thread.Context.GetX(31);
-            var memoryInfo = _owner.MemoryManager.QueryMemory(address);
+            KMemoryInfo memoryInfo = _owner.MemoryManager.QueryMemory(address);
             MemoryState memoryState = memoryInfo.State;
 
             if (!memoryState.HasFlag(MemoryState.Stack)) // Is this pointer within the stack?
@@ -461,12 +462,12 @@ namespace Ryujinx.HLE.HOS.Kernel.Process
 
             lock (_images)
             {
-                var image = new Image(textOffset, textSize, symbols.OrderBy(x => x.Value).ToArray());
+                Image image = new(textOffset, textSize, symbols.OrderBy(x => x.Value).ToArray());
 
                 string moduleName;
                 if (!GetModuleName(out moduleName, image))
                 {
-                    var newIndex = _images.Count;
+                    int newIndex = _images.Count;
                     moduleName = $"(unknown{newIndex})";
                 }
                 image.Name = moduleName;

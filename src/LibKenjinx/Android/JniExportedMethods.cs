@@ -1,6 +1,7 @@
 using LibKenjinx.Android;
 using LibKenjinx.Jni.Pointers;
 using Ryujinx.Audio.Backends.OpenAL;
+using Ryujinx.Audio.Integration;
 using Ryujinx.Common;
 using Ryujinx.Common.Configuration;
 using Ryujinx.Common.Logging;
@@ -17,6 +18,8 @@ using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using Ryujinx.Graphics.Vulkan;
+using System.IO;
+using System.Reflection;
 
 namespace LibKenjinx
 {
@@ -64,10 +67,10 @@ namespace LibKenjinx
         private static bool TryCallBool(object? target, string[] names, bool arg)
         {
             if (target == null) return false;
-            var t = target.GetType();
-            foreach (var name in names)
+            Type t = target.GetType();
+            foreach (string name in names)
             {
-                var m = t.GetMethod(name, new[] { typeof(bool) });
+                MethodInfo? m = t.GetMethod(name, new[] { typeof(bool) });
                 if (m != null)
                 {
                     try { m.Invoke(target, new object[] { arg }); return true; } catch { }
@@ -80,10 +83,10 @@ namespace LibKenjinx
         private static bool TryCallFloat(object? target, string[] names, float arg)
         {
             if (target == null) return false;
-            var t = target.GetType();
-            foreach (var name in names)
+            Type t = target.GetType();
+            foreach (string name in names)
             {
-                var m = t.GetMethod(name, new[] { typeof(float) });
+                MethodInfo? m = t.GetMethod(name, new[] { typeof(float) });
                 if (m != null)
                 {
                     try { m.Invoke(target, new object[] { arg }); return true; } catch { }
@@ -96,10 +99,10 @@ namespace LibKenjinx
         private static bool TrySetFloatProp(object? target, string[] names, float value)
         {
             if (target == null) return false;
-            var t = target.GetType();
-            foreach (var name in names)
+            Type t = target.GetType();
+            foreach (string name in names)
             {
-                var p = t.GetProperty(name);
+                PropertyInfo? p = t.GetProperty(name);
                 if (p != null && p.CanWrite)
                 {
                     try
@@ -119,10 +122,10 @@ namespace LibKenjinx
         private static bool TrySetBoolProp(object target, params string[] names)
         {
             if (target == null) return false;
-            var t = target.GetType();
-            foreach (var name in names)
+            Type t = target.GetType();
+            foreach (string name in names)
             {
-                var p = t.GetProperty(name);
+                PropertyInfo? p = t.GetProperty(name);
                 if (p != null && p.CanWrite && p.PropertyType == typeof(bool))
                 {
                     try { p.SetValue(target, true); return true; } catch { }
@@ -138,9 +141,9 @@ namespace LibKenjinx
 
             yield return root;
 
-            var t = root.GetType();
-            var props = t.GetProperties();
-            foreach (var p in props)
+            Type t = root.GetType();
+            PropertyInfo[] props = t.GetProperties();
+            foreach (PropertyInfo p in props)
             {
                 object? val = null;
                 try { val = p.GetValue(root); } catch { /* ignore */ }
@@ -154,7 +157,7 @@ namespace LibKenjinx
                     p.Name.IndexOf("Output", StringComparison.OrdinalIgnoreCase) >= 0 ||
                     p.PropertyType.Name.IndexOf("Audio", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    foreach (var x in WalkAudioObjects(val, depth - 1))
+                    foreach (object? x in WalkAudioObjects(val, depth - 1))
                         yield return x;
                 }
             }
@@ -171,26 +174,26 @@ namespace LibKenjinx
             try
             {
                 // 1) Try SwitchDevice wrapper itself
-                var dev = SwitchDevice;
+                SwitchDevice? dev = SwitchDevice;
                 if (dev != null && TryCallBool(dev, PauseMethodCandidates, pause)) hits++;
 
                 // 2) Try underlying Switch or similar inner object
-                var inner =
+                object? inner =
                     dev?.GetType().GetProperty("Switch")?.GetValue(dev) ??
                     dev?.GetType().GetProperty("Device")?.GetValue(dev);
                 if (inner != null && TryCallBool(inner, PauseMethodCandidates, pause)) hits++;
 
                 // 3) Try EmulationContext and its "System" (kernel/front controller etc.)
-                var ctx = dev?.EmulationContext;
+                Switch? ctx = dev?.EmulationContext;
                 if (ctx != null)
                 {
                     if (TryCallBool(ctx, PauseMethodCandidates, pause)) hits++;
 
-                    var sys = ctx.GetType().GetProperty("System")?.GetValue(ctx);
+                    object? sys = ctx.GetType().GetProperty("System")?.GetValue(ctx);
                     if (sys != null && TryCallBool(sys, PauseMethodCandidates, pause)) hits++;
 
                     // 4) walk all audio-ish descendants and try pause
-                    foreach (var node in WalkAudioObjects(ctx, depth: 2))
+                    foreach (object? node in WalkAudioObjects(ctx, depth: 2))
                     {
                         if (node != null && TryCallBool(node, PauseMethodCandidates, pause))
                             hits++;
@@ -218,7 +221,7 @@ namespace LibKenjinx
             // A) Direct: OpenAL driver (if used)
             try
             {
-                var oal = _openAl;
+                OpenALHardwareDeviceDriver? oal = _openAl;
                 if (oal != null)
                 {
                     bool p = TryCallBool(oal, PauseMethodCandidates, _audioPaused);
@@ -231,10 +234,10 @@ namespace LibKenjinx
             // B) EmulationContext managers (AudioRendererManager/AudioManager/AudioOutManager/…)
             try
             {
-                var ctx = SwitchDevice?.EmulationContext;
+                Switch? ctx = SwitchDevice?.EmulationContext;
                 if (ctx != null)
                 {
-                    foreach (var node in WalkAudioObjects(ctx, depth: 2))
+                    foreach (object? node in WalkAudioObjects(ctx, depth: 2))
                     {
                         if (node == null) continue;
 
@@ -254,7 +257,7 @@ namespace LibKenjinx
             // C) Generic driver fallback (whatever AudioDriver actually is)
             try
             {
-                var drv = AudioDriver;
+                IHardwareDeviceDriver? drv = AudioDriver;
                 if (drv != null)
                 {
                     bool p = TryCallBool(drv, PauseMethodCandidates, _audioPaused);
@@ -307,9 +310,9 @@ namespace LibKenjinx
                     AsyncLogTargetOverflowAction.Block
                 ));
 
-            var path = Marshal.PtrToStringAnsi(jpathId);
+            string? path = Marshal.PtrToStringAnsi(jpathId);
 
-            var init = Initialize(path);
+            bool init = Initialize(path);
 
             Interop.Initialize(new JEnvRef(jniEnv));
 
@@ -347,7 +350,7 @@ namespace LibKenjinx
             AudioDriver = new OpenALHardwareDeviceDriver();
             _openAl = AudioDriver as OpenALHardwareDeviceDriver; // <-- audio patch: keep a strong ref
 
-            var timezone = Marshal.PtrToStringAnsi(timeZonePtr);
+            string? timezone = Marshal.PtrToStringAnsi(timeZonePtr);
             return InitializeDevice((MemoryManagerMode)memoryManagerMode,
                                     useNce,
                                     (MemoryConfiguration)memoryConfiguration,
@@ -369,7 +372,7 @@ namespace LibKenjinx
         public static double JnaGetGameFifo()
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var stats = SwitchDevice?.EmulationContext?.Statistics.GetFifoPercent() ?? 0;
+            double stats = SwitchDevice?.EmulationContext?.Statistics.GetFifoPercent() ?? 0;
 
             return stats;
         }
@@ -378,7 +381,7 @@ namespace LibKenjinx
         public static double JnaGetGameFrameTime()
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var stats = SwitchDevice?.EmulationContext?.Statistics.GetGameFrameTime() ?? 0;
+            double stats = SwitchDevice?.EmulationContext?.Statistics.GetGameFrameTime() ?? 0;
 
             return stats;
         }
@@ -387,7 +390,7 @@ namespace LibKenjinx
         public static double JnaGetGameFrameRate()
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var stats = SwitchDevice?.EmulationContext?.Statistics.GetGameFrameRate() ?? 0;
+            double stats = SwitchDevice?.EmulationContext?.Statistics.GetGameFrameRate() ?? 0;
 
             return stats;
         }
@@ -408,7 +411,7 @@ namespace LibKenjinx
         public static nint JniGetDlcContentListNative(nint pathPtr, long titleId)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var list = GetDlcContentList(Marshal.PtrToStringAnsi(pathPtr) ?? "", (ulong)titleId);
+            List<string> list = GetDlcContentList(Marshal.PtrToStringAnsi(pathPtr) ?? "", (ulong)titleId);
 
             return CreateStringArray(list);
         }
@@ -450,8 +453,8 @@ namespace LibKenjinx
                 return false;
             }
 
-            var stream = OpenFile(descriptor);
-            var update = updateDescriptor == -1 ? null : OpenFile(updateDescriptor);
+            FileStream stream = OpenFile(descriptor);
+            FileStream? update = updateDescriptor == -1 ? null : OpenFile(updateDescriptor);
 
             return LoadApplication(stream, (FileType)type, update);
         }
@@ -461,7 +464,7 @@ namespace LibKenjinx
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
 
-            var stream = OpenFile(descriptor);
+            FileStream stream = OpenFile(descriptor);
 
             nint stringHandle = 0;
             string? version = "0.0";
@@ -488,7 +491,7 @@ namespace LibKenjinx
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
 
-            var stream = OpenFile(descriptor);
+            FileStream stream = OpenFile(descriptor);
 
             InstallFirmware(stream, isXci);
         }
@@ -498,7 +501,7 @@ namespace LibKenjinx
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
 
-            var version = GetInstalledFirmwareVersion() ?? "0.0";
+            string version = GetInstalledFirmwareVersion() ?? "0.0";
             return Marshal.StringToHGlobalAnsi(version);
         }
 
@@ -557,16 +560,16 @@ namespace LibKenjinx
                 _surfacePtr = Interop.GetSurfacePtr();
                 _window = Interop.GetWindowsHandle();
 
-                var api = VulkanLoader?.GetApi() ?? Vk.GetApi();
+                Vk? api = VulkanLoader?.GetApi() ?? Vk.GetApi();
                 if (api.TryGetInstanceExtension(new Instance(instance), out KhrAndroidSurface surfaceExtension))
                 {
-                    var createInfo = new AndroidSurfaceCreateInfoKHR
+                    AndroidSurfaceCreateInfoKHR createInfo = new()
                     {
                         SType = StructureType.AndroidSurfaceCreateInfoKhr,
                         Window = (nint*)_surfacePtr,
                     };
 
-                    var result = surfaceExtension.CreateAndroidSurface(new Instance(instance), in createInfo, null, out var surface);
+                    Result result = surfaceExtension.CreateAndroidSurface(new Instance(instance), in createInfo, null, out SurfaceKHR* surface);
 
                     // If a rotation was applied before the surface was created → apply it now
                     if (_window != 0 && _pendingRotationDegrees != -1)
@@ -618,7 +621,7 @@ namespace LibKenjinx
             {
                 if (SwitchDevice?.EmulationContext != null)
                 {
-                    var time = SwitchDevice.EmulationContext.Statistics.GetGameFrameTime();
+                    double time = SwitchDevice.EmulationContext.Statistics.GetGameFrameTime();
                     Interop.FrameEnded(time);
                 }
             });
@@ -641,11 +644,11 @@ namespace LibKenjinx
         public unsafe static void JniGetGameInfo(int fileDescriptor, nint extension, nint infoPtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            using var stream = OpenFile(fileDescriptor);
-            var ext = Marshal.PtrToStringAnsi(extension);
-            var info = GetGameInfo(stream, ext?.ToLower() ?? string.Empty) ?? GetDefaultInfo(stream);
-            var i = (GameInfoNative*)infoPtr;
-            var n = new GameInfoNative(info);
+            using FileStream stream = OpenFile(fileDescriptor);
+            string? ext = Marshal.PtrToStringAnsi(extension);
+            GameInfo info = GetGameInfo(stream, ext?.ToLower() ?? string.Empty) ?? GetDefaultInfo(stream);
+            GameInfoNative* i = (GameInfoNative*)infoPtr;
+            GameInfoNative n = new(info);
             i->TitleId = n.TitleId;
             i->TitleName = n.TitleName;
             i->Version = n.Version;
@@ -714,14 +717,14 @@ namespace LibKenjinx
         [UnmanagedCallersOnly(EntryPoint = "inputSetAccelerometerData")]
         public static void JniSetAccelerometerData(float x, float y, float z, int id)
         {
-            var accel = new Vector3(x, y, z);
+            Vector3 accel = new(x, y, z);
             SetAccelerometerData(accel, id);
         }
 
         [UnmanagedCallersOnly(EntryPoint = "inputSetGyroData")]
         public static void JniSetGyroData(float x, float y, float z, int id)
         {
-            var gryo = new Vector3(x, y, z);
+            Vector3 gryo = new(x, y, z);
             SetGryoData(gryo, id);
         }
 
@@ -743,8 +746,8 @@ namespace LibKenjinx
         public static nint JniGetOpenedUser()
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var userId = GetOpenedUser();
-            var ptr = Marshal.StringToHGlobalAnsi(userId);
+            string userId = GetOpenedUser();
+            IntPtr ptr = Marshal.StringToHGlobalAnsi(userId);
 
             return ptr;
         }
@@ -753,7 +756,7 @@ namespace LibKenjinx
         public static nint JniGetUserPicture(nint userIdPtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
+            string userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
 
             return Marshal.StringToHGlobalAnsi(GetUserPicture(userId));
         }
@@ -762,8 +765,8 @@ namespace LibKenjinx
         public static void JniGetUserPicture(nint userIdPtr, nint picturePtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
-            var picture = Marshal.PtrToStringAnsi(picturePtr) ?? "";
+            string userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
+            string picture = Marshal.PtrToStringAnsi(picturePtr) ?? "";
 
             SetUserPicture(userId, picture);
         }
@@ -772,7 +775,7 @@ namespace LibKenjinx
         public static nint JniGetUserName(nint userIdPtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
+            string userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
 
             return Marshal.StringToHGlobalAnsi(GetUserName(userId));
         }
@@ -781,8 +784,8 @@ namespace LibKenjinx
         public static void JniSetUserName(nint userIdPtr, nint userNamePtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
-            var userName = Marshal.PtrToStringAnsi(userNamePtr) ?? "";
+            string userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
+            string userName = Marshal.PtrToStringAnsi(userNamePtr) ?? "";
 
             SetUserName(userId, userName);
         }
@@ -791,7 +794,7 @@ namespace LibKenjinx
         public static nint JniGetAllUsers()
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var users = GetAllUsers();
+            string[] users = GetAllUsers();
 
             return CreateStringArray(users.ToList());
         }
@@ -800,8 +803,8 @@ namespace LibKenjinx
         public static void JniAddUser(nint userNamePtr, nint picturePtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var userName = Marshal.PtrToStringAnsi(userNamePtr) ?? "";
-            var picture = Marshal.PtrToStringAnsi(picturePtr) ?? "";
+            string userName = Marshal.PtrToStringAnsi(userNamePtr) ?? "";
+            string picture = Marshal.PtrToStringAnsi(picturePtr) ?? "";
 
             AddUser(userName, picture);
         }
@@ -810,7 +813,7 @@ namespace LibKenjinx
         public static void JniDeleteUser(nint userIdPtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
+            string userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
 
             DeleteUser(userId);
         }
@@ -847,7 +850,7 @@ namespace LibKenjinx
         public static void JniOpenUser(nint userIdPtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
+            string userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
 
             OpenUser(userId);
         }
@@ -856,7 +859,7 @@ namespace LibKenjinx
         public static void JniCloseUser(nint userIdPtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
+            string userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
 
             CloseUser(userId);
         }

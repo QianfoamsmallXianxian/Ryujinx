@@ -67,21 +67,21 @@ namespace Ryujinx.HLE.HOS
             {
                 if (OperatingSystem.IsMacOS())
                 {
-                    var cpuEngine = new HvEngine(_tickSource);
-                    var memoryManager = new HvMemoryManager(context.Memory, addressSpaceSize, invalidAccessHandler);
+                    HvEngine cpuEngine = new(_tickSource);
+                    HvMemoryManager memoryManager = new(context.Memory, addressSpaceSize, invalidAccessHandler);
                     processContext = new ArmProcessContext<HvMemoryManager>(pid, cpuEngine, _gpu, memoryManager, addressSpaceSize, for64Bit);
                 }
                 else
                 {
-                    if (!AddressSpace.TryCreateWithoutMirror(addressSpaceSize, out var addressSpace))
+                    if (!AddressSpace.TryCreateWithoutMirror(addressSpaceSize, out MemoryBlock addressSpace))
                     {
                         throw new Exception("Address space creation failed");
                     }
 
                     Logger.Info?.Print(LogClass.Cpu, $"NCE Base AS Address: 0x{addressSpace.Pointer.ToInt64():X} Size: 0x{addressSpace.Size:X}");
 
-                    var cpuEngine = new NceEngine(_tickSource);
-                    var memoryManager = new MemoryManagerNative(addressSpace, context.Memory, addressSpaceSize, invalidAccessHandler);
+                    NceEngine cpuEngine = new(_tickSource);
+                    MemoryManagerNative memoryManager = new(addressSpace, context.Memory, addressSpaceSize, invalidAccessHandler);
                     processContext = new ArmProcessContext<MemoryManagerNative>(pid, cpuEngine, _gpu, memoryManager, addressSpace.Size, for64Bit, memoryManager.ReservedSize);
                 }
             }
@@ -120,7 +120,7 @@ namespace Ryujinx.HLE.HOS
                 {
                     case MemoryManagerMode.SoftwarePageTable:
                         {
-                            var mm = new MemoryManager(context.Memory, addressSpaceSize, invalidAccessHandler);
+                            MemoryManager mm = new(context.Memory, addressSpaceSize, invalidAccessHandler);
                             processContext = new ArmProcessContext<MemoryManager>(pid, cpuEngine, _gpu, mm, addressSpaceSize, for64Bit);
                         }
                         break;
@@ -129,7 +129,7 @@ namespace Ryujinx.HLE.HOS
                     case MemoryManagerMode.HostMappedUnsafe:
                         if (addressSpace == null && asNoMirror == null)
                         {
-                            var memoryManagerHostTracked = new MemoryManagerHostTracked(context.Memory, addressSpaceSize, mode == MemoryManagerMode.HostMappedUnsafe, invalidAccessHandler);
+                            MemoryManagerHostTracked memoryManagerHostTracked = new(context.Memory, addressSpaceSize, mode == MemoryManagerMode.HostMappedUnsafe, invalidAccessHandler);
                             processContext = new ArmProcessContext<MemoryManagerHostTracked>(pid, cpuEngine, _gpu, memoryManagerHostTracked, addressSpaceSize, for64Bit);
                         }
                         else
@@ -138,12 +138,12 @@ namespace Ryujinx.HLE.HOS
 
                             if (addressSpace != null)
                             {
-                                var mm = new MemoryManagerHostMapped(addressSpace, unsafeMode, invalidAccessHandler);
+                                MemoryManagerHostMapped mm = new(addressSpace, unsafeMode, invalidAccessHandler);
                                 processContext = new ArmProcessContext<MemoryManagerHostMapped>(pid, cpuEngine, _gpu, mm, addressSpace.AddressSpaceSize, for64Bit);
                             }
                             else
                             {
-                                var mm = new MemoryManagerHostNoMirror(asNoMirror, context.Memory, unsafeMode, invalidAccessHandler);
+                                MemoryManagerHostNoMirror mm = new(asNoMirror, context.Memory, unsafeMode, invalidAccessHandler);
                                 processContext = new ArmProcessContext<MemoryManagerHostNoMirror>(pid, cpuEngine, _gpu, mm, asNoMirror.Size, for64Bit);
                             }
                         }

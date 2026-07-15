@@ -8,6 +8,7 @@ using Ryujinx.HLE.HOS.SystemState;
 using Ryujinx.Input;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -66,7 +67,7 @@ namespace LibKenjinx
                 return false;
             }
 
-            var path = Marshal.PtrToStringAnsi(pathPtr);
+            string? path = Marshal.PtrToStringAnsi(pathPtr);
 
             return LoadApplication(path);
         }
@@ -74,7 +75,7 @@ namespace LibKenjinx
         [UnmanagedCallersOnly(EntryPoint = "device_install_firmware")]
         public static void InstallFirmwareNative(int descriptor, bool isXci)
         {
-            var stream = OpenFile(descriptor);
+            FileStream stream = OpenFile(descriptor);
 
             InstallFirmware(stream, isXci);
         }
@@ -82,16 +83,16 @@ namespace LibKenjinx
         [UnmanagedCallersOnly(EntryPoint = "device_get_installed_firmware_version")]
         public static nint GetInstalledFirmwareVersionNative()
         {
-            var result = GetInstalledFirmwareVersion();
+            string result = GetInstalledFirmwareVersion();
             return Marshal.StringToHGlobalAnsi(result);
         }
 
         [UnmanagedCallersOnly(EntryPoint = "initialize")]
         public static bool InitializeNative(nint basePathPtr)
         {
-            var path = Marshal.PtrToStringAnsi(basePathPtr);
+            string? path = Marshal.PtrToStringAnsi(basePathPtr);
 
-            var res = Initialize(path);
+            bool res = Initialize(path);
 
             InitializeAudio();
 
@@ -119,10 +120,10 @@ namespace LibKenjinx
             }
 
             List<string> extensions = [];
-            var extPtr = (nint*)nativeGraphicsInterop.VkRequiredExtensions;
+            IntPtr* extPtr = (nint*)nativeGraphicsInterop.VkRequiredExtensions;
             for (int i = 0; i < nativeGraphicsInterop.VkRequiredExtensionsCount; i++)
             {
-                var ptr = extPtr[i];
+                IntPtr ptr = extPtr[i];
                 extensions.Add(Marshal.PtrToStringAnsi(ptr) ?? string.Empty);
             }
 
@@ -142,7 +143,7 @@ namespace LibKenjinx
         {
             if (Renderer is OpenGLRenderer)
             {
-                var proc = Marshal.GetDelegateForFunctionPointer<GetProcAddress>(_nativeGraphicsInterop.GlGetProcAddress);
+                GetProcAddress proc = Marshal.GetDelegateForFunctionPointer<GetProcAddress>(_nativeGraphicsInterop.GlGetProcAddress);
                 GL.LoadBindings(new OpenTKBindingsContext(x => proc.Invoke(x)));
             }
             RunLoop();
@@ -163,10 +164,10 @@ namespace LibKenjinx
         [UnmanagedCallersOnly(EntryPoint = "get_game_info")]
         public static GameInfoNative GetGameInfoNative(int descriptor, nint extensionPtr)
         {
-            var extension = Marshal.PtrToStringAnsi(extensionPtr);
-            var stream = OpenFile(descriptor);
+            string? extension = Marshal.PtrToStringAnsi(extensionPtr);
+            FileStream stream = OpenFile(descriptor);
 
-            var gameInfo = GetGameInfo(stream, extension ?? "");
+            GameInfo? gameInfo = GetGameInfo(stream, extension ?? "");
 
             return gameInfo == null ? default : new GameInfoNative(gameInfo.FileSize, gameInfo.TitleName, gameInfo.TitleId, gameInfo.Developer, gameInfo.Version, gameInfo.Icon);
         }
@@ -240,7 +241,7 @@ namespace LibKenjinx
         [UnmanagedCallersOnly(EntryPoint = "device_get_game_fifo")]
         public static double GetGameInfoNative()
         {
-            var stats = SwitchDevice?.EmulationContext?.Statistics.GetFifoPercent() ?? 0;
+            double stats = SwitchDevice?.EmulationContext?.Statistics.GetFifoPercent() ?? 0;
 
             return stats;
         }
@@ -248,7 +249,7 @@ namespace LibKenjinx
         [UnmanagedCallersOnly(EntryPoint = "device_get_game_frame_time")]
         public static double GetGameFrameTimeNative()
         {
-            var stats = SwitchDevice?.EmulationContext?.Statistics.GetGameFrameTime() ?? 0;
+            double stats = SwitchDevice?.EmulationContext?.Statistics.GetGameFrameTime() ?? 0;
 
             return stats;
         }
@@ -256,7 +257,7 @@ namespace LibKenjinx
         [UnmanagedCallersOnly(EntryPoint = "device_get_game_frame_rate")]
         public static double GetGameFrameRateNative()
         {
-            var stats = SwitchDevice?.EmulationContext?.Statistics.GetGameFrameRate() ?? 0;
+            double stats = SwitchDevice?.EmulationContext?.Statistics.GetGameFrameRate() ?? 0;
 
             return stats;
         }
@@ -275,7 +276,7 @@ namespace LibKenjinx
         [UnmanagedCallersOnly(EntryPoint = "device_get_dlc_content_list")]
         public static nint GetDlcContentListNative(nint pathPtr, long titleId)
         {
-            var list = GetDlcContentList(Marshal.PtrToStringAnsi(pathPtr) ?? "", (ulong)titleId);
+            List<string> list = GetDlcContentList(Marshal.PtrToStringAnsi(pathPtr) ?? "", (ulong)titleId);
 
             return CreateStringArray(list);
         }
@@ -312,8 +313,8 @@ namespace LibKenjinx
                 return false;
             }
 
-            var stream = OpenFile(descriptor);
-            var update = updateDescriptor == -1 ? null : OpenFile(updateDescriptor);
+            FileStream stream = OpenFile(descriptor);
+            FileStream? update = updateDescriptor == -1 ? null : OpenFile(updateDescriptor);
 
             return LoadApplication(stream, (FileType)type, update);
         }
@@ -321,7 +322,7 @@ namespace LibKenjinx
         [UnmanagedCallersOnly(EntryPoint = "device_verify_firmware")]
         public static nint VerifyFirmwareNative(int descriptor, bool isXci)
         {
-            var stream = OpenFile(descriptor);
+            FileStream stream = OpenFile(descriptor);
 
             nint stringHandle = 0;
             string? version = "0.0";
@@ -358,11 +359,11 @@ namespace LibKenjinx
         [UnmanagedCallersOnly(EntryPoint = "device_get_game_info")]
         public unsafe static void GetGameInfoNative(int fileDescriptor, nint extension, nint infoPtr)
         {
-            using var stream = OpenFile(fileDescriptor);
-            var ext = Marshal.PtrToStringAnsi(extension);
-            var info = GetGameInfo(stream, ext?.ToLower() ?? string.Empty) ?? GetDefaultInfo(stream);
-            var i = (GameInfoNative*)infoPtr;
-            var n = new GameInfoNative(info);
+            using FileStream stream = OpenFile(fileDescriptor);
+            string? ext = Marshal.PtrToStringAnsi(extension);
+            GameInfo info = GetGameInfo(stream, ext?.ToLower() ?? string.Empty) ?? GetDefaultInfo(stream);
+            GameInfoNative* i = (GameInfoNative*)infoPtr;
+            GameInfoNative n = new(info);
             i->TitleId = n.TitleId;
             i->TitleName = n.TitleName;
             i->Version = n.Version;
@@ -375,8 +376,8 @@ namespace LibKenjinx
         [UnmanagedCallersOnly(EntryPoint = "user_get_opened_user")]
         public static nint GetOpenedUserNative()
         {
-            var userId = GetOpenedUser();
-            var ptr = Marshal.StringToHGlobalAnsi(userId);
+            string userId = GetOpenedUser();
+            IntPtr ptr = Marshal.StringToHGlobalAnsi(userId);
 
             return ptr;
         }
@@ -384,7 +385,7 @@ namespace LibKenjinx
         [UnmanagedCallersOnly(EntryPoint = "user_get_user_picture")]
         public static nint GetUserPictureNative(nint userIdPtr)
         {
-            var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
+            string userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
 
             return Marshal.StringToHGlobalAnsi(GetUserPicture(userId));
         }
@@ -392,8 +393,8 @@ namespace LibKenjinx
         [UnmanagedCallersOnly(EntryPoint = "user_set_user_picture")]
         public static void SetUserPictureNative(nint userIdPtr, nint picturePtr)
         {
-            var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
-            var picture = Marshal.PtrToStringAnsi(picturePtr) ?? "";
+            string userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
+            string picture = Marshal.PtrToStringAnsi(picturePtr) ?? "";
 
             SetUserPicture(userId, picture);
         }
@@ -401,7 +402,7 @@ namespace LibKenjinx
         [UnmanagedCallersOnly(EntryPoint = "user_get_user_name")]
         public static nint GetUserNameNative(nint userIdPtr)
         {
-            var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
+            string userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
 
             return Marshal.StringToHGlobalAnsi(GetUserName(userId));
         }
@@ -409,8 +410,8 @@ namespace LibKenjinx
         [UnmanagedCallersOnly(EntryPoint = "user_set_user_name")]
         public static void SetUserNameNative(nint userIdPtr, nint userNamePtr)
         {
-            var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
-            var userName = Marshal.PtrToStringAnsi(userNamePtr) ?? "";
+            string userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
+            string userName = Marshal.PtrToStringAnsi(userNamePtr) ?? "";
 
             SetUserName(userId, userName);
         }
@@ -418,7 +419,7 @@ namespace LibKenjinx
         [UnmanagedCallersOnly(EntryPoint = "user_get_all_users")]
         public static nint GetAllUsersNative()
         {
-            var users = GetAllUsers();
+            string[] users = GetAllUsers();
 
             return CreateStringArray(users.ToList());
         }
@@ -426,8 +427,8 @@ namespace LibKenjinx
         [UnmanagedCallersOnly(EntryPoint = "user_add_user")]
         public static void AddUserNative(nint userNamePtr, nint picturePtr)
         {
-            var userName = Marshal.PtrToStringAnsi(userNamePtr) ?? "";
-            var picture = Marshal.PtrToStringAnsi(picturePtr) ?? "";
+            string userName = Marshal.PtrToStringAnsi(userNamePtr) ?? "";
+            string picture = Marshal.PtrToStringAnsi(picturePtr) ?? "";
 
             AddUser(userName, picture);
         }
@@ -435,7 +436,7 @@ namespace LibKenjinx
         [UnmanagedCallersOnly(EntryPoint = "user_delete_user")]
         public static void DeleteUserNative(nint userIdPtr)
         {
-            var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
+            string userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
 
             DeleteUser(userId);
         }
@@ -443,7 +444,7 @@ namespace LibKenjinx
         [UnmanagedCallersOnly(EntryPoint = "user_open_user")]
         public static void OpenUserNative(nint userIdPtr)
         {
-            var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
+            string userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
 
             OpenUser(userId);
         }
@@ -451,7 +452,7 @@ namespace LibKenjinx
         [UnmanagedCallersOnly(EntryPoint = "user_close_user")]
         public static void CloseUserNative(nint userIdPtr)
         {
-            var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
+            string userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
 
             CloseUser(userId);
         }

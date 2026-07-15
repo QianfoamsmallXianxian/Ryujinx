@@ -64,7 +64,7 @@ namespace Ryujinx.Graphics.Vulkan
                     _ => throw new ArgumentException($"Invalid log level \"{_logLevel}\"."),
                 };
 
-                var debugUtilsMessengerCreateInfo = new DebugUtilsMessengerCreateInfoEXT
+                DebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCreateInfo = new()
                 {
                     SType = StructureType.DebugUtilsMessengerCreateInfoExt,
                     MessageType = messageType,
@@ -98,7 +98,7 @@ namespace Ryujinx.Graphics.Vulkan
             DebugUtilsMessengerCallbackDataEXT* pCallbackData,
             void* pUserData)
         {
-            var msg = Marshal.PtrToStringAnsi((nint)pCallbackData->PMessage);
+            string msg = Marshal.PtrToStringAnsi((nint)pCallbackData->PMessage);
 
             if (messageSeverity.HasFlag(DebugUtilsMessageSeverityFlagsEXT.ErrorBitExt))
             {

@@ -32,10 +32,10 @@ namespace LibKenjinx.Android
 
         internal static void Initialize(JEnvRef jniEnv)
         {
-            var vm = JniHelper.GetVirtualMachine(jniEnv);
+            JavaVMRef? vm = JniHelper.GetVirtualMachine(jniEnv);
             if (_classId == null)
             {
-                var className = new ReadOnlySpan<Byte>(Encoding.UTF8.GetBytes(BaseClassName));
+                ReadOnlySpan<byte> className = new(Encoding.UTF8.GetBytes(BaseClassName));
                 using (IReadOnlyFixedMemory<Byte>.IDisposable cName = className.GetUnsafeValPtr()
                            .GetUnsafeFixedContext(className.Length))
                 {
@@ -48,7 +48,7 @@ namespace LibKenjinx.Android
                 }
             }
 
-            foreach (var x in _methods)
+            foreach ((string name, string descriptor) x in _methods)
             {
                 CacheMethod(jniEnv, x.name, x.descriptor);
             }
@@ -58,10 +58,10 @@ namespace LibKenjinx.Android
 
         private static void CacheMethod(JEnvRef jEnv, string name, string descriptor)
         {
-            if (!_methodCache.TryGetValue((name, descriptor), out var method))
+            if (!_methodCache.TryGetValue((name, descriptor), out JMethodId method))
             {
-                var methodName = new ReadOnlySpan<Byte>(Encoding.UTF8.GetBytes(name));
-                var descriptorId = new ReadOnlySpan<Byte>(Encoding.UTF8.GetBytes(descriptor));
+                ReadOnlySpan<byte> methodName = new(Encoding.UTF8.GetBytes(name));
+                ReadOnlySpan<byte> descriptorId = new(Encoding.UTF8.GetBytes(descriptor));
                 using (IReadOnlyFixedMemory<Byte>.IDisposable mName = methodName.GetUnsafeValPtr()
                        .GetUnsafeFixedContext(methodName.Length))
                 using (IReadOnlyFixedMemory<Byte>.IDisposable dName = descriptorId.GetUnsafeValPtr()
@@ -69,7 +69,7 @@ namespace LibKenjinx.Android
                 {
                     if (_classId != null)
                     {
-                        var methodId = JniHelper.GetStaticMethodId(jEnv, (JClassLocalRef)(_classId.Value.Value), mName, dName);
+                        JMethodId? methodId = JniHelper.GetStaticMethodId(jEnv, (JClassLocalRef)(_classId.Value.Value), mName, dName);
                         if (methodId == null)
                         {
                             Logger.Warning?.Print(LogClass.Application, $"Java Method Id {name} not found");
@@ -86,8 +86,8 @@ namespace LibKenjinx.Android
 
         private static void CallVoidMethod(string name, string descriptor, params JValue[] values)
         {
-            using var env = JniEnv.Create();
-            if (_methodCache.TryGetValue((name, descriptor), out var method))
+            using JniEnv? env = JniEnv.Create();
+            if (_methodCache.TryGetValue((name, descriptor), out JMethodId method))
             {
                 if (descriptor.EndsWith("V"))
                 {
@@ -101,8 +101,8 @@ namespace LibKenjinx.Android
 
         private static JLong CallLongMethod(string name, string descriptor, params JValue[] values)
         {
-            using var env = JniEnv.Create();
-            if (_methodCache.TryGetValue((name, descriptor), out var method))
+            using JniEnv? env = JniEnv.Create();
+            if (_methodCache.TryGetValue((name, descriptor), out JMethodId method))
             {
                 if (descriptor.EndsWith("J"))
                     if (env != null && _classId != null)
@@ -127,7 +127,7 @@ namespace LibKenjinx.Android
 
         public static void UpdateProgress(string info, float progress)
         {
-            using var infoPtr = new TempNativeString(info);
+            using TempNativeString infoPtr = new(info);
             CallVoidMethod("updateProgress", "(JF)V",
                 JValue.Create(infoPtr.AsBytes()),
                 JValue.Create(progress.AsBytes()));
@@ -153,11 +153,11 @@ namespace LibKenjinx.Android
             string newSubtitle,
             string newInitialText)
         {
-            using var titlePointer = new TempNativeString(newTitle);
-            using var messagePointer = new TempNativeString(newMessage);
-            using var watermarkPointer = new TempNativeString(newWatermark);
-            using var subtitlePointer = new TempNativeString(newSubtitle);
-            using var newInitialPointer = new TempNativeString(newInitialText);
+            using TempNativeString titlePointer = new(newTitle);
+            using TempNativeString messagePointer = new(newMessage);
+            using TempNativeString watermarkPointer = new(newWatermark);
+            using TempNativeString subtitlePointer = new(newSubtitle);
+            using TempNativeString newInitialPointer = new(newInitialText);
             CallVoidMethod("updateUiHandler", "(JJJIIIIJJ)V",
                 JValue.Create(titlePointer.AsBytes()),
                 JValue.Create(messagePointer.AsBytes()),
@@ -224,7 +224,7 @@ namespace LibKenjinx.Android
             {
                 bool newAttach = false;
                 ReadOnlySpan<Byte> threadName = "JvmCall"u8;
-                var env = _jvm == null ? default : JniHelper.Attach(_jvm.Value, threadName.GetUnsafeValPtr().GetUnsafeFixedContext(threadName.Length),
+                JEnvRef? env = _jvm == null ? default : JniHelper.Attach(_jvm.Value, threadName.GetUnsafeValPtr().GetUnsafeFixedContext(threadName.Length),
                                          out newAttach);
 
                 return env != null ? new JniEnv(env.Value, newAttach) : null;

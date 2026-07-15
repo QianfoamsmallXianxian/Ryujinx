@@ -8,6 +8,7 @@ using Ryujinx.Graphics.Gpu;
 using Ryujinx.Graphics.Gpu.Shader;
 using Ryujinx.Graphics.OpenGL;
 using Ryujinx.Graphics.Vulkan;
+using Ryujinx.HLE;
 using Silk.NET.Vulkan;
 using System;
 using System.Runtime.InteropServices;
@@ -62,7 +63,7 @@ namespace LibKenjinx
             else if (graphicsBackend == GraphicsBackend.Vulkan)
             {
                 // Prefer the platform-provided Vulkan loader (if present), fall back to default.
-                var api = VulkanLoader?.GetApi() ?? Vk.GetApi();
+                Vk? api = VulkanLoader?.GetApi() ?? Vk.GetApi();
 
                 Renderer = new VulkanRenderer(
                     api,
@@ -89,7 +90,7 @@ namespace LibKenjinx
 
         public static void SetVsyncState(Ryujinx.Common.Configuration.VSyncMode vSyncMode)
         {
-            var device = SwitchDevice!.EmulationContext!;
+            Switch device = SwitchDevice!.EmulationContext!;
             device.VSyncMode = vSyncMode;
             device.Gpu.Renderer.Window.ChangeVSyncMode((Ryujinx.Graphics.GAL.VSyncMode)vSyncMode);
         }
@@ -103,7 +104,7 @@ namespace LibKenjinx
             ARMeilleure.Optimizations.EcoFriendly = SwitchDevice!.EnableLowPowerPtc;
             ARMeilleure.Optimizations.CacheEviction = SwitchDevice.EnableJitCacheEviction;
 
-            var device = SwitchDevice.EmulationContext!;
+            Switch device = SwitchDevice.EmulationContext!;
             _gpuDoneEvent = new ManualResetEvent(true);
 
             device.Gpu.Renderer.Initialize(_enableGraphicsLogging ? GraphicsDebugLevel.All : GraphicsDebugLevel.None);
@@ -179,8 +180,8 @@ namespace LibKenjinx
                     Interop.UpdateProgress(status, value);
                 }
             }
-            var status = $"{current} / {total}";
-            var progress = current / (float)total;
+            string status = $"{current} / {total}";
+            float progress = current / (float)total;
             if (float.IsNaN(progress))
                 progress = 0;
 

@@ -8,44 +8,44 @@ namespace LibKenjinx
     {
         public static string GetOpenedUser()
         {
-            var lastProfile = SwitchDevice?.AccountManager?.LastOpenedUser;
+            UserProfile? lastProfile = SwitchDevice?.AccountManager?.LastOpenedUser;
 
             return lastProfile?.UserId.ToString() ?? "";
         }
 
         public static string GetUserPicture(string userId)
         {
-            var uid = new UserId(userId);
+            UserId uid = new(userId);
 
-            var user = SwitchDevice?.AccountManager?.GetAllUsers().FirstOrDefault(x => x.UserId == uid);
+            UserProfile? user = SwitchDevice?.AccountManager?.GetAllUsers().FirstOrDefault(x => x.UserId == uid);
 
             if (user == null)
                 return "";
 
-            var pic = user.Image;
+            byte[]? pic = user.Image;
 
             return pic != null ? Convert.ToBase64String(pic) : "";
         }
 
         public static void SetUserPicture(string userId, string picture)
         {
-            var uid = new UserId(userId);
+            UserId uid = new(userId);
 
             SwitchDevice?.AccountManager?.SetUserImage(uid, Convert.FromBase64String(picture));
         }
 
         public static string GetUserName(string userId)
         {
-            var uid = new UserId(userId);
+            UserId uid = new(userId);
 
-            var user = SwitchDevice?.AccountManager?.GetAllUsers().FirstOrDefault(x => x.UserId == uid);
+            UserProfile? user = SwitchDevice?.AccountManager?.GetAllUsers().FirstOrDefault(x => x.UserId == uid);
 
             return user?.Name ?? "";
         }
 
         public static void SetUserName(string userId, string name)
         {
-            var uid = new UserId(userId);
+            UserId uid = new(userId);
 
             SwitchDevice?.AccountManager?.SetUserName(uid, name);
         }
@@ -63,19 +63,19 @@ namespace LibKenjinx
 
         public static void DeleteUser(string userId)
         {
-            var uid = new UserId(userId);
+            UserId uid = new(userId);
             SwitchDevice?.AccountManager?.DeleteUser(uid);
         }
 
         public static void OpenUser(string userId)
         {
-            var uid = new UserId(userId);
+            UserId uid = new(userId);
             SwitchDevice?.AccountManager?.OpenUser(uid);
         }
 
         public static void CloseUser(string userId)
         {
-            var uid = new UserId(userId);
+            UserId uid = new(userId);
             SwitchDevice?.AccountManager?.CloseUser(uid);
         }
     }

@@ -146,11 +146,11 @@ namespace Ryujinx.HLE.HOS.Services.Nfc.Nfp
                     context.Device.System.NfpDevices[i].State = NfpDeviceState.SearchingForTag;
 
                     // ▼ If a tag has already been injected via Bridge, use it immediately.
-                    if (KenjinxAmiiboShim.TryConsume(out var tagBytes))
+                    if (KenjinxAmiiboShim.TryConsume(out byte[] tagBytes))
                     {
-                        var dev = context.Device.System.NfpDevices[i];
+                        NfpDevice dev = context.Device.System.NfpDevices[i];
 
-                        if (TryGetFigureIdFrom1Dc(tagBytes, out var fid, out var raw))
+                        if (TryGetFigureIdFrom1Dc(tagBytes, out string fid, out string raw))
                         {
                             dev.AmiiboId = fid;
                             Logger.Info?.PrintMsg(LogClass.ServiceNfp, $"Kenjinx: raw@1DC={raw} → FigureID={fid}");
@@ -182,11 +182,11 @@ namespace Ryujinx.HLE.HOS.Services.Nfc.Nfp
                     // ▼ Poll during the search for newly injected tags.
                     for (int d = 0; d < context.Device.System.NfpDevices.Count; d++)
                     {
-                        var dev = context.Device.System.NfpDevices[d];
+                        NfpDevice dev = context.Device.System.NfpDevices[d];
 
-                        if (dev.State == NfpDeviceState.SearchingForTag && KenjinxAmiiboShim.TryConsume(out var tagBytesLoop))
+                        if (dev.State == NfpDeviceState.SearchingForTag && KenjinxAmiiboShim.TryConsume(out byte[] tagBytesLoop))
                         {
-                            if (TryGetFigureIdFrom1Dc(tagBytesLoop, out var fid, out var raw))
+                            if (TryGetFigureIdFrom1Dc(tagBytesLoop, out string fid, out string raw))
                             {
                                 dev.AmiiboId = fid;
                                 Logger.Info?.PrintMsg(LogClass.ServiceNfp, $"Kenjinx: raw@1DC={raw} → FigureID={fid}");
@@ -267,7 +267,7 @@ namespace Ryujinx.HLE.HOS.Services.Nfc.Nfp
                 return false;
             }
 
-            var s = data.AsSpan(off, len);
+            Span<byte> s = data.AsSpan(off, len);
 
             // Debug string "AA-BB-..." in uppercase letters
             debugRaw = $"{s[0]:X2}-{s[1]:X2}-{s[2]:X2}-{s[3]:X2}-{s[4]:X2}-{s[5]:X2}-{s[6]:X2}-{s[7]:X2}";
@@ -286,8 +286,8 @@ namespace Ryujinx.HLE.HOS.Services.Nfc.Nfp
         {
             if (data == null || data.Length == 0) return "0000000000000000";
 
-            using var sha = SHA1.Create();
-            var hash = sha.ComputeHash(data); // 20 Bytes
+            using SHA1 sha = SHA1.Create();
+            byte[] hash = sha.ComputeHash(data); // 20 Bytes
             char[] buf = new char[16];
             for (int i = 0, k = 0; i < 8; i++)
             {

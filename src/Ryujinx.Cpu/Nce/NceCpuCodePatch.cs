@@ -50,7 +50,7 @@ namespace Ryujinx.Cpu.Nce
         {
             uint[] code = _code.ToArray();
 
-            foreach (var patchTarget in _patchTargets)
+            foreach (PatchTarget patchTarget in _patchTargets)
             {
                 ulong instPatchStartAddress = patchAddress + (ulong)patchTarget.PatchStartIndex * sizeof(uint);
                 ulong instPatchBranchAddress = patchAddress + (ulong)patchTarget.PatchBranchIndex * sizeof(uint);

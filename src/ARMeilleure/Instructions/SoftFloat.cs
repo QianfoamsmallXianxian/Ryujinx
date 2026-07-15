@@ -1686,7 +1686,7 @@ namespace ARMeilleure.Instructions
             }
             else if (MathF.Abs(value) < MathF.Pow(2f, -128))
             {
-                var overflowToInf = fpcr.GetRoundingMode() switch
+                bool overflowToInf = fpcr.GetRoundingMode() switch
                 {
                     FPRoundingMode.ToNearest => true,
                     FPRoundingMode.TowardsPlusInfinity => !sign,
@@ -3393,7 +3393,7 @@ namespace ARMeilleure.Instructions
             }
             else if (Math.Abs(value) < Math.Pow(2d, -1024))
             {
-                var overflowToInf = fpcr.GetRoundingMode() switch
+                bool overflowToInf = fpcr.GetRoundingMode() switch
                 {
                     FPRoundingMode.ToNearest => true,
                     FPRoundingMode.TowardsPlusInfinity => !sign,

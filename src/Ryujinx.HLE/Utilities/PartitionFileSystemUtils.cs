@@ -27,7 +27,7 @@ namespace Ryujinx.HLE.Utilities
             }
             else
             {
-                var pfsTemp = new PartitionFileSystem();
+                PartitionFileSystem pfsTemp = new();
                 Result initResult = pfsTemp.Initialize(stream.AsStorage());
 
                 if (throwOnFailure)

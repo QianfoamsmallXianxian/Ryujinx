@@ -18,13 +18,13 @@ namespace Ryujinx.HLE.Kenjinx
 
             // --- TRY 0: Our conflict-free shim class first (recommended) ---
             // Type name including assembly: Ryujinx.HLE
-            var shimType = Type.GetType(
+            Type? shimType = Type.GetType(
                 "Ryujinx.HLE.HOS.Services.Nfc.Nfp.KenjinxAmiiboShim, Ryujinx.HLE",
                 throwOnError: false
             );
             if (shimType != null)
             {
-                var m = shimType.GetMethod(
+                MethodInfo? m = shimType.GetMethod(
                     "InjectAmiibo",
                     BindingFlags.Public | BindingFlags.Static,
                     binder: null,
@@ -34,7 +34,7 @@ namespace Ryujinx.HLE.Kenjinx
 
                 if (m != null)
                 {
-                    var ok = (bool)(m.Invoke(null, new object[] { data }) ?? false);
+                    bool ok = (bool)(m.Invoke(null, new object[] { data }) ?? false);
                     if (ok)
                     {
                         message = "Injected via KenjinxAmiiboShim.InjectAmiibo";
@@ -45,13 +45,13 @@ namespace Ryujinx.HLE.Kenjinx
 
             // --- TRY 0.5: If available – static API directly on NfpManager ---
             // (Only if you later add a static InjectAmiibo(...) method to NfpManager.)
-            var nfpManagerType = Type.GetType(
+            Type? nfpManagerType = Type.GetType(
                 "Ryujinx.HLE.HOS.Services.Nfc.Nfp.NfpManager, Ryujinx.HLE",
                 throwOnError: false
             );
             if (nfpManagerType != null)
             {
-                var m = nfpManagerType.GetMethod(
+                MethodInfo? m = nfpManagerType.GetMethod(
                     "InjectAmiibo",
                     BindingFlags.Public | BindingFlags.Static,
                     binder: null,
@@ -61,15 +61,15 @@ namespace Ryujinx.HLE.Kenjinx
 
                 if (m != null)
                 {
-                    var ok = m.Invoke(null, new object[] { data });
+                    object? ok = m.Invoke(null, new object[] { data });
                     message = "Injected via NfpManager.InjectAmiibo(static)";
                     return true;
                 }
             }
 
             // --- TRY 1: Direct access to an existing manager in the system object (your existing code) ---
-            var sys = device.System;
-            var nfpMgr =
+            HOS.Horizon? sys = device.System;
+            object? nfpMgr =
                 GetField(sys, "NfpManager") ??
                 GetField(sys, "_nfpManager") ??
                 GetField(sys, "NfcManager") ??
@@ -78,7 +78,7 @@ namespace Ryujinx.HLE.Kenjinx
             if (nfpMgr != null)
             {
                 // Possible method identifiers depending on the tree:
-                var mi =
+                MethodInfo? mi =
                     GetMethod(nfpMgr, "InjectAmiibo", new[] { typeof(byte[]) }) ??
                     GetMethod(nfpMgr, "LoadAmiiboFromBytes", new[] { typeof(byte[]) }) ??
                     GetMethod(nfpMgr, "LoadVirtualAmiibo", new[] { typeof(byte[]) }) ??
@@ -101,7 +101,7 @@ namespace Ryujinx.HLE.Kenjinx
             if (device?.System is null) return;
 
             // --- Clear via Shim (if present) ---
-            var shimType = Type.GetType(
+            Type? shimType = Type.GetType(
                 "Ryujinx.HLE.HOS.Services.Nfc.Nfp.KenjinxAmiiboShim, Ryujinx.HLE",
                 throwOnError: false
             );
@@ -110,7 +110,7 @@ namespace Ryujinx.HLE.Kenjinx
                 ?.Invoke(null, null);
 
             // --- Optional: Static clear API on NfpManager (if available) ---
-            var nfpManagerType = Type.GetType(
+            Type? nfpManagerType = Type.GetType(
                 "Ryujinx.HLE.HOS.Services.Nfc.Nfp.NfpManager, Ryujinx.HLE",
                 throwOnError: false
             );
@@ -119,8 +119,8 @@ namespace Ryujinx.HLE.Kenjinx
                 ?.Invoke(null, null);
 
             // --- Your existing instance fallback ---
-            var sys = device.System;
-            var nfpMgr =
+            HOS.Horizon? sys = device.System;
+            object? nfpMgr =
                 GetField(sys, "NfpManager") ??
                 GetField(sys, "_nfpManager") ??
                 GetField(sys, "NfcManager") ??
@@ -128,7 +128,7 @@ namespace Ryujinx.HLE.Kenjinx
 
             if (nfpMgr != null)
             {
-                var mi =
+                MethodInfo? mi =
                     GetMethod(nfpMgr, "ClearAmiibo", Type.EmptyTypes) ??
                     GetMethod(nfpMgr, "ResetVirtualAmiibo", Type.EmptyTypes);
 
@@ -138,14 +138,14 @@ namespace Ryujinx.HLE.Kenjinx
 
         private static object? GetField(object target, string name)
         {
-            var t = target.GetType();
-            var f = t.GetField(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
+            Type t = target.GetType();
+            FieldInfo? f = t.GetField(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
             return f?.GetValue(target);
         }
 
         private static MethodInfo? GetMethod(object target, string name, Type[]? sig)
         {
-            var t = target.GetType();
+            Type t = target.GetType();
             return t.GetMethod(
                 name,
                 BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy,
