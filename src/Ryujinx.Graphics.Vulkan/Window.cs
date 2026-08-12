@@ -236,7 +236,7 @@ namespace Ryujinx.Graphics.Vulkan
 
                 CurrentTransform = capabilities.CurrentTransform;
 
-                var usage = ImageUsageFlags.ColorAttachmentBit | ImageUsageFlags.TransferDstBit;
+                ImageUsageFlags usage = ImageUsageFlags.ColorAttachmentBit | ImageUsageFlags.TransferDstBit;
                 if (!PlatformInfo.IsBionic)
                 {
                     usage |= ImageUsageFlags.StorageBit; // Only desktop allows storage for swapchain
@@ -328,7 +328,7 @@ namespace Ryujinx.Graphics.Vulkan
                 ComponentSwizzle.B,
                 ComponentSwizzle.A);
 
-            var aspectFlags = ImageAspectFlags.ColorBit;
+            ImageAspectFlags aspectFlags = ImageAspectFlags.ColorBit;
 
             ImageSubresourceRange subresourceRange = new(aspectFlags, 0, 1, 0, 1);
 
@@ -342,7 +342,7 @@ namespace Ryujinx.Graphics.Vulkan
                 SubresourceRange = subresourceRange,
             };
 
-            _gd.Api.CreateImageView(_device, in imageCreateInfo, null, out ImageView* imageView).ThrowOnError();
+            _gd.Api.CreateImageView(_device, in imageCreateInfo, null, out ImageView imageView).ThrowOnError();
 
             return new TextureView(_gd, _device, new DisposableImageView(_gd.Api, _device, imageView), info, format);
         }
@@ -561,7 +561,7 @@ namespace Ryujinx.Graphics.Vulkan
                 {
                     _gd.FlushAllCommands();
                     Semaphore[] emptySems = Array.Empty<Semaphore>();
-                    var waitStagesCO = new[] { PipelineStageFlags.ColorAttachmentOutputBit };
+                    PipelineStageFlags[] waitStagesCO = new[] { PipelineStageFlags.ColorAttachmentOutputBit };
                     _gd.CommandBufferPool.Return(
                         cbs,
                         emptySems,
@@ -643,7 +643,7 @@ namespace Ryujinx.Graphics.Vulkan
             }
 
             Semaphore[] waitSems = new[] { _imageAvailableSemaphores[semaphoreIndex] };
-            var waitStages = new[] { PipelineStageFlags.ColorAttachmentOutputBit }; // Important on Android
+            PipelineStageFlags[] waitStages = new[] { PipelineStageFlags.ColorAttachmentOutputBit }; // Important on Android
             Semaphore[] signalSems = new[] { _renderFinishedSemaphores[semaphoreIndex] };
             _gd.CommandBufferPool.Return(cbs, waitSems, waitStages, signalSems);
 

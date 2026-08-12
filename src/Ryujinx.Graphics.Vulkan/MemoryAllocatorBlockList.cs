@@ -220,7 +220,7 @@ namespace Ryujinx.Graphics.Vulkan
                 MemoryTypeIndex = (uint)MemoryTypeIndex,
             };
 
-            _api.AllocateMemory(_device, in memoryAllocateInfo, null, out DeviceMemory* deviceMemory).ThrowOnError();
+            _api.AllocateMemory(_device, in memoryAllocateInfo, null, out DeviceMemory deviceMemory).ThrowOnError();
 
             nint hostPointer = nint.Zero;
 
@@ -231,7 +231,7 @@ namespace Ryujinx.Graphics.Vulkan
                 hostPointer = (nint)pointer;
             }
 
-            Block newBlock = new Block(deviceMemory, hostPointer, blockAlignedSize);
+            Block newBlock = new(deviceMemory, hostPointer, blockAlignedSize);
 
             InsertBlock(newBlock);
 

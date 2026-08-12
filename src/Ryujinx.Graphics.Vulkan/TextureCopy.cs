@@ -59,8 +59,8 @@ namespace Ryujinx.Graphics.Vulkan
                 dstAspectFlags = dstInfo.Format.ConvertAspectFlags();
             }
 
-            var srcOffsets = new ImageBlit.SrcOffsetsBuffer();
-            var dstOffsets = new ImageBlit.DstOffsetsBuffer();
+            ImageBlit.SrcOffsetsBuffer srcOffsets = new();
+            ImageBlit.DstOffsetsBuffer dstOffsets = new();
 
             Filter filter = linearFilter && !dstInfo.Format.IsDepthOrStencil() ? Filter.Linear : Filter.Nearest;
 
@@ -453,7 +453,7 @@ namespace Ryujinx.Graphics.Vulkan
                     DependencyCount = 1,
                 };
 
-                gd.Api.CreateRenderPass2(device, in renderPassCreateInfo, null, out RenderPass* renderPass).ThrowOnError();
+                gd.Api.CreateRenderPass2(device, in renderPassCreateInfo, null, out RenderPass renderPass).ThrowOnError();
 
                 using Auto<DisposableRenderPass> rp = new(new DisposableRenderPass(gd.Api, device, renderPass));
 
@@ -476,10 +476,10 @@ namespace Ryujinx.Graphics.Vulkan
                     Layers = (uint)src.Layers,
                 };
 
-                gd.Api.CreateFramebuffer(device, in framebufferCreateInfo, null, out Framebuffer* framebuffer).ThrowOnError();
+                gd.Api.CreateFramebuffer(device, in framebufferCreateInfo, null, out Framebuffer framebuffer).ThrowOnError();
                 using Auto<DisposableFramebuffer> fb = new(new DisposableFramebuffer(gd.Api, device, framebuffer), null, srcView, dstView);
 
-                Rect2D renderArea = new Rect2D(null, new Extent2D((uint)src.Info.Width, (uint)src.Info.Height));
+                Rect2D renderArea = new(null, new Extent2D((uint)src.Info.Width, (uint)src.Info.Height));
                 ClearValue clearValue = new();
 
                 RenderPassBeginInfo renderPassBeginInfo = new()

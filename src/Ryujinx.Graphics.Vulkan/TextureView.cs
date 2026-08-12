@@ -120,7 +120,7 @@ namespace Ryujinx.Graphics.Vulkan
                     PNext = &imageViewUsage,
                 };
 
-                gd.Api.CreateImageView(device, in imageCreateInfo, null, out ImageView* imageView).ThrowOnError();
+                gd.Api.CreateImageView(device, in imageCreateInfo, null, out ImageView imageView).ThrowOnError();
                 return new Auto<DisposableImageView>(new DisposableImageView(gd.Api, device, imageView), null, storage.GetImage());
             }
 

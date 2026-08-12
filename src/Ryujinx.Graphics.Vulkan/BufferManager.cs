@@ -118,13 +118,13 @@ namespace Ryujinx.Graphics.Vulkan
                 PNext = &externalMemoryBuffer,
             };
 
-            gd.Api.CreateBuffer(_device, in bufferCreateInfo, null, out VkBuffer* buffer).ThrowOnError();
+            gd.Api.CreateBuffer(_device, in bufferCreateInfo, null, out VkBuffer buffer).ThrowOnError();
 
             (Auto<MemoryAllocation> allocation, ulong offset) = gd.HostMemoryAllocator.GetExistingAllocation(pointer, (ulong)size);
 
             gd.Api.BindBufferMemory(_device, buffer, allocation.GetUnsafe().Memory, allocation.GetUnsafe().Offset + offset);
 
-            BufferHolder holder = new BufferHolder(gd, _device, buffer, allocation, size, BufferAllocationType.HostMapped, BufferAllocationType.HostMapped, (int)offset);
+            BufferHolder holder = new(gd, _device, buffer, allocation, size, BufferAllocationType.HostMapped, BufferAllocationType.HostMapped, (int)offset);
 
             BufferCount++;
 
@@ -158,7 +158,7 @@ namespace Ryujinx.Graphics.Vulkan
                 Flags = BufferCreateFlags.SparseBindingBit | BufferCreateFlags.SparseAliasedBit
             };
 
-            gd.Api.CreateBuffer(_device, in bufferCreateInfo, null, out VkBuffer* buffer).ThrowOnError();
+            gd.Api.CreateBuffer(_device, in bufferCreateInfo, null, out VkBuffer buffer).ThrowOnError();
 
             SparseMemoryBind[] memoryBinds = new SparseMemoryBind[storageBuffers.Length];
             Auto<MemoryAllocation>[] storageAllocations = new Auto<MemoryAllocation>[storageBuffers.Length];
@@ -224,7 +224,7 @@ namespace Ryujinx.Graphics.Vulkan
                 gd.Api.QueueBindSparse(gd.Queue, 1, in bindSparseInfo, default).ThrowOnError();
             }
 
-            BufferHolder holder = new BufferHolder(gd, _device, buffer, (int)size, storageAllocations);
+            BufferHolder holder = new(gd, _device, buffer, (int)size, storageAllocations);
 
             BufferCount++;
 
@@ -303,7 +303,7 @@ namespace Ryujinx.Graphics.Vulkan
                 SharingMode = SharingMode.Exclusive,
             };
 
-            gd.Api.CreateBuffer(_device, in bufferCreateInfo, null, out VkBuffer* buffer).ThrowOnError();
+            gd.Api.CreateBuffer(_device, in bufferCreateInfo, null, out VkBuffer buffer).ThrowOnError();
 
             gd.Api.GetBufferMemoryRequirements(_device, buffer, out MemoryRequirements requirements);
 
@@ -339,7 +339,7 @@ namespace Ryujinx.Graphics.Vulkan
                 SharingMode = SharingMode.Exclusive,
             };
 
-            gd.Api.CreateBuffer(_device, in bufferCreateInfo, null, out VkBuffer* buffer).ThrowOnError();
+            gd.Api.CreateBuffer(_device, in bufferCreateInfo, null, out VkBuffer buffer).ThrowOnError();
             gd.Api.GetBufferMemoryRequirements(_device, buffer, out MemoryRequirements requirements);
 
             if (sparseCompatible)

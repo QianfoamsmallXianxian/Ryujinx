@@ -123,7 +123,7 @@ namespace Ryujinx.Graphics.Vulkan
                     PNext = &priorityInfo,
                 };
 
-                Result result = _api.AllocateMemory(_device, in memoryAllocateInfo, null, out DeviceMemory* deviceMemory);
+                Result result = _api.AllocateMemory(_device, in memoryAllocateInfo, null, out DeviceMemory deviceMemory);
 
                 if (result < Result.Success)
                 {
@@ -131,7 +131,7 @@ namespace Ryujinx.Graphics.Vulkan
                     return false;
                 }
 
-                MemoryAllocation allocation = new MemoryAllocation(this, deviceMemory, pageAlignedPointer, 0, pageAlignedSize);
+                MemoryAllocation allocation = new(this, deviceMemory, pageAlignedPointer, 0, pageAlignedSize);
                 Auto<MemoryAllocation> allocAuto = new(allocation);
                 HostMemoryAllocation hostAlloc = new(allocAuto, pageAlignedPointer, pageAlignedSize);
 

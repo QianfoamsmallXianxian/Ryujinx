@@ -560,7 +560,7 @@ namespace LibKenjinx
                 _surfacePtr = Interop.GetSurfacePtr();
                 _window = Interop.GetWindowsHandle();
 
-                Vk? api = VulkanLoader?.GetApi() ?? Vk.GetApi();
+                Vk api = VulkanLoader?.GetApi() ?? Vk.GetApi();
                 if (api.TryGetInstanceExtension(new Instance(instance), out KhrAndroidSurface surfaceExtension))
                 {
                     AndroidSurfaceCreateInfoKHR createInfo = new()
@@ -569,7 +569,7 @@ namespace LibKenjinx
                         Window = (nint*)_surfacePtr,
                     };
 
-                    Result result = surfaceExtension.CreateAndroidSurface(new Instance(instance), in createInfo, null, out SurfaceKHR* surface);
+                    Result result = surfaceExtension.CreateAndroidSurface(new Instance(instance), in createInfo, null, out SurfaceKHR surface);
 
                     // If a rotation was applied before the surface was created → apply it now
                     if (_window != 0 && _pendingRotationDegrees != -1)

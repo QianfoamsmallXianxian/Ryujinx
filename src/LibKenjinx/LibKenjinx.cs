@@ -1,12 +1,12 @@
 // State class for the library
 using Gommon;
-using LibHac;
 using LibHac.Account;
 using LibHac.Common;
 using LibHac.Common.Keys;
 using LibHac.Fs;
 using LibHac.Fs.Fsa;
 using LibHac.FsSystem;
+using LibHac.Ns;
 using LibHac.Tools.Fs;
 using LibHac.Tools.FsSystem;
 using LibHac.Tools.FsSystem.NcaUtils;
@@ -42,6 +42,7 @@ using System.Text;
 using System.Text.Json;
 using ApplicationId = LibHac.Ncm.ApplicationId;
 using Path = System.IO.Path;
+using Result = LibHac.Result;
 using VSyncMode = Ryujinx.Common.Configuration.VSyncMode;
 
 namespace LibKenjinx
@@ -109,7 +110,7 @@ namespace LibKenjinx
             {
                 return new GameStats();
             }
-            Switch? context = SwitchDevice.EmulationContext;
+            Switch context = SwitchDevice.EmulationContext;
 
             return new GameStats
             {
@@ -362,7 +363,7 @@ namespace LibKenjinx
 
                 if (string.IsNullOrWhiteSpace(titleName))
                 {
-                    foreach (ref readonly var controlTitle in controlData.Title)
+                    foreach (ref readonly ApplicationControlProperty.ApplicationTitle controlTitle in controlData.Title)
                     {
                         if (!controlTitle.NameString.IsEmpty())
                         {
@@ -375,7 +376,7 @@ namespace LibKenjinx
 
                 if (string.IsNullOrWhiteSpace(publisher))
                 {
-                    foreach (ref readonly var controlTitle in controlData.Title)
+                    foreach (ref readonly ApplicationControlProperty.ApplicationTitle controlTitle in controlData.Title)
                     {
                         if (!controlTitle.PublisherString.IsEmpty())
                         {
@@ -1203,14 +1204,14 @@ namespace LibKenjinx
                 int idx = (int)Language.AmericanEnglish;
                 if (control.Title.Length > idx)
                 {
-                    string? s = control.Title[idx].NameString.ToString();
+                    string s = control.Title[idx].NameString.ToString();
                     if (!string.IsNullOrWhiteSpace(s)) return s;
                 }
 
                 // Fallback: first non-empty localization
-                foreach (ref readonly var t in control.Title)
+                foreach (ref readonly ApplicationControlProperty.ApplicationTitle t in control.Title)
                 {
-                    var s = t.NameString.ToString();
+                    string s = t.NameString.ToString();
                     if (!string.IsNullOrWhiteSpace(s)) return s;
                 }
             }

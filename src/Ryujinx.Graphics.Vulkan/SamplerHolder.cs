@@ -68,7 +68,7 @@ namespace Ryujinx.Graphics.Vulkan
                 samplerCreateInfo.BorderColor = BorderColor.FloatCustomExt;
             }
 
-            gd.Api.CreateSampler(device, in samplerCreateInfo, null, out Sampler* sampler).ThrowOnError();
+            gd.Api.CreateSampler(device, in samplerCreateInfo, null, out Sampler sampler).ThrowOnError();
 
             _sampler = new Auto<DisposableSampler>(new DisposableSampler(gd.Api, device, sampler));
         }

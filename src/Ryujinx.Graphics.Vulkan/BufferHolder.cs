@@ -126,7 +126,7 @@ namespace Ryujinx.Graphics.Vulkan
                 Range = (uint)size,
             };
 
-            _gd.Api.CreateBufferView(_device, in bufferViewCreateInfo, null, out BufferView* bufferView).ThrowOnError();
+            _gd.Api.CreateBufferView(_device, in bufferViewCreateInfo, null, out BufferView bufferView).ThrowOnError();
 
             return new Auto<DisposableBufferView>(new DisposableBufferView(_gd.Api, _device, bufferView), this, _waitable, _buffer);
         }

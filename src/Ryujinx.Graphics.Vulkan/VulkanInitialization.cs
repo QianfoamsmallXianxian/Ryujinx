@@ -1,6 +1,7 @@
 using Ryujinx.Common.Configuration;
 using Ryujinx.Common.Logging;
 using Ryujinx.Graphics.GAL;
+using Silk.NET.Core;
 using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.EXT;
 using Silk.NET.Vulkan.Extensions.KHR;
@@ -249,7 +250,7 @@ namespace Ryujinx.Graphics.Vulkan
         {
             const QueueFlags RequiredFlags = QueueFlags.GraphicsBit | QueueFlags.ComputeBit;
 
-            KhrSurface khrSurface = new KhrSurface(api.Context);
+            KhrSurface khrSurface = new(api.Context);
 
             for (uint index = 0; index < physicalDevice.QueueFamilyProperties.Length; index++)
             {
@@ -566,7 +567,7 @@ namespace Ryujinx.Graphics.Vulkan
                 pExtendedFeatures = &featuresVertexInputDynamicState;
             }
 
-            var featuresExtendedDynamicState = new PhysicalDeviceExtendedDynamicStateFeaturesEXT
+            PhysicalDeviceExtendedDynamicStateFeaturesEXT featuresExtendedDynamicState = new()
             {
                 SType = StructureType.PhysicalDeviceExtendedDynamicStateFeaturesExt,
                 PNext = pExtendedFeatures,
@@ -704,7 +705,7 @@ namespace Ryujinx.Graphics.Vulkan
                 PEnabledFeatures = &features,
             };
 
-            api.CreateDevice(physicalDevice.PhysicalDevice, in deviceCreateInfo, null, out Device* device).ThrowOnError();
+            api.CreateDevice(physicalDevice.PhysicalDevice, in deviceCreateInfo, null, out Device device).ThrowOnError();
 
             for (int i = 0; i < enabledExtensions.Length; i++)
             {

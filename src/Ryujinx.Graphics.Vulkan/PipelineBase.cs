@@ -233,8 +233,8 @@ namespace Ryujinx.Graphics.Vulkan
                 return;
             }
 
-            ClearValue clearValue = new ClearValue(null, new ClearDepthStencilValue(depthValue, (uint)stencilValue));
-            int flags = depthMask ? ImageAspectFlags.DepthBit : 0;
+            ClearValue clearValue = new(null, new ClearDepthStencilValue(depthValue, (uint)stencilValue));
+            ImageAspectFlags flags = depthMask ? ImageAspectFlags.DepthBit : 0;
 
             if (stencilMask)
             {
@@ -257,7 +257,7 @@ namespace Ryujinx.Graphics.Vulkan
 
             BeginRenderPass();
 
-            ClearAttachment attachment = new ClearAttachment(flags, 0, clearValue);
+            ClearAttachment attachment = new(flags, 0, clearValue);
             ClearRect clearRect = FramebufferParams.GetClearRect(ClearScissor, layer, layerCount);
 
             Gd.Api.CmdClearAttachments(CommandBuffer, 1, &attachment, 1, &clearRect);
@@ -1722,7 +1722,7 @@ namespace Ryujinx.Graphics.Vulkan
             {
                 FramebufferParams.InsertLoadOpBarriers(Gd, Cbs);
 
-                Rect2D renderArea = new Rect2D(null, new Extent2D(FramebufferParams.Width, FramebufferParams.Height));
+                Rect2D renderArea = new(null, new Extent2D(FramebufferParams.Width, FramebufferParams.Height));
                 ClearValue clearValue = new();
 
                 RenderPassBeginInfo renderPassBeginInfo = new()
