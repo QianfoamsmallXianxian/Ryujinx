@@ -36,6 +36,9 @@ namespace Ryujinx.Graphics.Vulkan
         [GeneratedRegex(@"Adreno (\(TM\) )?(8[0-9]\d)")]
         public static partial Regex Adreno8xxRegex();
 
+        [GeneratedRegex(@"^\d+\.\d+\.\d+\.\d+$")]
+        internal static partial Regex IntelWindowsDriverVersionRegex();
+
         public static Vendor FromId(uint id)
         {
             return id switch
