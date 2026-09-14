@@ -2,6 +2,7 @@ using Ryujinx.Common.Configuration;
 using Ryujinx.Common.Configuration.Hid;
 using Ryujinx.Common.Configuration.Hid.Controller;
 using Ryujinx.Common.Configuration.Hid.Controller.Motion;
+using Ryujinx.HLE.HOS.Services.Hid;
 using Ryujinx.Input;
 using Ryujinx.Input.HLE;
 using System;
@@ -11,6 +12,8 @@ using System.Linq;
 using System.Numerics;
 using ConfigGamepadInputId = Ryujinx.Common.Configuration.Hid.Controller.GamepadInputId;
 using ConfigStickInputId = Ryujinx.Common.Configuration.Hid.Controller.StickInputId;
+using ControllerType = Ryujinx.Common.Configuration.Hid.ControllerType;
+using PlayerIndex = Ryujinx.Common.Configuration.Hid.PlayerIndex;
 using StickInputId = Ryujinx.Input.StickInputId;
 
 namespace LibKenjinx
@@ -268,7 +271,12 @@ namespace LibKenjinx
             throw new NotImplementedException();
         }
 
-        public void Rumble(float lowFrequency, float highFrequency, uint durationMs)
+        public bool HDRumble(VibrationValue left, VibrationValue right)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool Rumble(float lowFrequency, float highFrequency, uint durationMs)
         {
             throw new NotImplementedException();
         }
@@ -487,9 +495,14 @@ namespace LibKenjinx
             //throw new System.NotImplementedException();
         }
 
-        public void Rumble(float lowFrequency, float highFrequency, uint durationMs)
+        public bool HDRumble(VibrationValue left, VibrationValue right)
         {
-            //throw new System.NotImplementedException();
+            throw new NotImplementedException();
+        }
+
+        public bool Rumble(float lowFrequency, float highFrequency, uint durationMs)
+        {
+            throw new NotImplementedException();
         }
 
         public GamepadStateSnapshot GetMappedStateSnapshot()
