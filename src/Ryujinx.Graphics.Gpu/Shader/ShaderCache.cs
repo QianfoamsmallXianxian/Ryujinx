@@ -369,6 +369,16 @@ namespace Ryujinx.Graphics.Gpu.Shader
             bool vertexToCompute = ShouldConvertVertexToCompute(_context, vertexHasStore, geometryHasStore, hasGeometryShader);
             bool geometryToCompute = ShouldConvertGeometryToCompute(_context, geometryHasStore);
 
+            if (addresses.Geometry == 0x100719F30UL)
+            {
+                Logger.Info?.Print(
+                    LogClass.Gpu,
+                    "[MUA3-V29] Forcing geometry=0x100719F30 to Vertex+Geometry as Compute");
+
+                geometryToCompute = true;
+                vertexToCompute = true;
+            }
+
             CachedShaderStage[] shaders = new CachedShaderStage[Constants.ShaderStages + 1];
             List<ShaderSource> shaderSources = [];
 
