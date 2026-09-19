@@ -18,11 +18,14 @@ namespace Ryujinx.Cpu.Nce
             public uint Pstate;
             public uint Fpcr;
             public uint Fpsr;
+            public uint HostFpcr;
+            public uint HostFpsr;
             public uint InManaged;
             public ulong HostSp;
             public nint HostThreadHandle;
             public ulong TempStorage;
             public nint SvcCallHandler;
+            public ulong Pc;
         }
 
         private static NativeCtxStorage _dummyStorage = new();
@@ -75,6 +78,18 @@ namespace Ryujinx.Cpu.Nce
         {
             return StorageOffset(ref _dummyStorage, ref _dummyStorage.CtrEl0);
         }
+
+        public static int GetPstateOffset() => StorageOffset(ref _dummyStorage, ref _dummyStorage.Pstate);
+
+        public static int GetFpcrOffset() => StorageOffset(ref _dummyStorage, ref _dummyStorage.Fpcr);
+
+        public static int GetFpsrOffset() => StorageOffset(ref _dummyStorage, ref _dummyStorage.Fpsr);
+
+        public static int GetHostFpcrOffset() => StorageOffset(ref _dummyStorage, ref _dummyStorage.HostFpcr);
+
+        public static int GetHostFpsrOffset() => StorageOffset(ref _dummyStorage, ref _dummyStorage.HostFpsr);
+
+        public static int GetPcOffset() => StorageOffset(ref _dummyStorage, ref _dummyStorage.Pc);
 
         public static int GetTempStorageOffset()
         {

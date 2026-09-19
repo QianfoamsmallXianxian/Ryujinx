@@ -32,14 +32,20 @@ namespace Ryujinx.Cpu.Nce
             _tickSource = tickSource;
         }
 
+        public static void UnregisterThread()
+        {
+            _context = null;
+            _tickSource = null;
+        }
+
         public static ulong GetTickCounter()
         {
-            return _tickSource.Counter;
+            return _tickSource?.Counter ?? 0UL;
         }
 
         public static bool SuspendThreadHandler()
         {
-            return _context.OnInterrupt();
+            return _context?.OnInterrupt() ?? false;
         }
 
         public static nint GetTickCounterAccessFunctionPointer()

@@ -48,6 +48,10 @@ namespace Ryujinx.Cpu.Signal
         private const int SS_DISABLE = 2;
         private const int SS_AUTODISARM = 1 << 31;
 
+        private static readonly object _bionicSigactionLock = new();
+        private static nint _bionicLibcHandle;
+        private static nint _bionicSigaction;
+
         [LibraryImport("libc", SetLastError = true)]
         private static partial int sigaction(int signum, ref SigAction sigAction, out SigAction oldAction);
 
@@ -66,6 +70,26 @@ namespace Ryujinx.Cpu.Signal
         [LibraryImport("libc", SetLastError = true)]
         private static partial int sigaltstack(ref Stack ss, out Stack oldSs);
 
+        private static unsafe int BionicSigaction(int signum, SigActionBionic* action, SigActionBionic* oldAction)
+        {
+            if (_bionicSigaction == nint.Zero)
+            {
+                lock (_bionicSigactionLock)
+                {
+                    if (_bionicSigaction == nint.Zero)
+                    {
+                        _bionicLibcHandle = NativeLibrary.Load("libc.so");
+                        _bionicSigaction = NativeLibrary.GetExport(_bionicLibcHandle, "sigaction");
+                    }
+                }
+            }
+
+            // Resolve sigaction from libc itself on Android. Calling the public symbol through
+            // the process can be intercepted by libsigchain, which adds host TLS work to every
+            // guest protection fault and was a measurable NCE hot-path cost in Strato.
+            return ((delegate* unmanaged<int, SigActionBionic*, SigActionBionic*, int>)_bionicSigaction)(signum, action, oldAction);
+        }
+
         public static SigAction GetSegfaultExceptionHandler()
         {
             int result;
@@ -73,7 +97,11 @@ namespace Ryujinx.Cpu.Signal
 
             if (PlatformInfo.IsBionic)
             {
-                result = sigaction(SIGSEGV, nint.Zero, out SigActionBionic tmp);
+                SigActionBionic tmp;
+                unsafe
+                {
+                    result = BionicSigaction(SIGSEGV, null, &tmp);
+                }
 
                 old = new SigAction
                 {
@@ -111,7 +139,11 @@ namespace Ryujinx.Cpu.Signal
 
                 sigemptyset(ref sig.sa_mask);
 
-                result = sigaction(SIGSEGV, ref sig, out SigActionBionic tmp);
+                SigActionBionic tmp;
+                unsafe
+                {
+                    result = BionicSigaction(SIGSEGV, &sig, &tmp);
+                }
 
                 old = new SigAction
                 {
@@ -198,7 +230,11 @@ namespace Ryujinx.Cpu.Signal
 
                 sigemptyset(ref sig.sa_mask);
 
-                result = sigaction(sigNum, ref sig, out SigActionBionic oldu);
+                SigActionBionic oldu;
+                unsafe
+                {
+                    result = BionicSigaction(sigNum, &sig, &oldu);
+                }
 
                 if (oldu.sa_handler != nint.Zero)
                 {
@@ -246,7 +282,11 @@ namespace Ryujinx.Cpu.Signal
                     sa_restorer = oldAction.sa_restorer
                 };
 
-                return sigaction(SIGSEGV, ref tmp, out SigActionBionic _) == 0;
+                SigActionBionic discarded;
+                unsafe
+                {
+                    return BionicSigaction(SIGSEGV, &tmp, &discarded) == 0;
+                }
             }
             else
             {

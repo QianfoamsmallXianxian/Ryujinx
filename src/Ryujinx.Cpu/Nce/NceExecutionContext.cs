@@ -9,14 +9,18 @@ namespace Ryujinx.Cpu.Nce
 {
     class NceExecutionContext : IExecutionContext
     {
-        private const ulong AlternateStackSize = 0x4000;
+        private const ulong AlternateStackSize = 0x20000;
+        private const uint FpStateNzcvMask = 0xf0000000u;
 
         private readonly NceNativeContext _context;
         private readonly ExceptionCallbacks _exceptionCallbacks;
 
         internal nint NativeContextPtr => _context.BasePtr;
 
-        public ulong Pc => 0UL;
+        private readonly MemoryBlock _alternateStackMemory;
+        private bool _alternateStackInstalled;
+
+        public ulong Pc => _context.GetStorage().Pc;
 
         public long TpidrEl0
         {
@@ -60,7 +64,9 @@ namespace Ryujinx.Cpu.Nce
             }
         }
 
-        public bool Running { get; private set; }
+        private volatile bool _running;
+
+        public bool Running => _running;
 
         private delegate bool SupervisorCallHandler(int imm);
         private SupervisorCallHandler _svcHandler;
@@ -73,13 +79,14 @@ namespace Ryujinx.Cpu.Nce
             nint svcHandlerPtr = Marshal.GetFunctionPointerForDelegate(_svcHandler);
 
             _context = new NceNativeContext();
+            _alternateStackMemory = new MemoryBlock(AlternateStackSize);
 
             ref NceNativeContext.NativeCtxStorage storage = ref _context.GetStorage();
             storage.SvcCallHandler = svcHandlerPtr;
             storage.InManaged = 1u;
             storage.CtrEl0 = 0x8444c004; // TODO: Get value from host CPU instead of using guest one?
 
-            Running = true;
+            _running = true;
             _exceptionCallbacks = exceptionCallbacks;
         }
 
@@ -89,26 +96,101 @@ namespace Ryujinx.Cpu.Nce
         public V128 GetV(int index) => _context.GetStorage().V[index];
         public void SetV(int index, V128 value) => _context.GetStorage().V[index] = value;
 
-        // TODO
-        public bool GetPstateFlag(PState flag) => false;
-        public void SetPstateFlag(PState flag, bool value) { }
+        public bool GetPstateFlag(PState flag)
+        {
+            if ((uint)flag >= 32u)
+            {
+                throw new ArgumentException($"Invalid PSTATE flag \"{flag}\" specified.", nameof(flag));
+            }
 
-        // TODO
-        public bool GetFPstateFlag(FPState flag) => false;
-        public void SetFPstateFlag(FPState flag, bool value) { }
+            return (Pstate & (1u << (int)flag)) != 0;
+        }
+
+        public void SetPstateFlag(PState flag, bool value)
+        {
+            if ((uint)flag >= 32u)
+            {
+                throw new ArgumentException($"Invalid PSTATE flag \"{flag}\" specified.", nameof(flag));
+            }
+
+            uint mask = 1u << (int)flag;
+            ref uint pstate = ref _context.GetStorage().Pstate;
+            pstate = value ? pstate | mask : pstate & ~mask;
+        }
+
+        public bool GetFPstateFlag(FPState flag)
+        {
+            if ((uint)flag >= 32u)
+            {
+                throw new ArgumentException($"Invalid FP state flag \"{flag}\" specified.", nameof(flag));
+            }
+
+            uint mask = 1u << (int)flag;
+
+            if ((mask & (uint)FPCR.Mask) != 0)
+            {
+                return (Fpcr & mask) != 0;
+            }
+
+            if ((mask & (uint)FPSR.Mask) != 0)
+            {
+                return (Fpsr & mask) != 0;
+            }
+
+            if ((mask & FpStateNzcvMask) != 0)
+            {
+                return (Pstate & mask) != 0;
+            }
+
+            throw new ArgumentException($"Unsupported FP state flag \"{flag}\" specified for AArch64 NCE.", nameof(flag));
+        }
+
+        public void SetFPstateFlag(FPState flag, bool value)
+        {
+            if ((uint)flag >= 32u)
+            {
+                throw new ArgumentException($"Invalid FP state flag \"{flag}\" specified.", nameof(flag));
+            }
+
+            uint mask = 1u << (int)flag;
+
+            if ((mask & (uint)FPCR.Mask) != 0)
+            {
+                ref uint fpcr = ref _context.GetStorage().Fpcr;
+                fpcr = value ? fpcr | mask : fpcr & ~mask;
+                return;
+            }
+
+            if ((mask & (uint)FPSR.Mask) != 0)
+            {
+                ref uint fpsr = ref _context.GetStorage().Fpsr;
+                fpsr = value ? fpsr | mask : fpsr & ~mask;
+                return;
+            }
+
+            if ((mask & FpStateNzcvMask) != 0)
+            {
+                ref uint pstate = ref _context.GetStorage().Pstate;
+                pstate = value ? pstate | mask : pstate & ~mask;
+                return;
+            }
+
+            throw new ArgumentException($"Unsupported FP state flag \"{flag}\" specified for AArch64 NCE.", nameof(flag));
+        }
 
         public void SetStartAddress(ulong address)
         {
             ref NceNativeContext.NativeCtxStorage storage = ref _context.GetStorage();
             storage.X[30] = address;
-            storage.HostThreadHandle = NceThreadPal.GetCurrentThreadHandle();
+            storage.Pc = address;
+            Volatile.Write(ref storage.HostThreadHandle, NceThreadPal.GetCurrentThreadHandle());
 
             RegisterAlternateStack();
         }
 
         public void Exit()
         {
-            _context.GetStorage().HostThreadHandle = nint.Zero;
+            Volatile.Write(ref _context.GetStorage().HostThreadHandle, nint.Zero);
 
             UnregisterAlternateStack();
         }
@@ -118,15 +200,24 @@ namespace Ryujinx.Cpu.Nce
             // We need to use an alternate stack to handle the suspend signal,
             // as the guest stack may be in a state that is not suitable for the signal handlers.
 
-            _alternateStackMemory = new MemoryBlock(AlternateStackSize);
+            if (_alternateStackInstalled)
+            {
+                return;
+            }
+
             NativeSignalHandler.InstallUnixAlternateStackForCurrentThread(_alternateStackMemory.GetPointer(0UL, AlternateStackSize), AlternateStackSize);
+            _alternateStackInstalled = true;
         }
 
         private void UnregisterAlternateStack()
         {
+            if (!_alternateStackInstalled)
+            {
+                return;
+            }
+
             NativeSignalHandler.UninstallUnixAlternateStackForCurrentThread();
-            _alternateStackMemory.Dispose();
-            _alternateStackMemory = null;
+            _alternateStackInstalled = false;
         }
 
         public bool OnSupervisorCall(int imm)
@@ -143,7 +234,7 @@ namespace Ryujinx.Cpu.Nce
 
         public void RequestInterrupt()
         {
-            nint threadHandle = _context.GetStorage().HostThreadHandle;
+            nint threadHandle = Volatile.Read(ref _context.GetStorage().HostThreadHandle);
             if (threadHandle != nint.Zero)
             {
                 // Bit 0 set means that the thread is currently running managed code.
@@ -163,11 +254,12 @@ namespace Ryujinx.Cpu.Nce
 
         public void StopRunning()
         {
-            Running = false;
+            _running = false;
         }
 
         public void Dispose()
         {
+            _alternateStackMemory.Dispose();
             _context.Dispose();
         }
     }

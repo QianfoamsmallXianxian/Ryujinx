@@ -1,4 +1,5 @@
 using Ryujinx.Cpu.Nce.Arm64;
+using Ryujinx.Common;
 using Ryujinx.Common.Logging;
 using System;
 using System.Runtime.InteropServices;
@@ -8,9 +9,21 @@ namespace Ryujinx.Cpu.Nce
     public static class NcePatcher
     {
         private const int ScratchBaseReg = 19;
+        private const int LinuxUContextX0Offset = 184;
+        private const int LinuxUContextSpOffset = 432;
+        private const int LinuxUContextPcOffset = 440;
+        private const int LinuxUContextPstateOffset = 448;
+        private const int DarwinUContextMContextOffset = 48;
+        private const int DarwinMContextX0Offset = 16;
+        private const int DarwinMContextSpOffset = 264;
+        private const int DarwinMContextPcOffset = 272;
+
+        private const uint PstateNzcvMask = 0xf0000000u;
 
         private const uint IntCalleeSavedRegsMask = 0x1ff80000; // X19 to X28
         private const uint FpCalleeSavedRegsMask = 0xff00; // D8 to D15
+
+        internal static bool UsesThreadContextIndex => PlatformInfo.IsBionic;
 
         public static NceCpuCodePatch CreatePatch(ReadOnlySpan<byte> textSection)
         {
@@ -148,15 +161,17 @@ namespace Ryujinx.Cpu.Nce
         {
             Assembler asm = new();
 
-            Span<int> scratchRegs = stackalloc int[3];
+            Span<int> scratchRegs = stackalloc int[4];
             PickScratchRegs(scratchRegs, 1u << (int)rd);
 
-            RegisterSaveRestore rsr = new((1 << scratchRegs[0]) | (1 << scratchRegs[1]) | (1 << scratchRegs[2]));
+            RegisterSaveRestore rsr = new((1 << scratchRegs[0]) | (1 << scratchRegs[1]) | (1 << scratchRegs[2]) | (1 << scratchRegs[3]));
 
             rsr.WritePrologue(asm);
 
+            WriteMrsNzcv(asm, Gpr(scratchRegs[3]));
             WriteLoadContext(asm, Gpr(scratchRegs[0]), Gpr(scratchRegs[1]), Gpr(scratchRegs[2]));
-            asm.StrRiUn(Gpr((int)rd), Gpr(scratchRegs[0]),NceNativeContext.GetTpidrEl0Offset());
+            asm.StrRiUn(Gpr((int)rd), Gpr(scratchRegs[0]), NceNativeContext.GetTpidrEl0Offset());
+            WriteMsrNzcv(asm, Gpr(scratchRegs[3]));
 
             rsr.WriteEpilogue(asm);
 
@@ -169,15 +184,17 @@ namespace Ryujinx.Cpu.Nce
         {
             Assembler asm = new();
 
-            Span<int> scratchRegs = stackalloc int[3];
+            Span<int> scratchRegs = stackalloc int[4];
             PickScratchRegs(scratchRegs, 1u << (int)rd);
 
-            RegisterSaveRestore rsr = new((1 << scratchRegs[0]) | (1 << scratchRegs[1]) | (1 << scratchRegs[2]));
+            RegisterSaveRestore rsr = new((1 << scratchRegs[0]) | (1 << scratchRegs[1]) | (1 << scratchRegs[2]) | (1 << scratchRegs[3]));
 
             rsr.WritePrologue(asm);
 
+            WriteMrsNzcv(asm, Gpr(scratchRegs[3]));
             WriteLoadContext(asm, Gpr(scratchRegs[0]), Gpr(scratchRegs[1]), Gpr(scratchRegs[2]));
             asm.Add(Gpr((int)rd), Gpr(scratchRegs[0]), Const((ulong)contextOffset));
+            WriteMsrNzcv(asm, Gpr(scratchRegs[3]));
 
             rsr.WriteEpilogue(asm);
 
@@ -188,8 +205,35 @@ namespace Ryujinx.Cpu.Nce
             return asm.GetCode();
         }
 
+        private static void WriteTryLoadIndexedContext(Assembler asm, Operand lblFound, Operand tmp0, Operand tmp1, Operand tmp2)
+        {
+            asm.MrsTpidrEl0(tmp1);
+            asm.Mov(tmp2, NceThreadContextIndex.HashMultiplier);
+            asm.Mul(tmp2, tmp1, tmp2);
+            asm.Lsr(tmp2, tmp2, Const((ulong)(64 - NceThreadContextIndex.BucketBits)));
+            asm.Mov(tmp0, (ulong)NceThreadContextIndex.EntriesPointer);
+            asm.Add(tmp0, tmp0, tmp2, ArmShiftType.Lsl, NceThreadContextIndex.BucketStrideShift);
+
+            for (int way = 0; way < NceThreadContextIndex.Ways; way++)
+            {
+                asm.LdrRiPost(tmp2, tmp0, NceThreadContextIndex.EntrySize);
+                asm.Cmp(tmp1, tmp2);
+                asm.B(lblFound, ArmCondition.Eq);
+            }
+        }
+
         private static void WriteLoadContext(Assembler asm, Operand tmp0, Operand tmp1, Operand tmp2)
         {
+            Operand lblFastFound = default;
+            Operand lblDone = default;
+
+            if (UsesThreadContextIndex)
+            {
+                lblFastFound = asm.CreateLabel();
+                lblDone = asm.CreateLabel();
+                WriteTryLoadIndexedContext(asm, lblFastFound, tmp0, tmp1, tmp2);
+            }
+
             asm.Mov(tmp0, (ulong)NceThreadTable.EntriesPointer);
 
             if (OperatingSystem.IsMacOS())
@@ -214,10 +258,28 @@ namespace Ryujinx.Cpu.Nce
             asm.MarkLabel(lblFound);
 
             asm.Ldur(tmp0, tmp0, -8);
+
+            if (UsesThreadContextIndex)
+            {
+                asm.B(lblDone);
+                asm.MarkLabel(lblFastFound);
+                asm.Ldur(tmp0, tmp0, -8);
+                asm.MarkLabel(lblDone);
+            }
         }
 
         private static void WriteLoadContextSafe(Assembler asm, Operand lblFail, Operand tmp0, Operand tmp1, Operand tmp2, Operand tmp3)
         {
+            Operand lblFastFound = default;
+            Operand lblDone = default;
+
+            if (UsesThreadContextIndex)
+            {
+                lblFastFound = asm.CreateLabel();
+                lblDone = asm.CreateLabel();
+                WriteTryLoadIndexedContext(asm, lblFastFound, tmp0, tmp1, tmp2);
+            }
+
             asm.Mov(tmp0, (ulong)NceThreadTable.EntriesPointer);
             asm.Ldur(tmp3, tmp0, -8);
             asm.Add(tmp3, tmp0, tmp3, ArmShiftType.Lsl, 4);
@@ -246,6 +308,14 @@ namespace Ryujinx.Cpu.Nce
             asm.MarkLabel(lblFound);
 
             asm.Ldur(tmp0, tmp0, -8);
+
+            if (UsesThreadContextIndex)
+            {
+                asm.B(lblDone);
+                asm.MarkLabel(lblFastFound);
+                asm.Ldur(tmp0, tmp0, -8);
+                asm.MarkLabel(lblDone);
+            }
         }
 
         private static void PickScratchRegs(Span<int> scratchRegs, uint blacklistedRegMask)
@@ -288,6 +358,67 @@ namespace Ryujinx.Cpu.Nce
             return new Operand(type, value);
         }
 
+        private static void WriteMrsNzcv(Assembler asm, Operand rt) => asm.Mrs(rt, 1, 3, 4, 2, 0);
+        private static void WriteMsrNzcv(Assembler asm, Operand rt) => asm.WriteInstruction(0xd51b4200u, rt);
+        private static void WriteMrsFpcr(Assembler asm, Operand rt) => asm.Mrs(rt, 1, 3, 4, 4, 0);
+        private static void WriteMsrFpcr(Assembler asm, Operand rt) => asm.WriteInstruction(0xd51b4400u, rt);
+        private static void WriteMrsFpsr(Assembler asm, Operand rt) => asm.Mrs(rt, 1, 3, 4, 4, 1);
+        private static void WriteMsrFpsr(Assembler asm, Operand rt) => asm.WriteInstruction(0xd51b4420u, rt);
+
+        private static void WriteStoreGuestFpStateToContext(Assembler asm, Operand ctx, Operand tmp)
+        {
+            Operand tmp32 = Gpr(tmp.GetRegister().Index, OperandType.I32);
+            WriteMrsFpcr(asm, tmp);
+            asm.StrRiUn(tmp32, ctx, NceNativeContext.GetFpcrOffset());
+            WriteMrsFpsr(asm, tmp);
+            asm.StrRiUn(tmp32, ctx, NceNativeContext.GetFpsrOffset());
+        }
+
+        private static void WriteLoadGuestFpStateFromContext(Assembler asm, Operand ctx, Operand tmp)
+        {
+            Operand tmp32 = Gpr(tmp.GetRegister().Index, OperandType.I32);
+            asm.LdrRiUn(tmp32, ctx, NceNativeContext.GetFpcrOffset());
+            WriteMsrFpcr(asm, tmp);
+            asm.LdrRiUn(tmp32, ctx, NceNativeContext.GetFpsrOffset());
+            WriteMsrFpsr(asm, tmp);
+        }
+
+        private static void WriteStoreHostFpStateToContext(Assembler asm, Operand ctx, Operand tmp)
+        {
+            Operand tmp32 = Gpr(tmp.GetRegister().Index, OperandType.I32);
+            WriteMrsFpcr(asm, tmp);
+            asm.StrRiUn(tmp32, ctx, NceNativeContext.GetHostFpcrOffset());
+            WriteMrsFpsr(asm, tmp);
+            asm.StrRiUn(tmp32, ctx, NceNativeContext.GetHostFpsrOffset());
+        }
+
+        private static void WriteLoadHostFpStateFromContext(Assembler asm, Operand ctx, Operand tmp)
+        {
+            Operand tmp32 = Gpr(tmp.GetRegister().Index, OperandType.I32);
+            asm.LdrRiUn(tmp32, ctx, NceNativeContext.GetHostFpcrOffset());
+            WriteMsrFpcr(asm, tmp);
+            asm.LdrRiUn(tmp32, ctx, NceNativeContext.GetHostFpsrOffset());
+            WriteMsrFpsr(asm, tmp);
+        }
+
+        private static void WriteStoreNzcvToContext(Assembler asm, Operand ctx, Operand tmp, Operand nzcv)
+        {
+            Operand tmp32 = Gpr(tmp.GetRegister().Index, OperandType.I32);
+            Operand nzcv32 = Gpr(nzcv.GetRegister().Index, OperandType.I32);
+            asm.LdrRiUn(tmp32, ctx, NceNativeContext.GetPstateOffset());
+            asm.And(tmp32, tmp32, Const(OperandType.I32, ~PstateNzcvMask & uint.MaxValue));
+            asm.And(nzcv32, nzcv32, Const(OperandType.I32, PstateNzcvMask));
+            asm.Orr(tmp32, tmp32, nzcv32);
+            asm.StrRiUn(tmp32, ctx, NceNativeContext.GetPstateOffset());
+        }
+
+        private static void WriteLoadNzcvFromContext(Assembler asm, Operand ctx, Operand tmp)
+        {
+            Operand tmp32 = Gpr(tmp.GetRegister().Index, OperandType.I32);
+            asm.LdrRiUn(tmp32, ctx, NceNativeContext.GetPstateOffset());
+            WriteMsrNzcv(asm, tmp);
+        }
+
         private static uint GetImm26(ulong sourceAddress, ulong targetAddress)
         {
             long offset = (long)(targetAddress - sourceAddress);
@@ -321,14 +452,19 @@ namespace Ryujinx.Cpu.Nce
             int intMask = 0x7fffffff & (int)~blacklistedRegMask;
             int vecMask = unchecked((int)0xffffffff);
 
-            Span<int> scratchRegs = stackalloc int[3];
+            Span<int> scratchRegs = stackalloc int[4];
             PickScratchRegs(scratchRegs, blacklistedRegMask);
 
             RegisterSaveRestore rsr = new(intMask, vecMask, OperandType.V128);
 
             rsr.WritePrologue(asm);
 
+            WriteMrsNzcv(asm, Gpr(scratchRegs[3]));
             WriteLoadContext(asm, Gpr(scratchRegs[0]), Gpr(scratchRegs[1]), Gpr(scratchRegs[2]));
+            WriteStoreNzcvToContext(asm, Gpr(scratchRegs[0]), Gpr(scratchRegs[1]), Gpr(scratchRegs[3]));
+
+            WriteStoreGuestFpStateToContext(asm, Gpr(scratchRegs[0]), Gpr(scratchRegs[1]));
+            WriteLoadHostFpStateFromContext(asm, Gpr(scratchRegs[0]), Gpr(scratchRegs[1]));
 
             asm.MovSp(Gpr(scratchRegs[1]), Gpr(Assembler.SpRegister));
             asm.StrRiUn(Gpr(scratchRegs[1]), Gpr(scratchRegs[0]), NceNativeContext.GetGuestSPOffset());
@@ -336,6 +472,9 @@ namespace Ryujinx.Cpu.Nce
             asm.MovSp(Gpr(Assembler.SpRegister), Gpr(scratchRegs[1]));
 
             writeCall(asm, Gpr(scratchRegs[0]), Gpr(scratchRegs[1]), Gpr(scratchRegs[2]));
+
+            WriteLoadGuestFpStateFromContext(asm, Gpr(scratchRegs[0]), Gpr(scratchRegs[1]));
+            WriteLoadNzcvFromContext(asm, Gpr(scratchRegs[0]), Gpr(scratchRegs[1]));
 
             asm.LdrRiUn(Gpr(scratchRegs[1]), Gpr(scratchRegs[0]), NceNativeContext.GetGuestSPOffset());
             asm.MovSp(Gpr(Assembler.SpRegister), Gpr(scratchRegs[1]));
@@ -349,6 +488,8 @@ namespace Ryujinx.Cpu.Nce
 
             CreateRegisterSaveRestoreForManaged().WritePrologue(asm);
 
+            WriteStoreHostFpStateToContext(asm, Gpr(0), Gpr(1));
+
             asm.MovSp(Gpr(1), Gpr(Assembler.SpRegister));
             asm.StrRiUn(Gpr(1), Gpr(0), NceNativeContext.GetHostSPOffset());
 
@@ -361,6 +502,9 @@ namespace Ryujinx.Cpu.Nce
             {
                 asm.LdpRiUn(Vec(i), Vec(i + 1), Gpr(0), NceNativeContext.GetVOffset(i));
             }
+
+            WriteLoadGuestFpStateFromContext(asm, Gpr(0), Gpr(1));
+            WriteLoadNzcvFromContext(asm, Gpr(0), Gpr(1));
 
             asm.LdpRiUn(Gpr(30), Gpr(1), Gpr(0), NceNativeContext.GetXOffset(30));
             asm.MovSp(Gpr(Assembler.SpRegister), Gpr(1));
@@ -389,14 +533,21 @@ namespace Ryujinx.Cpu.Nce
 
             WriteLoadContextSafe(asm, lblFail, Gpr(scratchRegs[0]), Gpr(scratchRegs[1]), Gpr(scratchRegs[2]), Gpr(scratchRegs[3]));
 
-            asm.LdrRiUn(Gpr(scratchRegs[1]), Gpr(scratchRegs[0]), NceNativeContext.GetHostSPOffset());
-            asm.MovSp(Gpr(scratchRegs[2]), Gpr(Assembler.SpRegister));
-            asm.MovSp(Gpr(Assembler.SpRegister), Gpr(scratchRegs[1]));
-
             asm.Cmp(Gpr(0, OperandType.I32), Const((ulong)NceThreadPal.UnixSuspendSignal));
             asm.B(lblFail, ArmCondition.Ne);
 
-            // SigUsr2
+            if (OperatingSystem.IsLinux() || PlatformInfo.IsBionic)
+            {
+                asm.LdrRiUn(Gpr(scratchRegs[1]), Gpr(2), LinuxUContextPstateOffset);
+                asm.StrRiUn(Gpr(scratchRegs[1], OperandType.I32), Gpr(scratchRegs[0]), NceNativeContext.GetPstateOffset());
+            }
+
+            WriteStoreGuestFpStateToContext(asm, Gpr(scratchRegs[0]), Gpr(scratchRegs[1]));
+            WriteLoadHostFpStateFromContext(asm, Gpr(scratchRegs[0]), Gpr(scratchRegs[1]));
+
+            asm.LdrRiUn(Gpr(scratchRegs[1]), Gpr(scratchRegs[0]), NceNativeContext.GetHostSPOffset());
+            asm.MovSp(Gpr(scratchRegs[2]), Gpr(Assembler.SpRegister));
+            asm.MovSp(Gpr(Assembler.SpRegister), Gpr(scratchRegs[1]));
 
             asm.Mov(Gpr(scratchRegs[1], OperandType.I32), Const(OperandType.I32, 1));
             asm.StrRiUn(Gpr(scratchRegs[1], OperandType.I32), Gpr(scratchRegs[0]), NceNativeContext.GetInManagedOffset());
@@ -409,6 +560,8 @@ namespace Ryujinx.Cpu.Nce
             // TODO: Check return value, exit if we must.
 
             WriteInManagedLockReleaseForSuspendHandler(asm, Gpr(scratchRegs[0]), Gpr(scratchRegs[1]), Gpr(scratchRegs[3]), lblAgain);
+
+            WriteLoadGuestFpStateFromContext(asm, Gpr(scratchRegs[0]), Gpr(scratchRegs[1]));
 
             asm.MovSp(Gpr(Assembler.SpRegister), Gpr(scratchRegs[2]));
 
@@ -440,11 +593,38 @@ namespace Ryujinx.Cpu.Nce
 
             WriteLoadContextSafe(asm, lblFail, Gpr(scratchRegs[0]), Gpr(scratchRegs[1]), Gpr(scratchRegs[2]), Gpr(scratchRegs[3]));
 
+            if (OperatingSystem.IsLinux() || PlatformInfo.IsBionic)
+            {
+                WriteFaultRegisterSnapshot(
+                    asm,
+                    Gpr(scratchRegs[0]),
+                    Gpr(2),
+                    Gpr(scratchRegs[1]),
+                    LinuxUContextX0Offset,
+                    LinuxUContextSpOffset,
+                    LinuxUContextPcOffset,
+                    LinuxUContextPstateOffset);
+            }
+            else if (OperatingSystem.IsMacOS() || OperatingSystem.IsIOS())
+            {
+                asm.LdrRiUn(Gpr(scratchRegs[2]), Gpr(2), DarwinUContextMContextOffset);
+                WriteFaultRegisterSnapshot(
+                    asm,
+                    Gpr(scratchRegs[0]),
+                    Gpr(scratchRegs[2]),
+                    Gpr(scratchRegs[1]),
+                    DarwinMContextX0Offset,
+                    DarwinMContextSpOffset,
+                    DarwinMContextPcOffset,
+                    -1);
+            }
+
+            WriteStoreGuestFpStateToContext(asm, Gpr(scratchRegs[0]), Gpr(scratchRegs[1]));
+            WriteLoadHostFpStateFromContext(asm, Gpr(scratchRegs[0]), Gpr(scratchRegs[1]));
+
             asm.LdrRiUn(Gpr(scratchRegs[1]), Gpr(scratchRegs[0]), NceNativeContext.GetHostSPOffset());
             asm.MovSp(Gpr(scratchRegs[2]), Gpr(Assembler.SpRegister));
             asm.MovSp(Gpr(Assembler.SpRegister), Gpr(scratchRegs[1]));
-
-            // SigSegv
 
             WriteInManagedLockAcquire(asm, Gpr(scratchRegs[0]), Gpr(scratchRegs[1]), Gpr(scratchRegs[3]));
 
@@ -452,6 +632,8 @@ namespace Ryujinx.Cpu.Nce
             asm.Blr(Gpr(scratchRegs[3]));
 
             WriteInManagedLockRelease(asm, Gpr(scratchRegs[0]), Gpr(scratchRegs[1]), Gpr(scratchRegs[3]), ThreadExitMethod.None);
+
+            WriteLoadGuestFpStateFromContext(asm, Gpr(scratchRegs[0]), Gpr(scratchRegs[1]));
 
             asm.MovSp(Gpr(Assembler.SpRegister), Gpr(scratchRegs[2]));
 
@@ -467,6 +649,35 @@ namespace Ryujinx.Cpu.Nce
             asm.Br(Gpr(3));
 
             return asm.GetCode();
+        }
+
+        private static void WriteFaultRegisterSnapshot(
+            Assembler asm,
+            Operand ctx,
+            Operand signalContext,
+            Operand tmp,
+            int x0Offset,
+            int spOffset,
+            int pcOffset,
+            int pstateOffset)
+        {
+            for (int index = 0; index < 31; index++)
+            {
+                asm.LdrRiUn(tmp, signalContext, x0Offset + index * sizeof(ulong));
+                asm.StrRiUn(tmp, ctx, NceNativeContext.GetXOffset(index));
+            }
+
+            asm.LdrRiUn(tmp, signalContext, spOffset);
+            asm.StrRiUn(tmp, ctx, NceNativeContext.GetGuestSPOffset());
+
+            asm.LdrRiUn(tmp, signalContext, pcOffset);
+            asm.StrRiUn(tmp, ctx, NceNativeContext.GetPcOffset());
+
+            if (pstateOffset >= 0)
+            {
+                asm.LdrRiUn(tmp, signalContext, pstateOffset);
+                asm.StrRiUn(Gpr(tmp.GetRegister().Index, OperandType.I32), ctx, NceNativeContext.GetPstateOffset());
+            }
         }
 
         private static void WriteInManagedLockAcquire(Assembler asm, Operand ctx, Operand tmp, Operand tmp2)

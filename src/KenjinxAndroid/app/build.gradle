@@ -11,8 +11,8 @@ android {
         applicationId "org.kenjinx.android"
         minSdk 29
         targetSdk 37
-        versionCode 20105
-        versionName '2.1.0-neov2-loopguard3'
+        versionCode 20106
+        versionName '2.1.0-neov2-nce2-r1'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 

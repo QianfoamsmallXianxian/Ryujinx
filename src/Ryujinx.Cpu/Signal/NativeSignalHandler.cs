@@ -62,6 +62,7 @@ namespace Ryujinx.Cpu.Signal
 
         private static readonly Lock _lock = new();
         private static bool _initialized;
+        private static bool _customUnixWrapperInstalled;
 
         static NativeSignalHandler()
         {
@@ -141,6 +142,32 @@ namespace Ryujinx.Cpu.Signal
         public static void InstallUnixSignalHandler(int sigNum, nint action)
         {
             UnixSignalHandlerRegistration.RegisterExceptionHandler(sigNum, action);
+        }
+
+        /// <summary>
+        /// Installs a wrapper around the already initialized Unix fault handler.
+        /// This also works when another CPU backend initialized the shared handler first.
+        /// </summary>
+        public static void InstallUnixSignalWrapper(Func<nint, nint, nint> customSignalHandlerFactory)
+        {
+            ArgumentNullException.ThrowIfNull(customSignalHandlerFactory);
+
+            InitializeSignalHandler();
+
+            lock (_lock)
+            {
+                if (_customUnixWrapperInstalled)
+                {
+                    return;
+                }
+
+                ref SignalHandlerConfig config = ref GetConfigRef();
+                nint wrapper = customSignalHandlerFactory((nint)config.UnixOldSigaction, _signalHandlerPtr);
+
+                UnixSignalHandlerRegistration.RegisterExceptionHandler(wrapper);
+                _signalHandlerPtr = wrapper;
+                _customUnixWrapperInstalled = true;
+            }
         }
 
         private static nint MapCode(ReadOnlySpan<byte> code)
