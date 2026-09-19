@@ -956,6 +956,7 @@ namespace Ryujinx.Ava
                                                      renderer,
                                                      InitializeAudio(),
                                                      memoryConfiguration,
+                                                     12288 * 1024 * 1024UL,
                                                      _viewModel.UiHandler,
                                                      (SystemLanguage)ConfigurationState.Instance.System.Language.Value,
                                                      (RegionCode)ConfigurationState.Instance.System.Region.Value,

@@ -2,6 +2,7 @@ package org.kenjinx.android.widgets
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,22 +28,30 @@ fun <T> DropdownSelector(
     selectedValue: T,
     options: List<T>,
     getDisplayText: (T) -> String,
-    onOptionSelected: (T) -> Unit
+    onOptionSelected: (T) -> Unit,
+    description: String? = null
 ) {
     val expanded = remember { mutableStateOf(false) }
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(64.dp)
-            .padding(horizontal = 8.dp, vertical = 8.dp),
+            .then(if (description != null) Modifier.padding(horizontal = 8.dp, vertical = 8.dp) else Modifier.height(64.dp).padding(horizontal = 8.dp, vertical = 8.dp)),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = label,
-            modifier = Modifier.weight(1f)
-        )
+        Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+            Text(
+                text = label,
+            )
+            if (description != null) {
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
 
         Box {
             Button(

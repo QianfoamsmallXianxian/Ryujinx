@@ -1,4 +1,5 @@
 using Ryujinx.Common.Memory;
+using Ryujinx.Common.Logging;
 using Ryujinx.Graphics.GAL;
 using Ryujinx.Graphics.Shader;
 using Silk.NET.Vulkan;
@@ -38,12 +39,23 @@ namespace Ryujinx.Graphics.Vulkan
         protected PipelineDynamicState DynamicState;
         protected bool IsMainPipeline;
         private PipelineState _newState;
+
+        // NEOV2 Etapa 23: last extended dynamic state values recorded on the current command buffer.
+        private bool _extendedDynamicStateValid;
+        private ulong _extendedDynamicStateApplied;
         private bool _graphicsStateDirty;
         private bool _computeStateDirty;
         private bool _bindingBarriersDirty;
         private PrimitiveTopology _topology;
 
         private ulong _currentPipelineHandle;
+
+        // MUA3: the crash scene consistently submits compute work immediately before the
+        // graphics command buffers that hang the Adreno command processor. Keep this state
+        // across command-buffer rotations so the first matching scene draw can establish a
+        // conservative memory dependency on all earlier compute work.
+        private bool _mua3ComputeSinceSceneBarrier;
+        private static int _mua3SceneBarrierCount;
 
         protected Auto<DisposablePipeline> Pipeline;
 
@@ -96,7 +108,10 @@ namespace Ryujinx.Graphics.Vulkan
         public ulong DrawCount { get; private set; }
         public bool RenderPassActive { get; private set; }
 
-        public unsafe PipelineBase(VulkanRenderer gd, Device device)
+        // NEOV2 Etapa 6: somente o pipeline principal usa o cache persistido em disco.
+        private readonly bool _persistentPipelineCache;
+
+        public unsafe PipelineBase(VulkanRenderer gd, Device device, bool persistentPipelineCache = false)
         {
             Gd = gd;
             Device = device;
@@ -104,12 +119,21 @@ namespace Ryujinx.Graphics.Vulkan
             AutoFlush = new AutoFlushCounter(gd);
             EndRenderPassDelegate = EndRenderPass;
 
-            PipelineCacheCreateInfo pipelineCacheCreateInfo = new()
-            {
-                SType = StructureType.PipelineCacheCreateInfo,
-            };
+            _persistentPipelineCache = persistentPipelineCache;
 
-            gd.Api.CreatePipelineCache(device, in pipelineCacheCreateInfo, null, out PipelineCache).ThrowOnError();
+            if (persistentPipelineCache)
+            {
+                PipelineCache = PipelineCachePersistence.Create(gd.Api, device);
+            }
+            else
+            {
+                PipelineCacheCreateInfo pipelineCacheCreateInfo = new()
+                {
+                    SType = StructureType.PipelineCacheCreateInfo,
+                };
+
+                gd.Api.CreatePipelineCache(device, in pipelineCacheCreateInfo, null, out PipelineCache).ThrowOnError();
+            }
 
             _descriptorSetUpdater = new DescriptorSetUpdater(gd, device);
             _vertexBufferUpdater = new VertexBufferUpdater(gd);
@@ -217,11 +241,18 @@ namespace Ryujinx.Graphics.Vulkan
 
             Gd.Barriers.Flush(Cbs, RenderPassActive, _rpHolder, EndRenderPassDelegate);
 
+            ClearValue clearValue = new(new ClearColorValue(color.Red, color.Green, color.Blue, color.Alpha));
+            ClearRect clearRect = FramebufferParams.GetClearRect(ClearScissor, layer, layerCount);
+
+            // NEOV2 Etapa 5: clear da area inteira antes de o render pass comecar vira LoadOp.Clear.
+            if (TryDeferColorClear(index, clearRect, clearValue))
+            {
+                return;
+            }
+
             BeginRenderPass();
 
-            ClearValue clearValue = new(new ClearColorValue(color.Red, color.Green, color.Blue, color.Alpha));
             ClearAttachment attachment = new(ImageAspectFlags.ColorBit, (uint)index, clearValue);
-            ClearRect clearRect = FramebufferParams.GetClearRect(ClearScissor, layer, layerCount);
 
             Gd.Api.CmdClearAttachments(CommandBuffer, 1, &attachment, 1, &clearRect);
         }
@@ -255,10 +286,17 @@ namespace Ryujinx.Graphics.Vulkan
 
             Gd.Barriers.Flush(Cbs, RenderPassActive, _rpHolder, EndRenderPassDelegate);
 
+            ClearRect clearRect = FramebufferParams.GetClearRect(ClearScissor, layer, layerCount);
+
+            // NEOV2 Etapa 5: clear da area inteira antes de o render pass comecar vira LoadOp.Clear.
+            if (TryDeferDepthStencilClear(flags, clearRect, depthValue, (uint)stencilValue))
+            {
+                return;
+            }
+
             BeginRenderPass();
 
             ClearAttachment attachment = new(flags, 0, clearValue);
-            ClearRect clearRect = FramebufferParams.GetClearRect(ClearScissor, layer, layerCount);
 
             Gd.Api.CmdClearAttachments(CommandBuffer, 1, &attachment, 1, &clearRect);
         }
@@ -307,7 +345,14 @@ namespace Ryujinx.Graphics.Vulkan
             EndRenderPass();
             RecreateComputePipelineIfNeeded();
 
+            RecordMua3Command(Mua3CommandKind.Dispatch, groupsX, groupsY);
+
             Gd.Api.CmdDispatch(CommandBuffer, (uint)groupsX, (uint)groupsY, (uint)groupsZ);
+
+            if (GraphicsCompatibility.IsMua3)
+            {
+                _mua3ComputeSinceSceneBarrier = true;
+            }
         }
 
         public void DispatchComputeIndirect(Auto<DisposableBuffer> indirectBuffer, int indirectBufferOffset)
@@ -320,7 +365,80 @@ namespace Ryujinx.Graphics.Vulkan
             EndRenderPass();
             RecreateComputePipelineIfNeeded();
 
+            RecordMua3Command(Mua3CommandKind.DispatchIndirect, indirectBufferOffset, 0);
+
             Gd.Api.CmdDispatchIndirect(CommandBuffer, indirectBuffer.Get(Cbs, indirectBufferOffset, 12).Value, (ulong)indirectBufferOffset);
+
+            if (GraphicsCompatibility.IsMua3)
+            {
+                _mua3ComputeSinceSceneBarrier = true;
+            }
+        }
+
+        private unsafe void InsertMua3SceneComputeBarrierIfNeeded()
+        {
+            if (!_mua3ComputeSinceSceneBarrier ||
+                !GraphicsCompatibility.IsMua3 ||
+                !GraphicsCompatibility.TryGetMua3Program(_program, out Mua3ShaderIdentity identity) ||
+                identity.Geometry != 0x100719F30UL ||
+                identity.Fragment != 0x100719E30UL)
+            {
+                return;
+            }
+
+            EndRenderPass();
+
+            MemoryBarrier memoryBarrier = new()
+            {
+                SType = StructureType.MemoryBarrier,
+                SrcAccessMask = AccessFlags.MemoryReadBit | AccessFlags.MemoryWriteBit,
+                DstAccessMask = AccessFlags.MemoryReadBit | AccessFlags.MemoryWriteBit,
+            };
+
+            Gd.Api.CmdPipelineBarrier(
+                CommandBuffer,
+                PipelineStageFlags.AllCommandsBit,
+                PipelineStageFlags.AllCommandsBit,
+                0,
+                1,
+                new ReadOnlySpan<MemoryBarrier>(in memoryBarrier),
+                0,
+                ReadOnlySpan<BufferMemoryBarrier>.Empty,
+                0,
+                ReadOnlySpan<ImageMemoryBarrier>.Empty);
+
+            _mua3ComputeSinceSceneBarrier = false;
+
+            int count = System.Threading.Interlocked.Increment(ref _mua3SceneBarrierCount);
+
+            if (count == 1 || count % 100 == 0)
+            {
+                Logger.Info?.Print(
+                    LogClass.Gpu,
+                    $"[MUA3-SYNC] Full compute-to-scene barrier inserted (count={count}, shaders=[{identity}])");
+            }
+        }
+
+        private void RecordMua3Command(Mua3CommandKind kind, int argument0, int argument1)
+        {
+            if (!GraphicsCompatibility.IsMua3)
+            {
+                return;
+            }
+
+            GraphicsCompatibility.TryGetMua3Program(_program, out Mua3ShaderIdentity shaderIdentity);
+
+            Mua3CrashTelemetry.RecordCommand(
+                CommandBuffer,
+                kind,
+                _currentPipelineHandle,
+                _newState.Internal.GetHashCode(),
+                _program == null ? 0 : RuntimeHelpers.GetHashCode(_program),
+                _program?.Stages ?? 0,
+                shaderIdentity,
+                (int)_topology,
+                argument0,
+                argument1);
         }
 
         public void Draw(int vertexCount, int instanceCount, int firstVertex, int firstInstance)
@@ -337,6 +455,7 @@ namespace Ryujinx.Graphics.Vulkan
 
             BeginRenderPass();
             DrawCount++;
+            RecordMua3Command(Mua3CommandKind.Draw, vertexCount, instanceCount);
 
             if (Gd.TopologyUnsupported(_topology))
             {
@@ -407,6 +526,7 @@ namespace Ryujinx.Graphics.Vulkan
 
             BeginRenderPass();
             DrawCount++;
+            RecordMua3Command(Mua3CommandKind.DrawIndexed, indexCount, instanceCount);
 
             if (_indexBufferPattern != null)
             {
@@ -450,6 +570,7 @@ namespace Ryujinx.Graphics.Vulkan
 
             BeginRenderPass();
             DrawCount++;
+            RecordMua3Command(Mua3CommandKind.DrawIndexedIndirect, indirectBuffer.Size, 1);
 
             if (_indexBufferPattern != null)
             {
@@ -500,6 +621,7 @@ namespace Ryujinx.Graphics.Vulkan
 
             BeginRenderPass();
             DrawCount++;
+            RecordMua3Command(Mua3CommandKind.DrawIndexedIndirectCount, maxDrawCount, stride);
 
             if (_indexBufferPattern != null)
             {
@@ -589,6 +711,7 @@ namespace Ryujinx.Graphics.Vulkan
             BeginRenderPass();
             ResumeTransformFeedbackInternal();
             DrawCount++;
+            RecordMua3Command(Mua3CommandKind.DrawIndirect, indirectBuffer.Size, 1);
 
             Gd.Api.CmdDrawIndirect(CommandBuffer, buffer, (ulong)indirectBuffer.Offset, 1, (uint)indirectBuffer.Size);
         }
@@ -619,6 +742,7 @@ namespace Ryujinx.Graphics.Vulkan
             BeginRenderPass();
             ResumeTransformFeedbackInternal();
             DrawCount++;
+            RecordMua3Command(Mua3CommandKind.DrawIndirectCount, maxDrawCount, stride);
 
             Gd.DrawIndirectCountApi.CmdDrawIndirectCount(
                 CommandBuffer,
@@ -1042,6 +1166,12 @@ namespace Ryujinx.Graphics.Vulkan
 
         private void SetRenderTargetsInternal(Span<ITexture> colors, ITexture depthStencil, bool filterWriteMasked)
         {
+            // NEOV2 Etapa 5: clears adiados pertencem aos render targets atuais; aplica antes de trocar.
+            if (_pendingClearMask != 0)
+            {
+                EndRenderPass();
+            }
+
             CreateFramebuffer(colors, depthStencil, filterWriteMasked);
             CreateRenderPass();
             SignalStateChange();
@@ -1390,6 +1520,7 @@ namespace Ryujinx.Graphics.Vulkan
             _descriptorSetUpdater.SignalCommandBufferChange();
             DynamicState.ForceAllDirty();
             _currentPipelineHandle = 0;
+            _extendedDynamicStateValid = false;
         }
 
         private void CreateFramebuffer(Span<ITexture> colors, ITexture depthStencil, bool filterWriteMasked)
@@ -1612,6 +1743,8 @@ namespace Ryujinx.Graphics.Vulkan
 
         private bool RecreateGraphicsPipelineIfNeeded()
         {
+            InsertMua3SceneComputeBarrierIfNeeded();
+
             if (FramebufferParams != null &&
                 FramebufferParams.AttachmentsCount == 0 &&
                 FramebufferParams.Width == 1 &&
@@ -1688,11 +1821,52 @@ namespace Ryujinx.Graphics.Vulkan
                 Pbp = PipelineBindPoint.Graphics;
             }
 
+            if (PipelineState.UsesExtendedDynamicState(Gd))
+            {
+                ApplyExtendedDynamicState();
+            }
+
             Gd.Barriers.Flush(Cbs, _program, _feedbackLoop != 0, RenderPassActive, _rpHolder, EndRenderPassDelegate);
 
             _descriptorSetUpdater.UpdateAndBindDescriptorSets(Cbs, PipelineBindPoint.Graphics);
 
             return true;
+        }
+
+        private void ApplyExtendedDynamicState()
+        {
+            ulong key = _newState.Internal.Id6 & PipelineState.ExtendedDynamicStateMask;
+
+            if (_extendedDynamicStateValid && key == _extendedDynamicStateApplied)
+            {
+                return;
+            }
+
+            Silk.NET.Vulkan.Extensions.EXT.ExtExtendedDynamicState api = Gd.ExtendedDynamicStateApi;
+
+            api.CmdSetCullMode(CommandBuffer, _newState.CullMode);
+            api.CmdSetFrontFace(CommandBuffer, _newState.FrontFace);
+            api.CmdSetDepthTestEnable(CommandBuffer, _newState.DepthTestEnable);
+            api.CmdSetDepthWriteEnable(CommandBuffer, _newState.DepthWriteEnable);
+            api.CmdSetDepthCompareOp(CommandBuffer, _newState.DepthCompareOp);
+            api.CmdSetStencilTestEnable(CommandBuffer, _newState.StencilTestEnable);
+            api.CmdSetStencilOp(
+                CommandBuffer,
+                StencilFaceFlags.FaceFrontBit,
+                _newState.StencilFrontFailOp,
+                _newState.StencilFrontPassOp,
+                _newState.StencilFrontDepthFailOp,
+                _newState.StencilFrontCompareOp);
+            api.CmdSetStencilOp(
+                CommandBuffer,
+                StencilFaceFlags.FaceBackBit,
+                _newState.StencilBackFailOp,
+                _newState.StencilBackPassOp,
+                _newState.StencilBackDepthFailOp,
+                _newState.StencilBackCompareOp);
+
+            _extendedDynamicStateApplied = key;
+            _extendedDynamicStateValid = true;
         }
 
         private bool CreatePipeline(PipelineBindPoint pbp)
@@ -1746,16 +1920,37 @@ namespace Ryujinx.Graphics.Vulkan
                 FramebufferParams.InsertLoadOpBarriers(Gd, Cbs);
 
                 Rect2D renderArea = new(null, new Extent2D(FramebufferParams.Width, FramebufferParams.Height));
-                ClearValue clearValue = new();
+
+                // NEOV2 Etapa 5: se houver clears adiados, usa a variante do render pass com LoadOp.Clear.
+                Auto<DisposableRenderPass> renderPass = _renderPass;
+                ClearValue* clearValues = stackalloc ClearValue[Constants.MaxRenderTargets + 1];
+                clearValues[0] = new ClearValue();
+                uint clearValueCount = 1;
+
+                if (_pendingClearMask != 0 && _rpHolder != null && !_rpHolder.IsDisposed)
+                {
+                    renderPass = _rpHolder.GetRenderPassWithClears(Gd, Device, _pendingClearMask);
+
+                    int count = Math.Min(FramebufferParams.AttachmentsCount, Constants.MaxRenderTargets + 1);
+
+                    for (int i = 0; i < count; i++)
+                    {
+                        clearValues[i] = _pendingClearValues[i];
+                    }
+
+                    clearValueCount = (uint)Math.Max(count, 1);
+                }
+
+                _pendingClearMask = 0;
 
                 RenderPassBeginInfo renderPassBeginInfo = new()
                 {
                     SType = StructureType.RenderPassBeginInfo,
-                    RenderPass = _renderPass.Get(Cbs).Value,
+                    RenderPass = renderPass.Get(Cbs).Value,
                     Framebuffer = _framebuffer.Get(Cbs).Value,
                     RenderArea = renderArea,
-                    PClearValues = &clearValue,
-                    ClearValueCount = 1,
+                    PClearValues = clearValues,
+                    ClearValueCount = clearValueCount,
                 };
 
                 Gd.Api.CmdBeginRenderPass(CommandBuffer, in renderPassBeginInfo, SubpassContents.Inline);
@@ -1763,8 +1958,101 @@ namespace Ryujinx.Graphics.Vulkan
             }
         }
 
+        // NEOV2 Etapa 5: clears de area inteira registrados antes do inicio do render pass.
+        private uint _pendingClearMask;
+        private readonly ClearValue[] _pendingClearValues = new ClearValue[Constants.MaxRenderTargets + 1];
+
+        private bool CanDeferClear(in ClearRect rect)
+        {
+            return IsMainPipeline &&
+                   Gd.IsTBDR &&
+                   !RenderPassActive &&
+                   _rpHolder != null &&
+                   !_rpHolder.IsDisposed &&
+                   _rpHolder != _nullRenderPass &&
+                   FramebufferParams != null &&
+                   FramebufferParams.AttachmentsCount > 0 &&
+                   rect.Rect.Offset.X == 0 &&
+                   rect.Rect.Offset.Y == 0 &&
+                   rect.Rect.Extent.Width == FramebufferParams.Width &&
+                   rect.Rect.Extent.Height == FramebufferParams.Height &&
+                   rect.BaseArrayLayer == 0 &&
+                   rect.LayerCount == FramebufferParams.Layers;
+        }
+
+        private bool TryDeferColorClear(int bindIndex, in ClearRect rect, ClearValue value)
+        {
+            if (!CanDeferClear(rect))
+            {
+                return false;
+            }
+
+            int colorCount = Math.Min(FramebufferParams.ColorAttachmentsCount, Constants.MaxRenderTargets);
+
+            for (int i = 0; i < colorCount; i++)
+            {
+                if (FramebufferParams.AttachmentIndices[i] == bindIndex)
+                {
+                    _pendingClearValues[i] = value;
+                    _pendingClearMask |= 1u << i;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool TryDeferDepthStencilClear(ImageAspectFlags flags, in ClearRect rect, float depthValue, uint stencilValue)
+        {
+            if (!CanDeferClear(rect) || !FramebufferParams.HasDepthStencil)
+            {
+                return false;
+            }
+
+            int dsIndex = FramebufferParams.AttachmentsCount - 1;
+
+            ClearDepthStencilValue value = (_pendingClearMask & (RenderPassHolder.DepthClearBit | RenderPassHolder.StencilClearBit)) != 0
+                ? _pendingClearValues[dsIndex].DepthStencil
+                : default;
+
+            if (flags.HasFlag(ImageAspectFlags.DepthBit))
+            {
+                value.Depth = depthValue;
+                _pendingClearMask |= RenderPassHolder.DepthClearBit;
+            }
+
+            if (flags.HasFlag(ImageAspectFlags.StencilBit))
+            {
+                value.Stencil = stencilValue;
+                _pendingClearMask |= RenderPassHolder.StencilClearBit;
+            }
+
+            _pendingClearValues[dsIndex] = new ClearValue(null, value);
+
+            return true;
+        }
+
+        private void FlushPendingClears()
+        {
+            if (_rpHolder == null || _rpHolder.IsDisposed || FramebufferParams == null || _framebuffer == null)
+            {
+                _pendingClearMask = 0;
+                return;
+            }
+
+            Gd.Barriers.Flush(Cbs, false, _rpHolder, EndRenderPassDelegate);
+
+            BeginRenderPass();
+        }
+
         public void EndRenderPass()
         {
+            // NEOV2 Etapa 5: operacoes fora do render pass vem depois dos clears adiados.
+            if (!RenderPassActive && _pendingClearMask != 0)
+            {
+                FlushPendingClears();
+            }
+
             if (RenderPassActive)
             {
                 FramebufferParams.AddStoreOpUsage();
@@ -1828,6 +2116,11 @@ namespace Ryujinx.Graphics.Vulkan
                 }
 
                 Pipeline?.Dispose();
+
+                if (_persistentPipelineCache)
+                {
+                    PipelineCachePersistence.SaveAndRelease(PipelineCache);
+                }
 
                 unsafe
                 {

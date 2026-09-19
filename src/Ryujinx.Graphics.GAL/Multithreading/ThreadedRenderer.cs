@@ -39,6 +39,11 @@ namespace Ryujinx.Graphics.GAL.Multithreading
         private readonly ManualResetEventSlim _invokeRun;
         private readonly AutoResetEvent _interruptRun;
 
+        // NEOV2 Etapa 3 (portado do Gezinjinx): o produtor espera por evento quando a fila enche,
+        // no lugar de Thread.Sleep(1).
+        private readonly AutoResetEvent _queueSpaceAvailable;
+        private int _producerWaiting;
+
         private bool _lastSampleCounterClear = true;
 
         private readonly byte[] _commandQueue;
@@ -89,6 +94,7 @@ namespace Ryujinx.Graphics.GAL.Multithreading
             _galWorkAvailable = new ManualResetEventSlim(false);
             _invokeRun = new ManualResetEventSlim();
             _interruptRun = new AutoResetEvent(false);
+            _queueSpaceAvailable = new AutoResetEvent(false);
             _spanPool = new CircularSpanPool(this, SpanPoolBytes);
             SpanPool = _spanPool;
 
@@ -151,7 +157,14 @@ namespace Ryujinx.Graphics.GAL.Multithreading
 
                     _consumerPtr = (_consumerPtr + 1) % QueueCount;
 
+                    // Interlocked.Decrement e uma barreira completa: a escrita de _consumerPtr
+                    // fica visivel antes da leitura de _producerWaiting.
                     Interlocked.Decrement(ref _commandCount);
+
+                    if (Volatile.Read(ref _producerWaiting) != 0)
+                    {
+                        _queueSpaceAvailable.Set();
+                    }
                 }
             }
         }
@@ -173,8 +186,20 @@ namespace Ryujinx.Graphics.GAL.Multithreading
                 // If incrementing the producer pointer would overflow, we need to wait.
                 // _consumerPtr can only move forward, so there's no race to worry about here.
 
-                Thread.Sleep(1);
+                // Anuncia a espera com barreira completa e testa a capacidade de novo,
+                // fechando a janela de wakeup perdido antes de entrar no evento.
+                Interlocked.Exchange(ref _producerWaiting, 1);
+
+                if (_producerPtr != (Volatile.Read(ref _consumerPtr) + QueueCount - 1) % QueueCount)
+                {
+                    break;
+                }
+
+                // O timeout de 1 ms e apenas uma rede de seguranca; o caminho normal e o Set do consumidor.
+                _queueSpaceAvailable.WaitOne(1);
             }
+
+            Volatile.Write(ref _producerWaiting, 0);
 
             int taken = _producerPtr;
             _lastProducedPtr = taken;
@@ -194,11 +219,19 @@ namespace Ryujinx.Graphics.GAL.Multithreading
         {
             // The reference table is sized so that it will never overflow, so long as the references are taken after the command is allocated.
 
-            int index = _refProducerPtr;
+            // NEOV2 Etapa 9 (PR #174 do Ryubing): reserva a posicao de forma atomica. Antes, duas threads
+            // podiam ler o mesmo _refProducerPtr e gravar no mesmo slot, perdendo uma das referencias.
+            int index;
+            int next;
+
+            do
+            {
+                index = Volatile.Read(ref _refProducerPtr);
+                next = (index + 1) % _refQueue.Length;
+            }
+            while (Interlocked.CompareExchange(ref _refProducerPtr, next, index) != index);
 
             _refQueue[index] = obj;
-
-            _refProducerPtr = (_refProducerPtr + 1) % _refQueue.Length;
 
             return index;
         }
@@ -543,6 +576,7 @@ namespace Ryujinx.Graphics.GAL.Multithreading
             _galWorkAvailable.Dispose();
             _invokeRun.Dispose();
             _interruptRun.Dispose();
+            _queueSpaceAvailable.Dispose();
 
             Sync.Dispose();
         }

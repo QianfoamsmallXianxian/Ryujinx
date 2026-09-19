@@ -332,6 +332,7 @@ namespace LibKenjinx
         public static bool JnaDeviceInitialize(int memoryManagerMode,
                                                     bool useNce,
                                                     int memoryConfiguration,
+                                                    int memorySlackGiB,
                                                     int systemLanguage,
                                                     int regionCode,
                                                     int vSyncMode,
@@ -351,9 +352,11 @@ namespace LibKenjinx
             _openAl = AudioDriver as OpenALHardwareDeviceDriver; // <-- audio patch: keep a strong ref
 
             string? timezone = Marshal.PtrToStringAnsi(timeZonePtr);
+            ulong memorySlack = (ulong)memorySlackGiB * 1024 * 1024 * 1024;
             return InitializeDevice((MemoryManagerMode)memoryManagerMode,
                                     useNce,
                                     (MemoryConfiguration)memoryConfiguration,
+                                    memorySlack,
                                     (SystemLanguage)systemLanguage,
                                     (RegionCode)regionCode,
                                     (VSyncMode)vSyncMode,
@@ -617,12 +620,24 @@ namespace LibKenjinx
         public static void JniRunLoopNative()
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
+
+            // NEOV2 Etapa 7: o frameEnded do Kotlin (QuickSettings + turbo + broadcast de 60 Hz + progresso)
+            // rodava a cada present via JNI. Agora roda no primeiro quadro e depois no maximo a cada 2 s.
+            long lastFrameEndedTimestamp = 0;
+            long frameEndedInterval = System.Diagnostics.Stopwatch.Frequency * 2;
+
             SetSwapBuffersCallback(() =>
             {
                 if (SwitchDevice?.EmulationContext != null)
                 {
-                    double time = SwitchDevice.EmulationContext.Statistics.GetGameFrameTime();
-                    Interop.FrameEnded(time);
+                    long now = System.Diagnostics.Stopwatch.GetTimestamp();
+
+                    if (lastFrameEndedTimestamp == 0 || now - lastFrameEndedTimestamp >= frameEndedInterval)
+                    {
+                        lastFrameEndedTimestamp = now;
+                        double time = SwitchDevice.EmulationContext.Statistics.GetGameFrameTime();
+                        Interop.FrameEnded(time);
+                    }
                 }
             });
             RunLoop();

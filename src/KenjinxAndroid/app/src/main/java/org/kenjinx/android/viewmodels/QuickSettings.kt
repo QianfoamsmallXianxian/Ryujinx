@@ -47,6 +47,7 @@ class QuickSettings(val activity: Activity) {
     var vSyncMode: VSyncMode
     var useNce: Boolean
     var memoryConfiguration: MemoryConfiguration
+    var memorySlack: MemorySlack
     var useVirtualController: Boolean
     // Amiibo slots (URIs + names)
     var amiibo1Uri: String?
@@ -117,6 +118,7 @@ class QuickSettings(val activity: Activity) {
         memoryManagerMode = MemoryManagerMode.entries.toTypedArray()[sharedPref.getInt("memoryManagerMode", MemoryManagerMode.HostMappedUnsafe.ordinal)]
         useNce = sharedPref.getBoolean("useNce", false)
         memoryConfiguration = MemoryConfiguration.entries.toTypedArray()[sharedPref.getInt("memoryConfiguration", MemoryConfiguration.MemoryConfiguration4GiB.ordinal)]
+        memorySlack = MemorySlack.entries.toTypedArray()[sharedPref.getInt("memorySlack", MemorySlack.Slack12GiB.ordinal)]
         vSyncMode = VSyncMode.entries.toTypedArray()[sharedPref.getInt("vSyncMode", VSyncMode.Switch.ordinal)]
         enableDocked = sharedPref.getBoolean("enableDocked", true)
         enablePptc = sharedPref.getBoolean("enablePptc", true)
@@ -182,6 +184,7 @@ class QuickSettings(val activity: Activity) {
             putInt("memoryManagerMode", memoryManagerMode.ordinal)
             putBoolean("useNce", useNce)
             putInt("memoryConfiguration", memoryConfiguration.ordinal)
+            putInt("memorySlack", memorySlack.ordinal)
             putInt("vSyncMode", vSyncMode.ordinal)
             putBoolean("enableDocked", enableDocked)
             putBoolean("enablePptc", enablePptc)

@@ -205,24 +205,9 @@ namespace Ryujinx.Graphics.Vulkan
                 Array.Resize(ref storageAllocations, storageAllocationsCount);
             }
 
-            fixed (SparseMemoryBind* pMemoryBinds = memoryBinds)
-            {
-                SparseBufferMemoryBindInfo bufferBind = new()
-                {
-                    Buffer = buffer,
-                    BindCount = (uint)memoryBinds.Length,
-                    PBinds = pMemoryBinds
-                };
-
-                BindSparseInfo bindSparseInfo = new()
-                {
-                    SType = StructureType.BindSparseInfo,
-                    BufferBindCount = 1,
-                    PBufferBinds = &bufferBind
-                };
-
-                gd.Api.QueueBindSparse(gd.Queue, 1, in bindSparseInfo, default).ThrowOnError();
-            }
+            // NEOV2 Etapa 1: o bind sparse entra na mesma fila FIFO do VulkanSubmissionWorker,
+            // preservando a ordem em relacao aos QueueSubmit pendentes.
+            gd.QueueSubmissionWorker.BindSparse(buffer, memoryBinds);
 
             BufferHolder holder = new(gd, _device, buffer, (int)size, storageAllocations);
 

@@ -1,4 +1,4 @@
-using Silk.NET.Vulkan;
+﻿using Silk.NET.Vulkan;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -55,16 +55,15 @@ namespace Ryujinx.Graphics.Vulkan
 
         private readonly ReservedCommandBuffer[] _commandBuffers;
 
+        private readonly VulkanSubmissionWorker _submissionWorker;
         private readonly int[] _queuedIndexes;
         private int _queuedIndexesPtr;
         private int _queuedCount;
         private int _inUseCount;
-
         public unsafe CommandBufferPool(
             Vk api,
             Device device,
-            Queue queue,
-            Lock queueLock,
+            VulkanSubmissionWorker submissionWorker,
             uint queueFamilyIndex,
             bool concurrentFenceWaitUnsupported,
             bool fenceAlwaysWaits,
@@ -72,8 +71,7 @@ namespace Ryujinx.Graphics.Vulkan
         {
             _api = api;
             _device = device;
-            _queue = queue;
-            _queueLock = queueLock;
+            _submissionWorker = submissionWorker;
             _concurrentFenceWaitUnsupported = concurrentFenceWaitUnsupported;
             _fenceAlwaysWaits = fenceAlwaysWaits;
             _owner = Thread.CurrentThread;
@@ -210,7 +208,14 @@ namespace Ryujinx.Graphics.Vulkan
 
                 ref ReservedCommandBuffer entry = ref _commandBuffers[index];
 
-                if (wait || !entry.InConsumption || entry.Fence.IsSignaledLazy())
+                bool submissionReady = entry.Fence.Submission.IsCompleted;
+
+                if (submissionReady)
+                {
+                    entry.Fence.Submission.ThrowIfFaulted();
+                }
+
+                if (wait || !entry.InConsumption || (submissionReady && entry.Fence.IsSignaledLazy()))
                 {
                     WaitAndDecrementRef(index);
 
@@ -258,6 +263,8 @@ namespace Ryujinx.Graphics.Vulkan
 
                         _api.BeginCommandBuffer(entry.CommandBuffer, in commandBufferBeginInfo).ThrowOnError();
 
+                        Mua3CrashTelemetry.BeginCommandBuffer(entry.CommandBuffer, cursor);
+
                         return new CommandBufferScoped(this, entry.CommandBuffer, cursor);
                     }
 
@@ -296,28 +303,12 @@ namespace Ryujinx.Graphics.Vulkan
 
                 _api.EndCommandBuffer(commandBuffer).ThrowOnError();
 
-                fixed (Semaphore* pWaitSemaphores = waitSemaphores, pSignalSemaphores = signalSemaphores)
-                {
-                    fixed (PipelineStageFlags* pWaitDstStageMask = waitDstStageMask)
-                    {
-                        SubmitInfo sInfo = new()
-                        {
-                            SType = StructureType.SubmitInfo,
-                            WaitSemaphoreCount = !waitSemaphores.IsEmpty ? (uint)waitSemaphores.Length : 0,
-                            PWaitSemaphores = pWaitSemaphores,
-                            PWaitDstStageMask = pWaitDstStageMask,
-                            CommandBufferCount = 1,
-                            PCommandBuffers = &commandBuffer,
-                            SignalSemaphoreCount = !signalSemaphores.IsEmpty ? (uint)signalSemaphores.Length : 0,
-                            PSignalSemaphores = pSignalSemaphores,
-                        };
-
-                        lock (_queueLock)
-                        {
-                            _api.QueueSubmit(_queue, 1, in sInfo, entry.Fence.GetUnsafe()).ThrowOnError();
-                        }
-                    }
-                }
+                _submissionWorker.Submit(
+                    commandBuffer,
+                    entry.Fence,
+                    waitSemaphores,
+                    waitDstStageMask,
+                    signalSemaphores);
 
                 int ptr = (_queuedIndexesPtr + _queuedCount) % _totalCommandBuffers;
                 _queuedIndexes[ptr] = cbIndex;
@@ -352,7 +343,7 @@ namespace Ryujinx.Graphics.Vulkan
 
             if (refreshFence)
             {
-                entry.Fence = new FenceHolder(_api, _device, _concurrentFenceWaitUnsupported, _fenceAlwaysWaits);
+                entry.Fence = new FenceHolder(_api, _device, _concurrentFenceWaitUnsupported, _submissionWorker, _fenceAlwaysWaits);
             }
             else
             {

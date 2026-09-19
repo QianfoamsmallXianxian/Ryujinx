@@ -39,39 +39,43 @@ namespace Ryujinx.Graphics.Vulkan
         private readonly RenderPassCacheKey _key;
         private readonly List<ForcedFence> _forcedFences;
 
+        // NEOV2 Etapa 5: bits do clearMask usados para criar variantes do render pass com LoadOp.Clear.
+        // Bits 0..7: attachments de cor (indice do attachment). Bit 30: aspecto depth. Bit 31: aspecto stencil.
+        public const uint DepthClearBit = 1u << 30;
+        public const uint StencilClearBit = 1u << 31;
+
+        private const int MaxAttachments = Constants.MaxRenderTargets + 1;
+
+        private readonly bool _hasFramebuffer;
+        private readonly int _attachmentsCount;
+        private readonly int _colorAttachmentsCount;
+        private readonly int _maxColorAttachmentIndex;
+        private readonly bool _hasDepthStencil;
+        private readonly Silk.NET.Vulkan.Format[] _attachmentFormats;
+        private readonly SampleCountFlags[] _attachmentSamples;
+        private readonly int[] _attachmentBindIndices;
+
+        private Dictionary<uint, Auto<DisposableRenderPass>> _clearVariants;
+        private bool _disposed;
+
+        public bool IsDisposed => _disposed;
+
         public unsafe RenderPassHolder(VulkanRenderer gd, Device device, RenderPassCacheKey key, FramebufferParams fb)
         {
             // Create render pass using framebuffer params.
 
-            const int MaxAttachments = Constants.MaxRenderTargets + 1;
+            _hasFramebuffer = fb != null;
 
-            AttachmentDescription[] attachmentDescs = null;
-
-            SubpassDescription subpass = new()
+            if (_hasFramebuffer && fb.AttachmentsCount != 0)
             {
-                PipelineBindPoint = PipelineBindPoint.Graphics,
-            };
+                _attachmentsCount = fb.AttachmentsCount;
+                _attachmentFormats = new Silk.NET.Vulkan.Format[_attachmentsCount];
+                _attachmentSamples = new SampleCountFlags[_attachmentsCount];
 
-            AttachmentReference* attachmentReferences = stackalloc AttachmentReference[MaxAttachments];
-
-            bool hasFramebuffer = fb != null;
-
-            if (hasFramebuffer && fb.AttachmentsCount != 0)
-            {
-                attachmentDescs = new AttachmentDescription[fb.AttachmentsCount];
-
-                for (int i = 0; i < fb.AttachmentsCount; i++)
+                for (int i = 0; i < _attachmentsCount; i++)
                 {
-                    attachmentDescs[i] = new AttachmentDescription(
-                        0,
-                        fb.AttachmentFormats[i],
-                        TextureStorage.ConvertToSampleCountFlags(gd.Capabilities.SupportedSampleCounts, fb.AttachmentSamples[i]),
-                        AttachmentLoadOp.Load,
-                        AttachmentStoreOp.Store,
-                        AttachmentLoadOp.Load,
-                        AttachmentStoreOp.Store,
-                        ImageLayout.General,
-                        ImageLayout.General);
+                    _attachmentFormats[i] = fb.AttachmentFormats[i];
+                    _attachmentSamples[i] = TextureStorage.ConvertToSampleCountFlags(gd.Capabilities.SupportedSampleCounts, fb.AttachmentSamples[i]);
                 }
 
                 int colorAttachmentsCount = fb.ColorAttachmentsCount;
@@ -81,9 +85,95 @@ namespace Ryujinx.Graphics.Vulkan
                     colorAttachmentsCount = MaxAttachments - 1;
                 }
 
-                if (colorAttachmentsCount != 0)
+                _colorAttachmentsCount = colorAttachmentsCount;
+                _maxColorAttachmentIndex = fb.MaxColorAttachmentIndex;
+                _attachmentBindIndices = new int[colorAttachmentsCount];
+
+                for (int i = 0; i < colorAttachmentsCount; i++)
                 {
-                    int maxAttachmentIndex = fb.MaxColorAttachmentIndex;
+                    _attachmentBindIndices[i] = fb.AttachmentIndices[i];
+                }
+
+                _hasDepthStencil = fb.HasDepthStencil;
+            }
+
+            _renderPass = BuildRenderPass(gd, device, 0);
+
+            _framebuffers = new HashTableSlim<FramebufferCacheKey, Auto<DisposableFramebuffer>>();
+
+            // Register this render pass with all render target views.
+
+            if (_hasFramebuffer)
+            {
+                TextureView[] textures = fb.GetAttachmentViews();
+
+                foreach (TextureView texture in textures)
+                {
+                    texture.AddRenderPass(key, this);
+                }
+
+                _textures = textures;
+            }
+
+            _key = key;
+
+            _forcedFences = [];
+        }
+
+        private unsafe Auto<DisposableRenderPass> BuildRenderPass(VulkanRenderer gd, Device device, uint clearMask)
+        {
+            AttachmentDescription[] attachmentDescs = null;
+
+            SubpassDescription subpass = new()
+            {
+                PipelineBindPoint = PipelineBindPoint.Graphics,
+            };
+
+            AttachmentReference* attachmentReferences = stackalloc AttachmentReference[MaxAttachments];
+
+            if (_hasFramebuffer && _attachmentsCount != 0)
+            {
+                attachmentDescs = new AttachmentDescription[_attachmentsCount];
+
+                int dsIndex = _attachmentsCount - 1;
+
+                for (int i = 0; i < _attachmentsCount; i++)
+                {
+                    AttachmentLoadOp loadOp = AttachmentLoadOp.Load;
+                    AttachmentLoadOp stencilLoadOp = AttachmentLoadOp.Load;
+
+                    if (_hasDepthStencil && i == dsIndex)
+                    {
+                        if ((clearMask & DepthClearBit) != 0)
+                        {
+                            loadOp = AttachmentLoadOp.Clear;
+                        }
+
+                        if ((clearMask & StencilClearBit) != 0)
+                        {
+                            stencilLoadOp = AttachmentLoadOp.Clear;
+                        }
+                    }
+                    else if (i < 30 && (clearMask & (1u << i)) != 0)
+                    {
+                        loadOp = AttachmentLoadOp.Clear;
+                    }
+
+                    attachmentDescs[i] = new AttachmentDescription(
+                        0,
+                        _attachmentFormats[i],
+                        _attachmentSamples[i],
+                        loadOp,
+                        AttachmentStoreOp.Store,
+                        stencilLoadOp,
+                        AttachmentStoreOp.Store,
+                        ImageLayout.General,
+                        ImageLayout.General);
+                }
+
+                if (_colorAttachmentsCount != 0)
+                {
+                    int maxAttachmentIndex = _maxColorAttachmentIndex;
                     subpass.ColorAttachmentCount = (uint)maxAttachmentIndex + 1;
                     subpass.PColorAttachments = &attachmentReferences[0];
 
@@ -93,20 +183,18 @@ namespace Ryujinx.Graphics.Vulkan
                         subpass.PColorAttachments[i] = new AttachmentReference(Vk.AttachmentUnused, ImageLayout.Undefined);
                     }
 
-                    for (int i = 0; i < colorAttachmentsCount; i++)
+                    for (int i = 0; i < _colorAttachmentsCount; i++)
                     {
-                        int bindIndex = fb.AttachmentIndices[i];
+                        int bindIndex = _attachmentBindIndices[i];
 
                         subpass.PColorAttachments[bindIndex] = new AttachmentReference((uint)i, ImageLayout.General);
                     }
                 }
 
-                if (fb.HasDepthStencil)
+                if (_hasDepthStencil)
                 {
-                    uint dsIndex = (uint)fb.AttachmentsCount - 1;
-
                     subpass.PDepthStencilAttachment = &attachmentReferences[MaxAttachments - 1];
-                    *subpass.PDepthStencilAttachment = new AttachmentReference(dsIndex, ImageLayout.General);
+                    *subpass.PDepthStencilAttachment = new AttachmentReference((uint)dsIndex, ImageLayout.General);
                 }
             }
 
@@ -127,28 +215,30 @@ namespace Ryujinx.Graphics.Vulkan
 
                 gd.Api.CreateRenderPass(device, in renderPassCreateInfo, null, out RenderPass renderPass).ThrowOnError();
 
-                _renderPass = new Auto<DisposableRenderPass>(new DisposableRenderPass(gd.Api, device, renderPass));
+                return new Auto<DisposableRenderPass>(new DisposableRenderPass(gd.Api, device, renderPass));
             }
+        }
 
-            _framebuffers = new HashTableSlim<FramebufferCacheKey, Auto<DisposableFramebuffer>>();
-
-            // Register this render pass with all render target views.
-
-            if (hasFramebuffer)
+        /// <summary>
+        /// NEOV2 Etapa 5: variante do render pass em que os attachments do clearMask usam LoadOp.Clear.
+        /// E compativel com o render pass base (so muda o load op), entao usa os mesmos framebuffers e pipelines.
+        /// </summary>
+        public Auto<DisposableRenderPass> GetRenderPassWithClears(VulkanRenderer gd, Device device, uint clearMask)
+        {
+            if (clearMask == 0)
             {
-                TextureView[] textures = fb.GetAttachmentViews();
-
-                foreach (TextureView texture in textures)
-                {
-                    texture.AddRenderPass(key, this);
-                }
-
-                _textures = textures;
+                return _renderPass;
             }
 
-            _key = key;
+            _clearVariants ??= new Dictionary<uint, Auto<DisposableRenderPass>>();
 
-            _forcedFences = [];
+            if (!_clearVariants.TryGetValue(clearMask, out Auto<DisposableRenderPass> variant))
+            {
+                variant = BuildRenderPass(gd, device, clearMask);
+                _clearVariants.Add(clearMask, variant);
+            }
+
+            return variant;
         }
 
         public Auto<DisposableFramebuffer> GetFramebuffer(VulkanRenderer gd, CommandBufferScoped cbs, FramebufferParams fb)
@@ -219,6 +309,18 @@ namespace Ryujinx.Graphics.Vulkan
             // Dispose render pass.
 
             _renderPass.Dispose();
+
+            if (_clearVariants != null)
+            {
+                foreach (Auto<DisposableRenderPass> variant in _clearVariants.Values)
+                {
+                    variant.Dispose();
+                }
+
+                _clearVariants.Clear();
+            }
+
+            _disposed = true;
         }
     }
 }

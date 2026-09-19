@@ -1,7 +1,10 @@
 using Ryujinx.Common.Logging;
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace Ryujinx.Graphics.Vulkan
 {
@@ -43,9 +46,30 @@ namespace Ryujinx.Graphics.Vulkan
 
         private bool _fastFlushMode;
 
+        // NEOV2 Etapa 16: intervalos originais restaurados (a Etapa 15 piorou o TOTK).
+        // Contadores de flush por motivo, registrados a cada 5 s. Flushes forcados por
+        // FlushAllCommands sao separados por origem (arquivo.metodo).
+        private static readonly long _statsInterval = Stopwatch.Frequency * 5;
+        private static readonly ConcurrentDictionary<string, int> _externalOrigins = new();
+        private long _statsStart = Stopwatch.GetTimestamp();
+        private int _flushTotal;
+        private int _flushAttachment;
+        private int _flushDraw;
+        private int _flushQuery;
+        private int _presents;
+        private int _fastFlushFrames;
+
         public AutoFlushCounter(VulkanRenderer gd)
         {
             _gd = gd;
+        }
+
+        public static void RecordExternalFlush(string callerFile, string callerMember)
+        {
+            string file = string.IsNullOrEmpty(callerFile) ? "?" : Path.GetFileNameWithoutExtension(callerFile.Replace('\\', '/'));
+            string key = file + "." + callerMember;
+
+            _externalOrigins.AddOrUpdate(key, 1, (_, count) => count + 1);
         }
 
         public void RegisterFlush(ulong drawCount)
@@ -55,6 +79,8 @@ namespace Ryujinx.Graphics.Vulkan
 
             _hasPendingQuery = false;
             _consecutiveQueries = 0;
+
+            _flushTotal++;
         }
 
         public bool RegisterPendingQuery()
@@ -68,6 +94,7 @@ namespace Ryujinx.Graphics.Vulkan
             // Interrupt render passes to flush queries, so that early results arrive sooner.
             if (++_queryCount == InitialQueryCountForFlush)
             {
+                _flushQuery++;
                 return true;
             }
 
@@ -91,6 +118,11 @@ namespace Ryujinx.Graphics.Vulkan
 
         public bool ShouldFlushQuery()
         {
+            if (_hasPendingQuery)
+            {
+                _flushQuery++;
+            }
+
             return _hasPendingQuery;
         }
 
@@ -114,7 +146,14 @@ namespace Ryujinx.Graphics.Vulkan
 
                 long now = Stopwatch.GetTimestamp();
 
-                return now > _lastFlush + flushTimeout;
+                bool flush = now > _lastFlush + flushTimeout;
+
+                if (flush)
+                {
+                    _flushDraw++;
+                }
+
+                return flush;
             }
 
             return false;
@@ -127,6 +166,7 @@ namespace Ryujinx.Graphics.Vulkan
             // Flush when there's an attachment change out of a large block of queries.
             if (_consecutiveQueries > MinConsecutiveQueryForFlush)
             {
+                _flushQuery++;
                 return true;
             }
 
@@ -148,7 +188,14 @@ namespace Ryujinx.Graphics.Vulkan
 
             long now = Stopwatch.GetTimestamp();
 
-            return now > _lastFlush + flushTimeout;
+            bool flush = now > _lastFlush + flushTimeout;
+
+            if (flush)
+            {
+                _flushAttachment++;
+            }
+
+            return flush;
         }
 
         public void Present()
@@ -173,6 +220,41 @@ namespace Ryujinx.Graphics.Vulkan
             {
                 _fastFlushMode = !_fastFlushMode;
                 Logger.Debug?.PrintMsg(LogClass.Gpu, $"Switched fast flush mode: ({_fastFlushMode})");
+            }
+
+            _presents++;
+
+            if (_fastFlushMode)
+            {
+                _fastFlushFrames++;
+            }
+
+            long nowStats = Stopwatch.GetTimestamp();
+
+            if (nowStats - _statsStart >= _statsInterval)
+            {
+                int other = Math.Max(0, _flushTotal - _flushAttachment - _flushDraw - _flushQuery);
+
+                StringBuilder origins = new();
+
+                foreach (string key in _externalOrigins.Keys.ToArray())
+                {
+                    if (_externalOrigins.TryRemove(key, out int count) && count > 0)
+                    {
+                        origins.Append(' ').Append(key).Append('=').Append(count);
+                    }
+                }
+
+                Logger.Info?.Print(LogClass.Gpu,
+                    $"[NEOV2-ETAPA16] flushes total={_flushTotal} attachment={_flushAttachment} draw={_flushDraw} query={_flushQuery} other={other} frames={_presents} fastFlushFrames={_fastFlushFrames} origins:{origins}");
+
+                _statsStart = nowStats;
+                _flushTotal = 0;
+                _flushAttachment = 0;
+                _flushDraw = 0;
+                _flushQuery = 0;
+                _presents = 0;
+                _fastFlushFrames = 0;
             }
         }
     }

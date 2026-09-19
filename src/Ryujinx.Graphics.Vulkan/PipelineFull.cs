@@ -20,7 +20,7 @@ namespace Ryujinx.Graphics.Vulkan
 
         private readonly List<BufferHolder> _backingSwaps;
 
-        public PipelineFull(VulkanRenderer gd, Device device) : base(gd, device)
+        public PipelineFull(VulkanRenderer gd, Device device) : base(gd, device, persistentPipelineCache: true)
         {
             _activeQueries = [];
             _pendingQueryCopies = [];

@@ -44,6 +44,7 @@ class SettingsViewModel(val activity: MainActivity) {
         memoryManagerMode: MutableState<MemoryManagerMode>,
         useNce: MutableState<Boolean>,
         memoryConfiguration: MutableState<MemoryConfiguration>,
+        memorySlack: MutableState<MemorySlack>,
         vSyncMode: MutableState<VSyncMode>,
         enableDocked: MutableState<Boolean>,
         enablePptc: MutableState<Boolean>,
@@ -79,6 +80,7 @@ class SettingsViewModel(val activity: MainActivity) {
         memoryManagerMode.value = MemoryManagerMode.entries.toTypedArray()[sharedPref.getInt("memoryManagerMode", MemoryManagerMode.HostMappedUnsafe.ordinal)]
         useNce.value = sharedPref.getBoolean("useNce", false)
         memoryConfiguration.value = MemoryConfiguration.entries.toTypedArray()[sharedPref.getInt("memoryConfiguration", MemoryConfiguration.MemoryConfiguration4GiB.ordinal)]
+        memorySlack.value = MemorySlack.entries.toTypedArray()[sharedPref.getInt("memorySlack", MemorySlack.Slack12GiB.ordinal)]
         vSyncMode.value = VSyncMode.entries.toTypedArray()[sharedPref.getInt("vSyncMode", VSyncMode.Switch.ordinal)]
         enableDocked.value = sharedPref.getBoolean("enableDocked", true)
         enablePptc.value = sharedPref.getBoolean("enablePptc", true)
@@ -120,6 +122,7 @@ class SettingsViewModel(val activity: MainActivity) {
         memoryManagerMode: MutableState<MemoryManagerMode>,
         useNce: MutableState<Boolean>,
         memoryConfiguration: MutableState<MemoryConfiguration>,
+        memorySlack: MutableState<MemorySlack>,
         vSyncMode: MutableState<VSyncMode>,
         enableDocked: MutableState<Boolean>,
         enablePptc: MutableState<Boolean>,
@@ -157,6 +160,7 @@ class SettingsViewModel(val activity: MainActivity) {
             putInt("memoryManagerMode", memoryManagerMode.value.ordinal)
             putBoolean("useNce", useNce.value)
             putInt("memoryConfiguration", memoryConfiguration.value.ordinal)
+            putInt("memorySlack", memorySlack.value.ordinal)
             putInt("vSyncMode", vSyncMode.value.ordinal)
             putBoolean("enableDocked", enableDocked.value)
             putBoolean("enablePptc", enablePptc.value)

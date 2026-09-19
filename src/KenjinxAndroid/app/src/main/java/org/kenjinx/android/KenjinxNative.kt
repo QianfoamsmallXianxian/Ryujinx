@@ -15,6 +15,7 @@ interface KenjinxNativeJna : Library {
         memoryManagerMode: Int,
         useNce: Boolean,
         memoryConfiguration: Int,
+        memorySlackGiB: Int,
         systemLanguage: Int,
         regionCode: Int,
         vSyncMode: Int,

@@ -49,7 +49,11 @@ namespace Ryujinx.Graphics.Gpu.Image
     {
         private const int MinCountForDeletion = 32;
 #if ANDROID
-        private const int MaxCapacity = 1024;
+        // NEOV2 Etapa 18: 1024 texturas era pouco para jogos como o TOTK (mais de 2000 texturas vivas).
+        // O cache ficava removendo texturas o tempo todo, e cada textura modificada removida era lida
+        // de volta da GPU com uma parada completa (TextureView.GetData). O limite de memoria
+        // (_maxCacheMemoryUsage) continua valendo e protege contra uso excessivo.
+        private const int MaxCapacity = 4096;
 #else
         private const int MaxCapacity = 2048;
 #endif
@@ -94,6 +98,7 @@ namespace Ryujinx.Graphics.Gpu.Image
             _maxCacheMemoryUsage = Math.Clamp(cacheMemory, MinTextureSizeCapacity, MaxTextureSizeCapacity);
 
             Logger.Info?.Print(LogClass.Gpu, $"AutoDelete Cache Allocated VRAM : {_maxCacheMemoryUsage / GiB} GiB");
+            Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-ETAPA18] AutoDelete cache max textures: {MaxCapacity}");
         }
 
         /// <summary>

@@ -94,6 +94,47 @@ namespace Ryujinx.Common.PreciseSleep
         }
 
         /// <summary>
+        /// NEOV2 Etapa 12: wait until the given timepoint without burning a core.
+        /// On Linux/Android, sleeps with nanosleep in short steps and yields for the last fraction of a millisecond.
+        /// Other platforms keep the original spin wait.
+        /// </summary>
+        /// <param name="timePoint">Target timepoint in host ticks</param>
+        public static void YieldingWaitUntilTimePoint(long timePoint)
+        {
+            if (!(OperatingSystem.IsLinux() || OperatingSystem.IsAndroid() || PlatformInfo.IsBionic))
+            {
+                SpinWaitUntilTimePoint(timePoint);
+                return;
+            }
+
+            const long MinNanosleepNs = 300_000; // 0.3ms
+
+            while (true)
+            {
+                long remaining = timePoint - PerformanceCounter.ElapsedTicks;
+
+                if (remaining <= 0)
+                {
+                    return;
+                }
+
+                long ns = (remaining * 1_000_000) / PerformanceCounter.TicksPerMillisecond;
+
+                if (ns < MinNanosleepNs)
+                {
+                    break;
+                }
+
+                Nanosleep.SleepAtMost(ns);
+            }
+
+            while (PerformanceCounter.ElapsedTicks < timePoint)
+            {
+                Thread.Yield();
+            }
+        }
+
+        /// <summary>
         /// Spinwait until the given timepoint, with no opportunity to wake early.
         /// </summary>
         /// <param name="timePoint">Target timepoint in host ticks</param>

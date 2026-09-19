@@ -255,6 +255,7 @@ class MainViewModel(val activity: MainActivity) {
                     settings.memoryManagerMode.ordinal,
                     settings.useNce,
                     settings.memoryConfiguration.ordinal,
+                    settings.memorySlack.gigabytes,
                     /* OLD: was fixed -> SystemLanguage.AmericanEnglish.ordinal */
                     loadSystemLanguage().ordinal,
                     /* OLD: was fixed -> RegionCode.USA.ordinal */
@@ -370,6 +371,7 @@ class MainViewModel(val activity: MainActivity) {
                     settings.memoryManagerMode.ordinal,
                     settings.useNce,
                     settings.memoryConfiguration.ordinal,
+                    settings.memorySlack.gigabytes,
                     /* OLD: was fixed -> SystemLanguage.AmericanEnglish.ordinal */
                     loadSystemLanguage().ordinal,
                     /* OLD: was fixed -> RegionCode.USA.ordinal */

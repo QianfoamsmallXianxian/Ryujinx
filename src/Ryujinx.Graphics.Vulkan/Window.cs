@@ -5,6 +5,7 @@ using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.KHR;
 using System;
 using VkFormat = Silk.NET.Vulkan.Format;
+using System.Diagnostics;
 using System.Linq;
 
 namespace Ryujinx.Graphics.Vulkan
@@ -654,34 +655,21 @@ namespace Ryujinx.Graphics.Vulkan
             swapBuffersCallback?.Invoke();
         }
 
-        private static unsafe void PresentOne(
+        private static void PresentOne(
             VulkanRenderer gd,
             Semaphore signal,
             SwapchainKHR swapchain,
             uint imageIndex)
         {
-            Semaphore* pWait = stackalloc Semaphore[1];
-            SwapchainKHR* pSwap = stackalloc SwapchainKHR[1];
-            uint* pImageIndex = stackalloc uint[1];
+            // NEOV2 Etapa 1: o present entra na mesma fila FIFO do VulkanSubmissionWorker.
+            // Assim ele so chega ao VkQueue depois do QueueSubmit que sinaliza "signal".
+            long start = Stopwatch.GetTimestamp();
+            Result result = gd.QueueSubmissionWorker.Present(gd.SwapchainApi, signal, swapchain, imageIndex);
+            long elapsed = Stopwatch.GetTimestamp() - start;
 
-            pWait[0] = signal;
-            pSwap[0] = swapchain;
-            pImageIndex[0] = imageIndex;
-
-            PresentInfoKHR presentInfo = new()
+            if (result == Result.Success || result == Result.SuboptimalKhr)
             {
-                SType = StructureType.PresentInfoKhr,
-                WaitSemaphoreCount = 1,
-                PWaitSemaphores = pWait,
-                SwapchainCount = 1,
-                PSwapchains = pSwap,
-                PImageIndices = pImageIndex,
-                PResults = null
-            };
-
-            lock (gd.QueueLock)
-            {
-                gd.SwapchainApi.QueuePresent(gd.Queue, in presentInfo);
+                BaselineTelemetry.RecordPresent(elapsed);
             }
         }
 

@@ -16,121 +16,24 @@ namespace Ryujinx.Common.Memory
     /// <typeparam name="T">The type of item to store.</typeparam>
     public sealed class MemoryOwner<T> : IMemoryOwner<T>
     {
+        // NEOV2 Etapa 21: o pool proprio (lista unica com trava global, busca/remocao lineares e
+        // limite que so crescia) foi trocado pelo ArrayPool<T>.Shared do .NET, o mesmo usado no
+        // Ryujinx original. Ele tem cache por thread/nucleo e nao usa trava global no caminho rapido.
         private static class ArrayPooling
         {
-            public class Holder(T[]? array = null) : IComparable<Holder>, IComparable<int>
-            {
-                public int SkipCount;
-                public readonly T[]? Array = array;
-
-                public int CompareTo(Holder? other)
-                {
-                    return Array!.Length.CompareTo(other!.Array!.Length);
-                }
-                
-                public int CompareTo(int other)
-                {
-                    int self = Array!.Length;
-
-                    if (self < other)
-                    {
-                        SkipCount++;
-                        return -1;
-                    }
-
-                    if (self > other * 4)
-                    {
-                        return 1;
-                    }
-                    
-                    return 0;
-                }
-            }
-            
-            // ReSharper disable once StaticMemberInGenericType
-            private static int _maxCacheCount = 50;
-            
-            private const int MaxSkipCount = 50;
-        
-            static readonly List<Holder> _pool = new();
-            
-            // ReSharper disable once StaticMemberInGenericType
-            static readonly Lock _lock = new();
-            
-            private static int BinarySearch(List<Holder> list, int size)
-            {
-                int min = 0;
-                int max = list.Count-1;
-
-                while (min <= max)
-                {
-                    int mid = (min + max) / 2;
-                    int comparison = list[mid].CompareTo(size);
-                    if (comparison == 0)
-                    {
-                        return mid;
-                    }
-                    if (comparison < 0)
-                    {
-                        min = mid+1;
-                    }
-                    else
-                    {
-                        max = mid-1;
-                    }
-                }
-                return ~min;
-            }
-
             public static T[] Get(int minimumSize)
             {
-                lock (_lock)
-                {
-                    int index = BinarySearch(_pool, minimumSize);
+                MemoryOwnerPoolInfo.LogOnce();
 
-                    if (index >= 0)
-                    {
-                        Holder holder = _pool[index];
-                        
-                        _pool.Remove(holder);
-                        return holder.Array!;
-                    }
-
-                    return new T[minimumSize];
-                }
+                return ArrayPool<T>.Shared.Rent(minimumSize);
             }
 
             public static void Return(T[] array)
             {
-
-                lock (_lock)
-                {
-                    Holder holder = new(array);
-                    int i = _pool.BinarySearch(holder);
-                    if (i < 0)
-                    {
-                        _pool.Insert(~i, holder);
-                    }
-
-                    if (_pool.Count >= _maxCacheCount)
-                    {
-                        for (int index = 0; index < _pool.Count; index++)
-                        {
-                            Holder h = _pool[index];
-
-                            if (h.SkipCount >= MaxSkipCount)
-                            {
-                                _pool.Remove(h);
-                                index--;
-                            }
-                        }
-                        
-                        _maxCacheCount = _pool.Count * 2;
-                    }
-                }
+                ArrayPool<T>.Shared.Return(array, RuntimeHelpers.IsReferenceOrContainsReferences<T>());
             }
         }
-        
+
         private readonly int _length;
         private T[]? _array;
 
@@ -251,6 +154,22 @@ namespace Ryujinx.Common.Memory
         private static void ThrowObjectDisposedException()
         {
             throw new ObjectDisposedException(nameof(MemoryOwner<T>), "The buffer has already been disposed.");
+        }
+    }
+
+    /// <summary>
+    /// NEOV2 Etapa 21: registra uma unica vez que o MemoryOwner passou a usar o ArrayPool.Shared.
+    /// </summary>
+    internal static class MemoryOwnerPoolInfo
+    {
+        private static int _logged;
+
+        public static void LogOnce()
+        {
+            if (Volatile.Read(ref _logged) == 0 && Interlocked.Exchange(ref _logged, 1) == 0)
+            {
+                Logging.Logger.Info?.Print(Logging.LogClass.Application, "[NEOV2-ETAPA21] MemoryOwner pool: ArrayPool.Shared");
+            }
         }
     }
 }

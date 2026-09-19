@@ -1,4 +1,5 @@
 using Ryujinx.Common;
+using Ryujinx.Common.Logging;
 using Ryujinx.Graphics.GAL;
 using Silk.NET.Vulkan;
 using System;
@@ -69,6 +70,19 @@ namespace Ryujinx.Graphics.Vulkan
 
         public ImageUsageFlags UsageFlags { get; }
 
+        // NEOV2 Etapa 4A: estado de telemetria de formatos (somente leitura, nao altera renderizacao).
+        private readonly bool _telemetryTracked;
+        private bool _telemetryIsRt;
+        private bool _telemetryDisposed;
+        private int _telemetryFlags;
+
+        // NEOV2 Etapa 13: formatos de view declarados na criacao da imagem (Turnip). Usado para detectar
+        // views fora da lista, que nao seriam validas com a lista reduzida para manter o UBWC.
+        private VkFormat[] _turnipViewFormats;
+        private static int _turnipViewOutsideListLogs;
+        private static bool _turnipUbwcListLogged;
+        private static readonly object _telemetryLock = new();
+
         public unsafe TextureStorage(
             VulkanRenderer gd,
             Device device,
@@ -130,6 +144,36 @@ namespace Ryujinx.Graphics.Vulkan
                 Flags = flags,
             };
 
+            // NEOV2 Etapa 4B: no Turnip, uma imagem MUTABLE_FORMAT sem VkImageFormatListCreateInfo
+            // e forcada para layout linear e perde UBWC. Informamos a lista exata de formatos de view
+            // que o backend pode criar para esta imagem. Views de outros formatos vindas da camada GPU
+            // viram copia (SupportsMismatchingViewFormat = false no Turnip).
+            VkFormat* viewFormats = stackalloc VkFormat[MaxTurnipViewFormats];
+            ImageFormatListCreateInfo formatList = default;
+
+            if (gd.IsTurnip && foreignAllocation == null)
+            {
+                int viewFormatCount = BuildTurnipViewFormatList(gd, info, format, isMsImageStorageSupported, viewFormats);
+
+                if (viewFormatCount > 0)
+                {
+                    _turnipViewFormats = new VkFormat[viewFormatCount];
+
+                    for (int i = 0; i < viewFormatCount; i++)
+                    {
+                        _turnipViewFormats[i] = viewFormats[i];
+                    }
+
+                    formatList = new ImageFormatListCreateInfo
+                    {
+                        SType = StructureType.ImageFormatListCreateInfo,
+                        ViewFormatCount = (uint)viewFormatCount,
+                        PViewFormats = viewFormats,
+                    };
+
+                    imageCreateInfo.PNext = &formatList;
+                }
+            }
             gd.Api.CreateImage(device, in imageCreateInfo, null, out _image).ThrowOnError();
 
             if (foreignAllocation == null)
@@ -151,6 +195,9 @@ namespace Ryujinx.Graphics.Vulkan
                 _imageAuto = new Auto<DisposableImage>(new DisposableImage(_gd.Api, device, _image), null, _allocationAuto);
 
                 InitialTransition(ImageLayout.Undefined, ImageLayout.General);
+
+                _telemetryTracked = true;
+                TextureFormatTelemetry.RecordStorageCreated((long)_size);
             }
             else
             {
@@ -163,9 +210,183 @@ namespace Ryujinx.Graphics.Vulkan
                 _imageAuto = new Auto<DisposableImage>(new DisposableImage(_gd.Api, device, _image));
 
                 InitialTransition(ImageLayout.Undefined, ImageLayout.General);
+
+                TextureFormatTelemetry.RecordAliasImageCreated();
             }
 
             _slices = new TextureSliceInfo[levels * _depthOrLayers];
+        }
+
+        private const int MaxTurnipViewFormats = 8;
+
+        /// <summary>
+        /// NEOV2 Etapa 4B: monta a lista de formatos de view para imagens de cor nao comprimidas no Turnip.
+        /// Inclui o formato da imagem e os formatos uint que o HelperShader usa em copias de reinterpretacao
+        /// (GetFormat(bpp) e GetFormat(componentSize, count)). Retorna 0 quando a imagem deve ficar como antes.
+        /// </summary>
+        private static unsafe int BuildTurnipViewFormatList(
+            VulkanRenderer gd,
+            TextureCreateInfo info,
+            VkFormat format,
+            bool isMsImageStorageSupported,
+            VkFormat* list)
+        {
+            if (info.IsCompressed || info.Format.IsDepthOrStencil())
+            {
+                return 0;
+            }
+
+            // Formato substituido pelo backend (ex.: decodificacao ou fallback de suporte): mantem o comportamento atual.
+            if (format != FormatTable.GetFormat(info.Format))
+            {
+                return 0;
+            }
+
+            int count = 0;
+            list[count++] = format;
+
+            switch (info.BytesPerPixel)
+            {
+                case 1:
+                    AddViewFormat(gd, Format.R8Uint, isMsImageStorageSupported, list, ref count);
+                    break;
+                case 2:
+                    AddViewFormat(gd, Format.R8G8Uint, isMsImageStorageSupported, list, ref count);
+                    AddViewFormat(gd, Format.R16Uint, isMsImageStorageSupported, list, ref count);
+                    break;
+                case 4:
+                    AddViewFormat(gd, Format.R8G8B8A8Uint, isMsImageStorageSupported, list, ref count);
+                    AddViewFormat(gd, Format.R16G16Uint, isMsImageStorageSupported, list, ref count);
+                    AddViewFormat(gd, Format.R32Uint, isMsImageStorageSupported, list, ref count);
+                    break;
+                case 8:
+                    AddViewFormat(gd, Format.R16G16B16A16Uint, isMsImageStorageSupported, list, ref count);
+                    AddViewFormat(gd, Format.R32G32Uint, isMsImageStorageSupported, list, ref count);
+                    break;
+                case 16:
+                    AddViewFormat(gd, Format.R32G32B32A32Uint, isMsImageStorageSupported, list, ref count);
+                    break;
+                default:
+                    return 0;
+            }
+
+            // NEOV2 Etapa 13: o Turnip so mantem UBWC (compressao) em imagens MUTABLE quando todos os
+            // formatos da lista sao da mesma classe de compatibilidade UBWC. Formatos de classe diferente
+            // desligam a compressao da imagem inteira. Mantemos apenas os formatos da mesma classe.
+            bool unormIntCompatible = IsUbwcUnormIntCompatible(gd);
+            int ownClass = GetUbwcCompatClass(format, unormIntCompatible);
+            int kept = 1;
+
+            for (int i = 1; i < count; i++)
+            {
+                if (ownClass != 0 && GetUbwcCompatClass(list[i], unormIntCompatible) == ownClass)
+                {
+                    list[kept++] = list[i];
+                }
+            }
+
+            if (!_turnipUbwcListLogged)
+            {
+                _turnipUbwcListLogged = true;
+                Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-ETAPA13] Turnip UBWC-compatible view format lists: Enabled (unormIntCompatible={unormIntCompatible})");
+            }
+
+            return kept;
+        }
+
+        private static bool IsUbwcUnormIntCompatible(VulkanRenderer gd)
+        {
+            // Adreno 740/750 e 8xx: UNORM, SNORM, SRGB e INT do mesmo layout compartilham a classe UBWC.
+            if (gd.IsAdreno8xx)
+            {
+                return true;
+            }
+
+            System.Text.RegularExpressions.Match match = VendorUtils.Adreno7xxRegex().Match(gd.GpuRenderer ?? string.Empty);
+
+            return match.Success &&
+                int.TryParse(match.Groups[2].Value.TrimEnd('L'), out int model) &&
+                model >= 740;
+        }
+
+        /// <summary>
+        /// NEOV2 Etapa 13: classe de compatibilidade UBWC do Turnip (fd6_ubwc_compat_mode).
+        /// 0 = desconhecida (so e compativel consigo mesma).
+        /// </summary>
+        private static int GetUbwcCompatClass(VkFormat format, bool unormIntCompatible)
+        {
+            switch (format)
+            {
+                case VkFormat.R8G8Unorm:
+                case VkFormat.R8G8Srgb:
+                    return unormIntCompatible ? 2 : 1;
+                case VkFormat.R8G8SNorm:
+                    return unormIntCompatible ? 2 : 0;
+                case VkFormat.R8G8Uint:
+                case VkFormat.R8G8Sint:
+                    return 2;
+
+                case VkFormat.R8G8B8A8Unorm:
+                case VkFormat.R8G8B8A8Srgb:
+                    return unormIntCompatible ? 4 : 3;
+                case VkFormat.R8G8B8A8SNorm:
+                    return unormIntCompatible ? 4 : 0;
+                case VkFormat.R8G8B8A8Uint:
+                case VkFormat.R8G8B8A8Sint:
+                    return 4;
+
+                case VkFormat.B8G8R8A8Unorm:
+                case VkFormat.B8G8R8A8Srgb:
+                    return 5;
+
+                case VkFormat.R16G16Unorm:
+                    return unormIntCompatible ? 7 : 6;
+                case VkFormat.R16G16SNorm:
+                    return unormIntCompatible ? 7 : 0;
+                case VkFormat.R16G16Uint:
+                case VkFormat.R16G16Sint:
+                    return 7;
+
+                case VkFormat.R16G16B16A16Unorm:
+                    return unormIntCompatible ? 9 : 8;
+                case VkFormat.R16G16B16A16SNorm:
+                    return unormIntCompatible ? 9 : 0;
+                case VkFormat.R16G16B16A16Uint:
+                case VkFormat.R16G16B16A16Sint:
+                    return 9;
+
+                case VkFormat.R32Uint:
+                case VkFormat.R32Sint:
+                    return 10;
+                case VkFormat.R32G32Uint:
+                case VkFormat.R32G32Sint:
+                    return 11;
+                case VkFormat.R32G32B32A32Uint:
+                case VkFormat.R32G32B32A32Sint:
+                    return 12;
+
+                default:
+                    return 0;
+            }
+        }
+
+        private static unsafe void AddViewFormat(VulkanRenderer gd, Format galFormat, bool isMsImageStorageSupported, VkFormat* list, ref int count)
+        {
+            // Mesmo caminho de conversao usado pelo construtor de TextureView.
+            VkFormat vkFormat = gd.FormatCapabilities.ConvertToVkFormat(galFormat, isMsImageStorageSupported);
+
+            for (int i = 0; i < count; i++)
+            {
+                if (list[i] == vkFormat)
+                {
+                    return;
+                }
+            }
+
+            if (count < MaxTurnipViewFormats)
+            {
+                list[count++] = vkFormat;
+            }
         }
 
         public TextureStorage CreateAliasedColorForDepthStorageUnsafe(Format format)
@@ -194,6 +415,8 @@ namespace Ryujinx.Graphics.Vulkan
                 storage = new TextureStorage(_gd, _device, info, _allocationAuto);
 
                 _aliasedStorages.Add(format, storage);
+
+                AddTelemetryFlags(TextureFormatTelemetry.FlagAliased);
             }
 
             return storage;
@@ -459,8 +682,76 @@ namespace Ryujinx.Graphics.Vulkan
             return FormatCapabilities.IsD24S8(Info.Format) && VkFormat == VkFormat.D32SfloatS8Uint;
         }
 
+        internal void RecordViewFormatTelemetry(VkFormat viewFormat)
+        {
+            if (_turnipViewFormats != null && viewFormat != VkFormat && Array.IndexOf(_turnipViewFormats, viewFormat) < 0)
+            {
+                // NEOV2 Etapa 13: view com formato fora da lista declarada. Registra as primeiras ocorrencias.
+                if (System.Threading.Interlocked.Increment(ref _turnipViewOutsideListLogs) <= 5)
+                {
+                    Logger.Warning?.Print(LogClass.Gpu, $"[NEOV2-ETAPA13] View format outside image list: {VkFormat} -> {viewFormat}");
+                }
+            }
+
+            if (!_telemetryTracked)
+            {
+                return;
+            }
+
+            int flag = TextureFormatTelemetry.Classify(VkFormat, viewFormat);
+
+            if (flag != 0)
+            {
+                AddTelemetryFlags(flag);
+            }
+        }
+
+        private void AddTelemetryFlags(int flag)
+        {
+            if (!_telemetryTracked)
+            {
+                return;
+            }
+
+            lock (_telemetryLock)
+            {
+                if (_telemetryDisposed)
+                {
+                    return;
+                }
+
+                int oldFlags = _telemetryFlags;
+                int newFlags = oldFlags | flag;
+
+                if (newFlags != oldFlags)
+                {
+                    _telemetryFlags = newFlags;
+                    TextureFormatTelemetry.RecordFlagsChanged(_telemetryIsRt, (long)_size, oldFlags, newFlags);
+                }
+            }
+        }
+
+        private void MarkRenderTargetTelemetry()
+        {
+            lock (_telemetryLock)
+            {
+                if (_telemetryIsRt || _telemetryDisposed)
+                {
+                    return;
+                }
+
+                _telemetryIsRt = true;
+                TextureFormatTelemetry.RecordBecameRenderTarget((long)_size, _telemetryFlags);
+            }
+        }
+
         public void AddStoreOpUsage(bool depthStencil)
         {
+            if (_telemetryTracked && !_telemetryIsRt)
+            {
+                MarkRenderTargetTelemetry();
+            }
+
             _lastModificationStage = depthStencil ?
                 PipelineStageFlags.LateFragmentTestsBit :
                 PipelineStageFlags.ColorAttachmentOutputBit;
@@ -601,6 +892,18 @@ namespace Ryujinx.Graphics.Vulkan
         public void Dispose()
         {
             Disposed = true;
+
+            if (_telemetryTracked)
+            {
+                lock (_telemetryLock)
+                {
+                    if (!_telemetryDisposed)
+                    {
+                        _telemetryDisposed = true;
+                        TextureFormatTelemetry.RecordStorageDisposed(_telemetryIsRt, (long)_size, _telemetryFlags);
+                    }
+                }
+            }
 
             if (_aliasedStorages != null)
             {

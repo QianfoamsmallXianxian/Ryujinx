@@ -7,9 +7,9 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
     {
         public KMemoryRegionManager[] MemoryRegions { get; }
 
-        public KMemoryManager(MemorySize size, MemoryArrange arrange)
+        public KMemoryManager(MemorySize size, MemoryArrange arrange, ulong memorySlack)
         {
-            MemoryRegions = KernelInit.GetMemoryRegions(size, arrange);
+            MemoryRegions = KernelInit.GetMemoryRegions(size, arrange, memorySlack);
         }
 
         private KMemoryRegionManager GetMemoryRegion(ulong address)

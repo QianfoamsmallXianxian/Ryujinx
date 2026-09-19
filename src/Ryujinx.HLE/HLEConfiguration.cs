@@ -71,6 +71,7 @@ namespace Ryujinx.HLE
         /// </summary>
         /// <remarks>This cannot be changed after <see cref="Switch"/> instantiation.</remarks>
         internal readonly MemoryConfiguration MemoryConfiguration;
+        internal readonly ulong MemorySlack;
 
         /// <summary>
         /// The system language to use in the settings service.
@@ -198,6 +199,7 @@ namespace Ryujinx.HLE
                                 IRenderer gpuRenderer,
                                 IHardwareDeviceDriver audioDeviceDriver,
                                 MemoryConfiguration memoryConfiguration,
+                                ulong memorySlack,
                                 IHostUIHandler hostUIHandler,
                                 SystemLanguage systemLanguage,
                                 RegionCode region,
@@ -229,6 +231,7 @@ namespace Ryujinx.HLE
             GpuRenderer = gpuRenderer;
             AudioDeviceDriver = audioDeviceDriver;
             MemoryConfiguration = memoryConfiguration;
+            MemorySlack = memorySlack;
             HostUIHandler = hostUIHandler;
             SystemLanguage = systemLanguage;
             Region = region;

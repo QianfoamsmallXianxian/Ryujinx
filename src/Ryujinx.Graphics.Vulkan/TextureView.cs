@@ -71,6 +71,9 @@ namespace Ryujinx.Graphics.Vulkan
 
             VkFormat = format;
 
+            // NEOV2 Etapa 4A: registra o formato da view em relacao ao formato da imagem (telemetria).
+            storage.RecordViewFormatTelemetry(format);
+
             ImageViewType type = info.Target.ConvertView();
 
             ComponentSwizzle swizzleR = info.SwizzleR.Convert();

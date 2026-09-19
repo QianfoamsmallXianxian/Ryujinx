@@ -75,6 +75,8 @@ namespace Ryujinx.HLE.HOS.Services.SurfaceFlinger
 
             UpdateSwapInterval(1);
 
+            Logger.Info?.Print(LogClass.SurfaceFlinger, "[NEOV2-ETAPA12] Vsync wait: nanosleep + yield (no busy spin)");
+
             _composerThread.Start();
         }
 
@@ -346,7 +348,8 @@ namespace Ryujinx.HLE.HOS.Services.SurfaceFlinger
 
                         if (diff < _spinTicks)
                         {
-                            PreciseSleepHelper.SpinWaitUntilTimePoint(PerformanceCounter.ElapsedTicks + diff);
+                            // NEOV2 Etapa 12: nanosleep + yield instead of a busy spin on Android.
+                            PreciseSleepHelper.YieldingWaitUntilTimePoint(PerformanceCounter.ElapsedTicks + diff);
                         }
                         else
                         {

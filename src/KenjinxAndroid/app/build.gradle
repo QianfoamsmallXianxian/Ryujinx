@@ -12,7 +12,7 @@ android {
         minSdk 29
         targetSdk 37
         versionCode 20100
-        versionName '2.1.0-pr.2'
+        versionName '2.1.0-neov2-f3a'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 

@@ -39,6 +39,7 @@ namespace LibKenjinx
             return InitializeDevice(memoryManagerMode,
                                     useHypervisor,
                                     memoryConfiguration,
+                                    12288 * 1024 * 1024UL,
                                     systemLanguage,
                                     regionCode,
                                     vSyncMode,

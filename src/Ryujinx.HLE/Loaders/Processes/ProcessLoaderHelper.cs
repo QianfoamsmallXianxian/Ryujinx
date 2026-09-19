@@ -1,4 +1,4 @@
-﻿using LibHac.Account;
+using LibHac.Account;
 using LibHac.Common;
 using LibHac.Fs;
 using LibHac.Fs.Fsa;
@@ -336,11 +336,10 @@ namespace Ryujinx.HLE.Loaders.Processes
             KResourceLimit resourceLimit = new(context);
 
             long applicationRgSize = (long)context.MemoryManager.MemoryRegions[(int)MemoryRegion.Application].Size;
-            long memoryLimit = applicationRgSize + 12288 * 1024 * 1024L; // Add 12GB slack for System Resource and MapPhysicalMemory
-
-            Logger.Info?.Print(LogClass.Loader, $"Initializing process resource limit: ApplicationRegion={applicationRgSize / 1024 / 1024}MB, Total={memoryLimit / 1024 / 1024}MB");
-
+            long memoryLimit = applicationRgSize + (long)context.MemorySlack;
             result = resourceLimit.SetLimitValue(LimitableResource.Memory, memoryLimit);
+
+            Logger.Info?.Print(LogClass.Loader, $"[NEOV2-MEMLIMIT] ApplicationRegion={applicationRgSize / 1024 / 1024}MB slack={context.MemorySlack / 1024 / 1024}MB total={memoryLimit / 1024 / 1024}MB");
 
             if (result.IsSuccess)
             {

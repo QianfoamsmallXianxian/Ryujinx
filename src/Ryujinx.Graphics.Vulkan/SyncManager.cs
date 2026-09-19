@@ -29,6 +29,7 @@ namespace Ryujinx.Graphics.Vulkan
         private readonly List<SyncHandle> _handles;
         private ulong _flushId;
         private long _waitTicks;
+        private static bool _deferredStrictLogged;
 
         public SyncManager(VulkanRenderer gd, Device device)
         {
@@ -46,7 +47,25 @@ namespace Ryujinx.Graphics.Vulkan
         {
             ulong flushId = _flushId;
             MultiFenceHolder waitable = new();
-            if (strict || _gd.InterruptAction == null)
+
+            bool eagerFlush = strict || _gd.InterruptAction == null;
+
+            // NEOV2 Etapa 17: no Turnip, syncs "strict" (criados a cada incremento de syncpoint) nao
+            // forcam mais um envio imediato. O sync fica ligado ao command buffer atual e e enviado no
+            // proximo flush natural. Se alguem esperar por ele antes disso, Wait() interrompe a thread
+            // da GPU e faz o flush na hora (mesmo caminho ja usado pelos syncs nao strict).
+            if (eagerFlush && strict && _gd.IsTurnip && _gd.InterruptAction != null)
+            {
+                eagerFlush = false;
+
+                if (!_deferredStrictLogged)
+                {
+                    _deferredStrictLogged = true;
+                    Logger.Info?.Print(LogClass.Gpu, "[NEOV2-ETAPA17] Strict host syncs deferred to the next natural flush (Turnip)");
+                }
+            }
+
+            if (eagerFlush)
             {
                 _gd.FlushAllCommands();
                 _gd.CommandBufferPool.AddWaitable(waitable);

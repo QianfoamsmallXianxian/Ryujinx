@@ -1,4 +1,4 @@
-using Ryujinx.Common.Configuration;
+﻿using Ryujinx.Common.Configuration;
 using Ryujinx.Common.Logging;
 using Ryujinx.Graphics.GAL;
 using Ryujinx.Graphics.Shader;
@@ -10,6 +10,7 @@ using Silk.NET.Vulkan.Extensions.EXT;
 using Silk.NET.Vulkan.Extensions.KHR;
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -58,6 +59,10 @@ namespace Ryujinx.Graphics.Vulkan
 
         internal MemoryAllocator MemoryAllocator { get; private set; }
         internal HostMemoryAllocator HostMemoryAllocator { get; private set; }
+        private readonly object _submissionGraphGate = new();
+        internal VulkanSubmissionWorker QueueSubmissionWorker { get; private set; }
+        internal VulkanSubmissionWorker BackgroundQueueSubmissionWorker { get; private set; }
+        internal bool SupportsTimelineSemaphore { get; private set; }
         internal CommandBufferPool CommandBufferPool { get; private set; }
         internal PipelineLayoutCache PipelineLayoutCache { get; private set; }
         internal BackgroundResources BackgroundResources { get; private set; }
@@ -407,7 +412,10 @@ namespace Ryujinx.Graphics.Vulkan
 
             IsFeedbackLoopDevice = IsAmdRdna3 || IsAdreno6xx || IsAdreno7xx;
 
-            IsTurnip = GpuRenderer.StartsWith("Turnip");
+            // NEOV2 Etapa 4B: forks do Turnip (ex.: PurpleVK) trocam o nome do dispositivo
+            // ("PurpleVK-public Adreno (TM) 740"), entao tambem identificamos pelo DriverID do Mesa.
+            IsTurnip = GpuRenderer.StartsWith("Turnip") ||
+                       (hasDriverProperties && driverProperties.DriverID == DriverId.MesaTurnip);
 
             if (Vendor == Vendor.Nvidia)
             {
@@ -489,7 +497,15 @@ namespace Ryujinx.Graphics.Vulkan
             Api.TryGetDeviceExtension(_instance.Instance, _device, out ExtExternalMemoryHost hostMemoryApi);
             HostMemoryAllocator = new HostMemoryAllocator(MemoryAllocator, Api, hostMemoryApi, _device);
 
-            CommandBufferPool = new CommandBufferPool(Api, _device, Queue, QueueLock, queueFamilyIndex, IsQualcommProprietary, IsTurnip);
+            QueueSubmissionWorker = new VulkanSubmissionWorker(Api, _device, Queue, QueueLock, _submissionGraphGate, SupportsTimelineSemaphore, "Kenji Vulkan Main Submit");
+            BackgroundQueueSubmissionWorker = BackgroundQueue.Handle != 0
+                ? new VulkanSubmissionWorker(Api, _device, BackgroundQueue, BackgroundQueueLock, _submissionGraphGate, SupportsTimelineSemaphore, "Kenji Vulkan Background Submit")
+                : QueueSubmissionWorker;
+
+            Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-ETAPA2] Vulkan timeline semaphore completion: {(SupportsTimelineSemaphore ? "Enabled" : "Fence fallback")}");
+            Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-ETAPA4B] Turnip image view format lists: {(IsTurnip ? "Enabled" : "Disabled")}");
+
+            CommandBufferPool = new CommandBufferPool(Api, _device, QueueSubmissionWorker, queueFamilyIndex, IsQualcommProprietary, IsTurnip);
 
             PipelineLayoutCache = new PipelineLayoutCache();
 
@@ -523,7 +539,8 @@ namespace Ryujinx.Graphics.Vulkan
 
             uint queueFamilyIndex = VulkanInitialization.FindSuitableQueueFamily(Api, _physicalDevice, _surface, out uint maxQueueCount);
 
-            _device = VulkanInitialization.CreateDevice(Api, _physicalDevice, queueFamilyIndex, maxQueueCount);
+            _device = VulkanInitialization.CreateDevice(Api, _physicalDevice, queueFamilyIndex, maxQueueCount, out bool timelineSemaphoreEnabled);
+            SupportsTimelineSemaphore = timelineSemaphoreEnabled;
 
             if (Api.TryGetDeviceExtension(_instance.Instance, _device, out KhrSwapchain swapchainApi))
             {
@@ -647,8 +664,11 @@ namespace Ryujinx.Graphics.Vulkan
             BufferManager.Delete(buffer);
         }
 
-        internal void FlushAllCommands()
+        internal void FlushAllCommands([CallerFilePath] string callerFile = "", [CallerMemberName] string callerMember = "")
         {
+            // NEOV2 Etapa 16: registra a origem de cada flush forcado (arquivo.metodo) para o contador.
+            AutoFlushCounter.RecordExternalFlush(callerFile, callerMember);
+
             _pipeline?.FlushCommandsImpl();
         }
 
@@ -801,7 +821,9 @@ namespace Ryujinx.Graphics.Vulkan
                 supportsTransformFeedback: Capabilities.SupportsTransformFeedback && !IsAdreno8xx,
                 supportsImageLoadFormatted: features2.Features.ShaderStorageImageReadWithoutFormat,
                 supportsLayerVertexTessellation: featuresVk12.ShaderOutputLayer && !IsAdreno8xx,
-                supportsMismatchingViewFormat: true,
+                // NEOV2 Etapa 4B: no Turnip as imagens recebem lista fechada de formatos de view,
+                // entao views com formato diferente viram copia na camada GPU.
+                supportsMismatchingViewFormat: !IsTurnip,
                 supportsCubemapView: !IsAmdGcn,
                 supportsNonConstantTextureOffset: false,
                 supportsQuads: false,
@@ -1236,6 +1258,11 @@ namespace Ryujinx.Graphics.Vulkan
             BackgroundResources.Dispose();
             _counters.Dispose();
             _window.Dispose();
+            QueueSubmissionWorker?.Dispose();
+            if (!ReferenceEquals(BackgroundQueueSubmissionWorker, QueueSubmissionWorker))
+            {
+                BackgroundQueueSubmissionWorker?.Dispose();
+            }
             HelperShader.Dispose();
             _pipeline.Dispose();
             BufferManager.Dispose();

@@ -1,3 +1,4 @@
+using Ryujinx.Common.Logging;
 using Silk.NET.Vulkan;
 using System;
 using System.Collections.Generic;
@@ -38,6 +39,10 @@ namespace Ryujinx.Graphics.Vulkan
         private PipelineStageFlags _extraStages;
         private IncoherentBarrierType _queuedIncoherentBarrier;
         private bool _queuedFeedbackLoopBarrier;
+
+        // NEOV2 Etapa 10: on Turnip, feedback loop barriers are kept inside the render pass
+        // as a global memory barrier instead of being discarded.
+        private static bool _feedbackLoopInPassLogged;
 
         public BarrierBatch(VulkanRenderer gd)
         {
@@ -334,7 +339,48 @@ namespace Ryujinx.Graphics.Vulkan
                     {
                         if (!_gd.IsMoltenVk)
                         {
-                            if (!anyIsNonAttachment)
+                            if (!anyIsNonAttachment && _gd.IsTurnip)
+                            {
+                                // NEOV2 Etapa 10: feedback loop on Turnip.
+                                // Keep the dependency as a memory barrier inside the pass (covered by the
+                                // subpass self-dependency), so the pass is not split and the data is visible.
+
+                                (AccessFlags superAccess, PipelineStageFlags superStages) = GetSubpassAccessSuperset(_gd);
+
+                                foreach (BarrierWithStageFlags<ImageMemoryBarrier, TextureStorage> barrier in _imageBarriers)
+                                {
+                                    PipelineStageFlags src = barrier.Flags.Source & superStages;
+                                    PipelineStageFlags dst = barrier.Flags.Dest & superStages;
+
+                                    if (src == PipelineStageFlags.None)
+                                    {
+                                        src = PipelineStageFlags.ColorAttachmentOutputBit | PipelineStageFlags.LateFragmentTestsBit;
+                                    }
+
+                                    if (dst == PipelineStageFlags.None)
+                                    {
+                                        dst = PipelineStageFlags.FragmentShaderBit;
+                                    }
+
+                                    _memoryBarriers.Add(new BarrierWithStageFlags<MemoryBarrier, int>(
+                                        new StageFlags(src, dst),
+                                        new MemoryBarrier()
+                                        {
+                                            SType = StructureType.MemoryBarrier,
+                                            SrcAccessMask = barrier.Barrier.SrcAccessMask & superAccess,
+                                            DstAccessMask = barrier.Barrier.DstAccessMask & superAccess
+                                        }));
+                                }
+
+                                _imageBarriers.Clear();
+
+                                if (!_feedbackLoopInPassLogged)
+                                {
+                                    _feedbackLoopInPassLogged = true;
+                                    Logger.Info?.Print(LogClass.Gpu, "[NEOV2-ETAPA10] Feedback loop barrier kept inside render pass (Turnip)");
+                                }
+                            }
+                            else if (!anyIsNonAttachment)
                             {
                                 // This case is a feedback loop. To prevent this from causing an absolute performance disaster,
                                 // remove the barriers entirely.

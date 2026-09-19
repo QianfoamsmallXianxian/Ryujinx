@@ -1,4 +1,4 @@
-using Silk.NET.Vulkan;
+﻿using Silk.NET.Vulkan;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -24,16 +24,17 @@ namespace Ryujinx.Graphics.Vulkan
             if (_pool == null)
             {
                 bool useBackground = _gd.BackgroundQueue.Handle != 0 && _gd.Vendor != Vendor.Amd;
-                Queue queue = useBackground ? _gd.BackgroundQueue : _gd.Queue;
                 Lock queueLock = useBackground ? _gd.BackgroundQueueLock : _gd.QueueLock;
+                VulkanSubmissionWorker submissionWorker = useBackground
+                    ? _gd.BackgroundQueueSubmissionWorker
+                    : _gd.QueueSubmissionWorker;
 
                 lock (queueLock)
                 {
                     _pool = new CommandBufferPool(
                         _gd.Api,
                         _device,
-                        queue,
-                        queueLock,
+                        submissionWorker,
                         _gd.QueueFamilyIndex,
                         _gd.IsQualcommProprietary,
                         _gd.IsTurnip,

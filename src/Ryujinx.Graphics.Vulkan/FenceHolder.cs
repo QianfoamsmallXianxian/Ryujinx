@@ -1,5 +1,6 @@
-using Silk.NET.Vulkan;
+﻿using Silk.NET.Vulkan;
 using System;
+using System.Diagnostics;
 using System.Threading;
 
 namespace Ryujinx.Graphics.Vulkan
@@ -8,28 +9,65 @@ namespace Ryujinx.Graphics.Vulkan
     {
         private readonly Vk _api;
         private readonly Device _device;
+        private readonly VulkanSubmissionWorker _submissionWorker;
+        private readonly bool _usesTimeline;
         private Fence _fence;
+        private ulong _timelineValue;
         private int _referenceCount;
         private int _lock;
         private readonly bool _concurrentWaitUnsupported;
         private readonly bool _alwaysWaits;
         private bool _disposed;
+        private readonly VulkanSubmissionHandle _submission = new();
 
-        public unsafe FenceHolder(Vk api, Device device, bool concurrentWaitUnsupported, bool alwaysWaits)
+        internal VulkanSubmissionHandle Submission => _submission;
+        internal bool IsTimeline => _usesTimeline;
+        internal VulkanSubmissionWorker SubmissionWorker => _submissionWorker;
+        internal ulong TimelineValue => Volatile.Read(ref _timelineValue);
+
+        public unsafe FenceHolder(
+            Vk api,
+            Device device,
+            bool concurrentWaitUnsupported,
+            VulkanSubmissionWorker submissionWorker,
+            bool alwaysWaits = false)
         {
             _api = api;
             _device = device;
+            _submissionWorker = submissionWorker;
             _concurrentWaitUnsupported = concurrentWaitUnsupported;
             _alwaysWaits = alwaysWaits;
 
-            FenceCreateInfo fenceCreateInfo = new()
-            {
-                SType = StructureType.FenceCreateInfo,
-            };
+            // NEOV2 Etapa 2: quando o worker usa timeline semaphore, a conclusao e
+            // verificada pelo contador do timeline e nenhum VkFence e criado.
+            _usesTimeline = submissionWorker.TimelineEnabled;
 
-            api.CreateFence(device, in fenceCreateInfo, null, out _fence).ThrowOnError();
+            if (!_usesTimeline)
+            {
+                FenceCreateInfo fenceCreateInfo = new()
+                {
+                    SType = StructureType.FenceCreateInfo,
+                };
+
+                api.CreateFence(device, in fenceCreateInfo, null, out _fence).ThrowOnError();
+            }
 
             _referenceCount = 1;
+        }
+
+        internal void PrepareTimeline(ulong value)
+        {
+            if (!_usesTimeline || value == 0 || _timelineValue != 0)
+            {
+                throw new InvalidOperationException("Invalid timeline completion assignment.");
+            }
+
+            Volatile.Write(ref _timelineValue, value);
+        }
+
+        internal Fence GetSubmitFence()
+        {
+            return _usesTimeline ? default : _fence;
         }
 
         public Fence GetUnsafe()
@@ -37,7 +75,7 @@ namespace Ryujinx.Graphics.Vulkan
             return _fence;
         }
 
-        public bool TryGet(out Fence fence)
+        internal bool TryAddReference()
         {
             int lastValue;
             do
@@ -46,11 +84,37 @@ namespace Ryujinx.Graphics.Vulkan
 
                 if (lastValue == 0)
                 {
-                    fence = default;
                     return false;
                 }
             }
             while (Interlocked.CompareExchange(ref _referenceCount, lastValue + 1, lastValue) != lastValue);
+
+            return true;
+        }
+
+        public bool TryGet(out Fence fence)
+        {
+            if (_usesTimeline)
+            {
+                fence = default;
+                return false;
+            }
+
+            if (!TryAddReference())
+            {
+                fence = default;
+                return false;
+            }
+
+            try
+            {
+                _submission.Wait();
+            }
+            catch
+            {
+                Put();
+                throw;
+            }
 
             if (_concurrentWaitUnsupported)
             {
@@ -81,8 +145,11 @@ namespace Ryujinx.Graphics.Vulkan
         {
             if (Interlocked.Decrement(ref _referenceCount) == 0)
             {
-                _api.DestroyFence(_device, _fence, Span<AllocationCallbacks>.Empty);
-                _fence = default;
+                if (!_usesTimeline && _fence.Handle != 0)
+                {
+                    _api.DestroyFence(_device, _fence, Span<AllocationCallbacks>.Empty);
+                    _fence = default;
+                }
             }
         }
 
@@ -106,7 +173,15 @@ namespace Ryujinx.Graphics.Vulkan
 
         public void Wait()
         {
-            if (_concurrentWaitUnsupported)
+            long start = Stopwatch.GetTimestamp();
+
+            _submission.Wait();
+
+            if (_usesTimeline)
+            {
+                _submissionWorker.WaitTimeline(TimelineValue, ulong.MaxValue);
+            }
+            else if (_concurrentWaitUnsupported)
             {
                 AcquireLock();
 
@@ -123,11 +198,47 @@ namespace Ryujinx.Graphics.Vulkan
             {
                 FenceHelper.WaitAllIndefinitely(_api, _device, [_fence]);
             }
+
+            long elapsed = Stopwatch.GetTimestamp() - start;
+            BaselineTelemetry.RecordWait(elapsed);
+        }
+
+        public bool Wait(ulong timeout)
+        {
+            if (timeout == 0 && !_submission.IsCompleted)
+            {
+                return false;
+            }
+
+            _submission.Wait();
+
+            if (_usesTimeline)
+            {
+                return _submissionWorker.WaitTimeline(TimelineValue, timeout);
+            }
+
+            if (_concurrentWaitUnsupported)
+            {
+                AcquireLock();
+
+                try
+                {
+                    return FenceHelper.AllSignaled(_api, _device, [_fence], timeout);
+                }
+                finally
+                {
+                    ReleaseLock();
+                }
+            }
+
+            return FenceHelper.AllSignaled(_api, _device, [_fence], timeout);
         }
 
         public bool IsSignaledLazy()
         {
-            if (_alwaysWaits)
+            // O workaround do Turnip existe para evitar vkWaitForFences com timeout zero.
+            // Com timeline, a consulta e vkGetSemaphoreCounterValue, entao ele nao se aplica.
+            if (_alwaysWaits && !_usesTimeline)
             {
                 return false;
             }
@@ -137,6 +248,27 @@ namespace Ryujinx.Graphics.Vulkan
 
         public bool IsSignaled()
         {
+            if (!_submission.IsCompleted)
+            {
+                return false;
+            }
+
+            _submission.ThrowIfFaulted();
+
+            if (_usesTimeline)
+            {
+                bool reached = _submissionWorker.IsTimelineReached(TimelineValue);
+
+                if (reached)
+                {
+                    BaselineTelemetry.RecordWaitAlreadySignaled();
+                }
+
+                return reached;
+            }
+
+            bool signaled;
+
             if (_concurrentWaitUnsupported)
             {
                 if (!TryAcquireLock())
@@ -146,7 +278,7 @@ namespace Ryujinx.Graphics.Vulkan
 
                 try
                 {
-                    return FenceHelper.AllSignaled(_api, _device, [_fence]);
+                    signaled = FenceHelper.AllSignaled(_api, _device, [_fence]);
                 }
                 finally
                 {
@@ -155,8 +287,15 @@ namespace Ryujinx.Graphics.Vulkan
             }
             else
             {
-                return FenceHelper.AllSignaled(_api, _device, [_fence]);
+                signaled = FenceHelper.AllSignaled(_api, _device, [_fence]);
             }
+
+            if (signaled)
+            {
+                BaselineTelemetry.RecordWaitAlreadySignaled();
+            }
+
+            return signaled;
         }
 
         public void Dispose()

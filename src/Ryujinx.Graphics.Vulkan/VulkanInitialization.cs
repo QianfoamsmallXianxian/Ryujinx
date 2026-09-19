@@ -271,7 +271,7 @@ namespace Ryujinx.Graphics.Vulkan
             return InvalidIndex;
         }
 
-        internal static Device CreateDevice(Vk api, VulkanPhysicalDevice physicalDevice, uint queueFamilyIndex, uint queueCount)
+        internal static Device CreateDevice(Vk api, VulkanPhysicalDevice physicalDevice, uint queueFamilyIndex, uint queueCount, out bool timelineSemaphoreEnabled)
         {
             if (queueCount > QueuesCount)
             {
@@ -495,6 +495,11 @@ namespace Ryujinx.Graphics.Vulkan
 
             api.GetPhysicalDeviceFeatures2(physicalDevice.PhysicalDevice, &features2);
 
+            // NEOV2 Etapa 2: conclusao de command buffers por timeline semaphore (portado do Gezinjinx).
+            timelineSemaphoreEnabled =
+                physicalDevice.PhysicalDeviceProperties.ApiVersion >= Vk.Version12.Value &&
+                supportedPhysicalDeviceVulkan12Features.TimelineSemaphore;
+
             PhysicalDeviceFeatures supportedFeatures = features2.Features;
 
             PhysicalDeviceFeatures features = new()
@@ -599,6 +604,7 @@ namespace Ryujinx.Graphics.Vulkan
                 UniformAndStorageBuffer8BitAccess = supportedPhysicalDeviceVulkan12Features.UniformAndStorageBuffer8BitAccess,
                 StorageBuffer8BitAccess = supportedPhysicalDeviceVulkan12Features.StorageBuffer8BitAccess,
                 StoragePushConstant8 = supportedPhysicalDeviceVulkan12Features.StoragePushConstant8,
+                TimelineSemaphore = timelineSemaphoreEnabled,
                 ShaderSampledImageArrayNonUniformIndexing = supportedPhysicalDeviceVulkan12Features.ShaderSampledImageArrayNonUniformIndexing,
                 ShaderStorageImageArrayNonUniformIndexing = supportedPhysicalDeviceVulkan12Features.ShaderStorageImageArrayNonUniformIndexing,
             };

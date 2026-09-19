@@ -28,6 +28,8 @@ namespace Ryujinx.HLE.HOS.Kernel
         public Syscall Syscall { get; }
         public SyscallHandler SyscallHandler { get; }
 
+        public ulong MemorySlack { get; }
+
         public KResourceLimit ResourceLimit { get; }
 
         public KMemoryManager MemoryManager { get; }
@@ -58,11 +60,13 @@ namespace Ryujinx.HLE.HOS.Kernel
             Switch device,
             MemoryBlock memory,
             MemorySize memorySize,
-            MemoryArrange memoryArrange)
+            MemoryArrange memoryArrange,
+            ulong memorySlack)
         {
             TickSource = tickSource;
             Device = device;
             Memory = memory;
+            MemorySlack = memorySlack;
             KScheduler.CpuCoresCount = device.CpuCoresCount;
 
             Running = true;
@@ -73,9 +77,9 @@ namespace Ryujinx.HLE.HOS.Kernel
 
             ResourceLimit = new KResourceLimit(this);
 
-            KernelInit.InitializeResourceLimit(ResourceLimit, memorySize);
+            KernelInit.InitializeResourceLimit(ResourceLimit, memorySize, memorySlack);
 
-            MemoryManager = new KMemoryManager(memorySize, memoryArrange);
+            MemoryManager = new KMemoryManager(memorySize, memoryArrange, memorySlack);
 
             LargeMemoryBlockSlabManager = new KMemoryBlockSlabManager(KernelConstants.MemoryBlockAllocatorSize * 2);
             SmallMemoryBlockSlabManager = new KMemoryBlockSlabManager(KernelConstants.MemoryBlockAllocatorSize);
