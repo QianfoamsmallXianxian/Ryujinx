@@ -1,5 +1,4 @@
 using Ryujinx.Graphics.Device;
-using Ryujinx.Graphics.GAL;
 using Ryujinx.Graphics.Gpu.Engine.InlineToMemory;
 using Ryujinx.Graphics.Gpu.Engine.Threed;
 using Ryujinx.Graphics.Gpu.Engine.Types;
@@ -145,8 +144,6 @@ namespace Ryujinx.Graphics.Gpu.Engine.Compute
 
             CachedShaderProgram cs = memoryManager.Physical.ShaderCache.GetComputeShader(_channel, samplerPoolMaximumId, poolState, computeState, shaderGpuVa);
 
-            GraphicsCompatibility.RegisterMua3Program(cs.HostProgram, new Mua3ShaderIdentity(0, shaderGpuVa, 0, 0, 0, 0));
-
             _context.Renderer.Pipeline.SetProgram(cs.HostProgram);
 
             _channel.TextureManager.SetComputeSamplerPool(samplerPoolGpuVa, _state.State.SetTexSamplerPoolCMaximumIndex, qmd.SamplerIndex);
@@ -191,8 +188,6 @@ namespace Ryujinx.Graphics.Gpu.Engine.Compute
                     _channel.BufferManager.HasUnalignedStorageBuffers);
 
                 cs = memoryManager.Physical.ShaderCache.GetComputeShader(_channel, samplerPoolMaximumId, poolState, computeState, shaderGpuVa);
-
-                GraphicsCompatibility.RegisterMua3Program(cs.HostProgram, new Mua3ShaderIdentity(0, shaderGpuVa, 0, 0, 0, 0));
 
                 _context.Renderer.Pipeline.SetProgram(cs.HostProgram);
             }

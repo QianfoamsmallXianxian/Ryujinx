@@ -312,12 +312,25 @@ namespace Ryujinx.Graphics.Gpu.Shader
             ref GpuChannelGraphicsState graphicsState,
             ShaderAddresses addresses)
         {
-            if (_gpPrograms.TryGetValue(addresses, out CachedShaderProgram gpShaders) && IsShaderEqual(channel, ref poolState, ref graphicsState, gpShaders, addresses))
+            bool forceV29GeometryAsCompute = addresses.Geometry == 0x100719F30UL;
+
+            if (_gpPrograms.TryGetValue(addresses, out CachedShaderProgram gpShaders) &&
+                IsShaderEqual(channel, ref poolState, ref graphicsState, gpShaders, addresses) &&
+                (!forceV29GeometryAsCompute || (gpShaders.VertexAsCompute != null && gpShaders.GeometryAsCompute != null)))
             {
                 return gpShaders;
             }
 
-            if (_graphicsShaderCache.TryFind(channel, ref poolState, ref graphicsState, addresses, out gpShaders, out CachedGraphicsGuestCode cachedGuestCode))
+            bool foundCachedProgram = _graphicsShaderCache.TryFind(
+                channel,
+                ref poolState,
+                ref graphicsState,
+                addresses,
+                out gpShaders,
+                out CachedGraphicsGuestCode cachedGuestCode,
+                forceV29GeometryAsCompute);
+
+            if (foundCachedProgram)
             {
                 _gpPrograms[addresses] = gpShaders;
                 return gpShaders;
@@ -368,6 +381,16 @@ namespace Ryujinx.Graphics.Gpu.Shader
             bool geometryHasStore = hasGeometryShader && translatorContexts[4].HasStore;
             bool vertexToCompute = ShouldConvertVertexToCompute(_context, vertexHasStore, geometryHasStore, hasGeometryShader);
             bool geometryToCompute = ShouldConvertGeometryToCompute(_context, geometryHasStore);
+
+            if (forceV29GeometryAsCompute)
+            {
+                Logger.Info?.Print(
+                    LogClass.Gpu,
+                    "[NEOV2-V29] Forcing geometry=0x100719F30 to Vertex+Geometry as Compute");
+
+                geometryToCompute = true;
+                vertexToCompute = true;
+            }
 
             CachedShaderStage[] shaders = new CachedShaderStage[Constants.ShaderStages + 1];
             List<ShaderSource> shaderSources = [];

@@ -1464,16 +1464,6 @@ namespace Ryujinx.Graphics.Gpu.Engine.Threed
                 ref _currentSpecState.GetGraphicsState(),
                 addresses);
 
-            GraphicsCompatibility.RegisterMua3Program(
-                gs.HostProgram,
-                new Mua3ShaderIdentity(
-                    addresses.VertexA,
-                    addresses.VertexB,
-                    addresses.TessControl,
-                    addresses.TessEvaluation,
-                    addresses.Geometry,
-                    addresses.Fragment));
-
             // Consume the modified flag for spec state so that it isn't checked again.
             _currentSpecState.SetShader(gs);
 

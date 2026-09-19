@@ -51,17 +51,7 @@ namespace Ryujinx.Graphics.Gpu
         /// Title id of the current running game.
         /// Used by the shader cache.
         /// </summary>
-        private static string _titleId;
-
-        public static string TitleId
-        {
-            get => _titleId;
-            set
-            {
-                _titleId = value;
-                Ryujinx.Graphics.GAL.GraphicsCompatibility.TitleId = value;
-            }
-        }
+        public static string TitleId;
 
         /// <summary>
         /// Enables or disables the shader cache.

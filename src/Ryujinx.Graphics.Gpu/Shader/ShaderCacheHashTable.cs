@@ -219,7 +219,8 @@ namespace Ryujinx.Graphics.Gpu.Shader
             ref GpuChannelGraphicsState graphicsState,
             ShaderAddresses addresses,
             out CachedShaderProgram program,
-            out CachedGraphicsGuestCode guestCode)
+            out CachedGraphicsGuestCode guestCode,
+            bool requireVertexAndGeometryAsCompute = false)
         {
             MemoryManager memoryManager = channel.MemoryManager;
             IdTable idTable = new();
@@ -236,7 +237,12 @@ namespace Ryujinx.Graphics.Gpu.Shader
 
             if (found && _shaderPrograms.TryGetValue(idTable, out ShaderSpecializationList specList))
             {
-                return specList.TryFindForGraphics(channel, ref poolState, ref graphicsState, out program);
+                return specList.TryFindForGraphics(
+                    channel,
+                    ref poolState,
+                    ref graphicsState,
+                    out program,
+                    requireVertexAndGeometryAsCompute);
             }
 
             return false;
