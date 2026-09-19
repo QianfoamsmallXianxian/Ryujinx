@@ -71,8 +71,6 @@ namespace Ryujinx.Cpu.Nce
         private delegate bool SupervisorCallHandler(int imm);
         private SupervisorCallHandler _svcHandler;
 
-        private MemoryBlock _alternateStackMemory;
-
         public NceExecutionContext(ExceptionCallbacks exceptionCallbacks)
         {
             _svcHandler = OnSupervisorCall;
