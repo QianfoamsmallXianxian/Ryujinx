@@ -250,7 +250,8 @@ namespace Ryujinx.Cpu.Nce
         /// <inheritdoc/>
         public void PrepareCodeRange(ulong address, ulong size)
         {
-            InvalidateCacheRegion(address, size);
+            // The process factory calls this before NSO images are mapped on NCE.
+            // Cache maintenance here would operate on unpublished guest mappings.
         }
 
         public void Dispose()
