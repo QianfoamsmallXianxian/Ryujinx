@@ -176,3 +176,30 @@ PublishProfiles/
 
 # Log files
 /logs/
+
+# =======================================================
+# Android build artifacts, keystores and environment files
+# =======================================================
+*.apk
+*.aab
+*.apks
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.log
+*.tmp
+*.user
+local.properties
+.gradle/
+.idea/
+.vscode/
+**/build/
+**/bin/
+**/obj/
+artifacts/
+outputs/
+native-debug-symbols/
+
+# Deliberately excluded external / temporary files
+src/Ryujinx.Common/Diagnostics/
