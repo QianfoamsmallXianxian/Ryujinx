@@ -1,4 +1,12 @@
 package org.kenjinx.android.views
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.offset
 
 import android.app.Activity
 import android.content.Intent
@@ -40,8 +48,6 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
@@ -397,113 +403,173 @@ class HomeViews {
                 }
             }
 
-            // NEO library: quiet header, search, and a cartridge-only grid.
-            Box(Modifier.fillMaxSize()) {
-                Scaffold(
-                    modifier = Modifier.fillMaxSize(),
-                    topBar = {
-                        Column(
+            // Ryujinx Neo: Dual panel layout (Caixinhas) over dark background
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF141416))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    // Caixinha Superior: Header Panel (Logo, Pill Search, Hamburger Menu)
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(72.dp),
+                        shape = RoundedCornerShape(18.dp),
+                        color = Color(0xFF454545),
+                        shadowElevation = 6.dp
+                    ) {
+                        Row(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.background)
-                                .padding(horizontal = 18.dp, vertical = 12.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                                .fillMaxSize()
+                                .padding(horizontal = 20.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                            // Left: Ryujinx Neo Logo from /imagens
+                            Image(
+                                painter = painterResource(R.drawable.ryujinx_neo_logo),
+                                contentDescription = "Ryujinx Neo",
+                                contentScale = ContentScale.Fit,
+                                modifier = Modifier.height(34.dp)
+                            )
+
+                            // Center: Pill Search Bar (White rounded with magnifying glass on the right)
+                            Surface(
+                                modifier = Modifier
+                                    .weight(1f, fill = false)
+                                    .widthIn(min = 260.dp, max = 460.dp)
+                                    .height(42.dp),
+                                shape = CircleShape,
+                                color = Color.White
                             ) {
-                                Column {
-                                    Text("NEO", style = MaterialTheme.typography.headlineMedium)
-                                    Text(
-                                        "${viewModel.gameList.size} jogos",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(horizontal = 16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    BasicTextField(
+                                        value = query.value,
+                                        onValueChange = { query.value = it },
+                                        singleLine = true,
+                                        textStyle = TextStyle(
+                                            color = Color(0xFF222222),
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.Medium
+                                        ),
+                                        modifier = Modifier.weight(1f),
+                                        decorationBox = { innerTextField ->
+                                            if (query.value.isEmpty()) {
+                                                Text(
+                                                    text = "Pesquisar jogos...",
+                                                    color = Color(0xFF757575),
+                                                    fontSize = 15.sp
+                                                )
+                                            }
+                                            innerTextField()
+                                        }
+                                    )
+                                    Icon(
+                                        imageVector = Icons.Default.Search,
+                                        contentDescription = "Pesquisar",
+                                        tint = Color(0xFF454545),
+                                        modifier = Modifier.size(22.dp)
                                     )
                                 }
-                                Row {
-                                    IconButton(onClick = {
-                                        viewModel.requestReload()
-                                        viewModel.ensureReloadIfNecessary()
-                                    }) {
-                                        Icon(Icons.Default.Refresh, contentDescription = "Atualizar")
-                                    }
-                                    IconButton(onClick = {
-                                        val currentRoute = navController?.currentDestination?.route
-                                        if (currentRoute != "settings") {
-                                            navController?.navigate("settings") {
-                                                launchSingleTop = true
-                                                restoreState = true
-                                            }
+                            }
+
+                            // Right: Hamburger Menu Icon (≡) from /imagens
+                            IconButton(
+                                onClick = {
+                                    val currentRoute = navController?.currentDestination?.route
+                                    if (currentRoute != "settings") {
+                                        navController?.navigate("settings") {
+                                            launchSingleTop = true
                                         }
-                                    }) {
-                                        Icon(Icons.Filled.Settings, contentDescription = "Configurações")
                                     }
                                 }
-                            }
-                            OutlinedTextField(
-                                value = query.value,
-                                onValueChange = { query.value = it },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp),
-                                placeholder = {
-                                    Text("Buscar jogo", modifier = Modifier.padding(bottom = 4.dp))
-                                },
-                                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = "Search") },
-                                singleLine = true,
-                                shape = RoundedCornerShape(18.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = Color.Transparent,
-                                    unfocusedContainerColor = Color.Transparent,
-                                    disabledContainerColor = Color.Transparent,
-                                    errorContainerColor = Color.Transparent,
-                                    focusedBorderColor = MaterialTheme.colorScheme.onSurface,
-                                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                            ) {
+                                Image(
+                                    painter = painterResource(R.drawable.ic_menu_hamburger),
+                                    contentDescription = "Menu Principal",
+                                    modifier = Modifier.size(30.dp)
                                 )
-                            )
+                            }
                         }
                     }
-                ) { contentPadding ->
-                    Column(modifier = Modifier.padding(contentPadding)) {
-                        Box {
-                            val list = remember { viewModel.gameList }
-                            val isLoading = remember { viewModel.isLoading }
 
-                            viewModel.filter(query.value)
+                    // Caixinha Principal: Library Panel (Grid de 7 Colunas com Mockup do Cartucho)
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        shape = RoundedCornerShape(18.dp),
+                        color = Color(0xFF454545),
+                        shadowElevation = 6.dp
+                    ) {
+                        val list = remember { viewModel.gameList }
+                        val isLoading = remember { viewModel.isLoading }
 
-                            if (!isPreview) {
-                                if (isLoading.value) {
-                                    Box(modifier = Modifier.fillMaxSize()) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier
-                                                .width(64.dp)
-                                                .align(Alignment.Center),
-                                            color = MaterialTheme.colorScheme.secondary,
-                                            trackColor = MaterialTheme.colorScheme.surfaceVariant
-                                        )
+                        viewModel.filter(query.value)
+
+                        if (!isPreview) {
+                            if (isLoading.value) {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(54.dp),
+                                        color = Color.White,
+                                        trackColor = Color(0xFF5A5A5A)
+                                    )
+                                }
+                            } else {
+                                val filteredList = list.filter { game ->
+                                    val title = game.titleName.orEmpty()
+                                    title.isNotEmpty() && (query.value.trim().isEmpty() || title.lowercase(Locale.getDefault()).contains(query.value.lowercase(Locale.getDefault())))
+                                }
+
+                                if (filteredList.isEmpty()) {
+                                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                                        ) {
+                                            Text(
+                                                "Nenhum jogo encontrado",
+                                                style = MaterialTheme.typography.titleMedium,
+                                                color = Color.White,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            Text(
+                                                "Adicione pastas de jogos no menu de configurações.",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = Color(0xFFD0D0D0)
+                                            )
+                                        }
                                     }
                                 } else {
-                                    val size = GridImageSize / Resources.getSystem().displayMetrics.density
                                     LazyVerticalGrid(
-                                        columns = GridCells.Adaptive(minSize = (size + 12).dp),
-                                        modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                                        columns = GridCells.Fixed(7),
+                                        contentPadding = PaddingValues(16.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                        verticalArrangement = Arrangement.spacedBy(14.dp),
+                                        modifier = Modifier.fillMaxSize()
                                     ) {
-                                        items(list) {
-                                            it.titleName?.apply {
-                                                if (isNotEmpty() && (query.value.trim().isEmpty() || lowercase(Locale.getDefault()).contains(query.value.lowercase(Locale.getDefault())))) {
-                                                    GridGameItem(it, viewModel, showAppActions, showLoading, selectedModel, showError)
-                                                }
-                                            }
+                                        items(filteredList) { game ->
+                                            GridGameItem(game, viewModel, showAppActions, showLoading, selectedModel, showError)
                                         }
                                     }
                                 }
                             }
                         }
                     }
+                }
 
                     SimpleAlertDialog.Loading(showDialog = showLoading)
                     SimpleAlertDialog.Custom(
@@ -569,7 +635,6 @@ class HomeViews {
                             }
                         )
                     }
-                }
 
                 if (viewModel.mainViewModel?.loadGameModel?.value != null)
                     LaunchedEffect(viewModel.mainViewModel.loadGameModel.value) {
@@ -1056,20 +1121,29 @@ class HomeViews {
             selectedModel: MutableState<GameModel?>,
             showError: MutableState<String>
         ) {
-            val decoder = Base64.getDecoder()
+            val context = LocalContext.current
             val isSelected = selectedModel.value == gameModel
 
-            Surface(
-                shape = RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp, bottomStart = 8.dp, bottomEnd = 8.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                border = BorderStroke(
-                    if (isSelected) 2.dp else 1.dp,
-                    if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant
-                ),
+            // Load game cover bitmap (from game_icons file or base64 icon)
+            val coverBitmap = remember(gameModel.titleId) {
+                try {
+                    val iconFile = java.io.File(context.filesDir, "game_icons/${gameModel.titleId}.jpg")
+                    if (iconFile.exists()) {
+                        BitmapFactory.decodeFile(iconFile.absolutePath)
+                    } else if (gameModel.icon?.isNotEmpty() == true) {
+                        val pic = Base64.getDecoder().decode(gameModel.icon)
+                        BitmapFactory.decodeByteArray(pic, 0, pic.size)
+                    } else null
+                } catch (_: Throwable) {
+                    null
+                }
+            }
+
+            BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(0.72f)
-                    .padding(3.dp)
+                    .aspectRatio(214f / 308f)
+                    .clip(RoundedCornerShape(8.dp))
                     .combinedClickable(
                         onClick = {
                             if (viewModel.mainViewModel?.selected != null) {
@@ -1087,7 +1161,7 @@ class HomeViews {
                                         launchOnUiThread { viewModel.mainViewModel?.navigateToGame() }
                                     } else {
                                         if (success == -2)
-                                            showError.value = "Error loading update. Please re-add update file"
+                                            showError.value = "Erro ao carregar atualização. Adicione o arquivo de atualização novamente."
                                         gameModel.close()
                                     }
                                     showLoading.value = false
@@ -1101,46 +1175,66 @@ class HomeViews {
                         }
                     )
             ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 6.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 5.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "NEO",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                val w = maxWidth
+                val h = maxHeight
+
+                // Layer 1: Game artwork strictly aligned with the cartridge cutout (18, 83) to (197, 240) in 214x308
+                Box(
+                    modifier = Modifier
+                        .offset(
+                            x = w * (18f / 214f),
+                            y = h * (83f / 308f)
                         )
-                        Box(
-                            modifier = Modifier
-                                .width(22.dp)
-                                .height(4.dp)
-                                .clip(RoundedCornerShape(2.dp))
-                                .background(MaterialTheme.colorScheme.background)
+                        .size(
+                            width = w * (179f / 214f),
+                            height = h * (157f / 308f)
+                        )
+                        .background(Color(0xFF1B1B1D)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (coverBitmap != null) {
+                        Image(
+                            bitmap = coverBitmap.asImageBitmap(),
+                            contentDescription = gameModel.titleName,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else if (gameModel.type == FileType.Nro) {
+                        Image(
+                            painter = painterResource(id = R.drawable.icon_nro),
+                            contentDescription = "NRO",
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.size(48.dp)
+                        )
+                    } else {
+                        Text(
+                            text = gameModel.titleName ?: "Jogo",
+                            color = Color.White,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(4.dp)
                         )
                     }
-                    if (!gameModel.titleId.isNullOrEmpty()
-                        && (gameModel.titleId != "0000000000000000" || gameModel.type == FileType.Nro)
-                    ) {
-                        if (gameModel.icon?.isNotEmpty() == true) {
-                            val pic = decoder.decode(gameModel.icon)
-                            Image(
-                                bitmap = BitmapFactory.decodeByteArray(pic, 0, pic.size).asImageBitmap(),
-                                contentDescription = gameModel.titleName ?: "Cartucho",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .aspectRatio(1f)
-                                    .clip(RoundedCornerShape(6.dp))
-                            )
-                        } else if (gameModel.type == FileType.Nro) NROIcon()
-                        else NotAvailableIcon()
-                    } else NotAvailableIcon()
+                }
+
+                // Layer 2: Nintendo Switch Cartridge Mockup frame from /imagens (transparent cutout allows artwork to show)
+                Image(
+                    painter = painterResource(R.drawable.mockup_cartucho_switch),
+                    contentDescription = gameModel.titleName,
+                    contentScale = ContentScale.FillBounds,
+                    modifier = Modifier.fillMaxSize()
+                )
+
+                // High contrast selection border
+                if (isSelected) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .border(2.5.dp, Color.White, RoundedCornerShape(8.dp))
+                    )
                 }
             }
         }

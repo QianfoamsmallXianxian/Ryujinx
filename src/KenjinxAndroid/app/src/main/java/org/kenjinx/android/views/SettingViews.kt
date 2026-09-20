@@ -1,4 +1,16 @@
 package org.kenjinx.android.views
+import org.kenjinx.android.viewmodels.QuickSettings.VirtualControllerPreset
+import org.kenjinx.android.viewmodels.QuickSettings.OrientationPreference
+import kotlin.concurrent.thread
+import androidx.compose.ui.text.style.TextAlign
+import org.kenjinx.android.views.VulkanDriverViews
+import com.anggrayudi.storage.file.extension
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.ui.window.DialogProperties
+import org.kenjinx.android.widgets.SimpleAlertDialog
+import org.kenjinx.android.RegionCode
+import org.kenjinx.android.SystemLanguage
+import org.kenjinx.android.MainActivity
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
@@ -6,11 +18,13 @@ import android.os.Build
 import android.provider.DocumentsContract
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,92 +32,123 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.Create
-import androidx.compose.material.icons.filled.FileDownload
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.MailOutline
-import androidx.compose.material.icons.outlined.Code
-import androidx.compose.material.icons.outlined.FileOpen
-import androidx.compose.material.icons.outlined.Folder
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Memory
-import androidx.compose.material.icons.outlined.Panorama
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Tune
-import androidx.compose.material.icons.outlined.VideogameAsset
+import androidx.compose.material.icons.filled.Devices
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.SportsEsports
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.Label
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PlainTooltip
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.unit.sp
 import androidx.documentfile.provider.DocumentFile
-import com.anggrayudi.storage.file.extension
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlin.concurrent.thread
-import kotlin.math.roundToInt
-import org.kenjinx.android.MainActivity
-import org.kenjinx.android.providers.DocumentProvider
+import org.kenjinx.android.R
 import org.kenjinx.android.viewmodels.DataImportState
 import org.kenjinx.android.viewmodels.DataResetState
 import org.kenjinx.android.viewmodels.FirmwareInstallState
 import org.kenjinx.android.viewmodels.KeyInstallState
 import org.kenjinx.android.viewmodels.MainViewModel
-import org.kenjinx.android.viewmodels.SettingsViewModel
 import org.kenjinx.android.viewmodels.MemoryConfiguration
 import org.kenjinx.android.viewmodels.MemoryManagerMode
-import org.kenjinx.android.viewmodels.VSyncMode
-import org.kenjinx.android.widgets.ActionButton
-import org.kenjinx.android.widgets.DropdownSelector
-import org.kenjinx.android.widgets.ExpandableView
-import org.kenjinx.android.widgets.SimpleAlertDialog
-import org.kenjinx.android.widgets.SwitchSelector
 import org.kenjinx.android.viewmodels.QuickSettings
-import org.kenjinx.android.viewmodels.QuickSettings.OrientationPreference
-import org.kenjinx.android.viewmodels.QuickSettings.VirtualControllerPreset
-import org.kenjinx.android.KenjinxNative
-import org.kenjinx.android.SystemLanguage
-import org.kenjinx.android.RegionCode
+import org.kenjinx.android.viewmodels.SettingsViewModel
+import org.kenjinx.android.viewmodels.VSyncMode
+
+enum class SettingsCategory(
+    val title: String,
+    val description: String,
+    val icon: ImageVector,
+    val iconRes: Int? = null
+) {
+    Geral(
+        title = "Geral",
+        description = "Orientação da tela, exibição de estatísticas e modo de alto desempenho",
+        icon = Icons.Default.Tune
+    ),
+    Emulacao(
+        title = "Emulação e CPU",
+        description = "Modo NCE vs JIT, PPTC de baixo consumo e expansão de memória Slack",
+        icon = Icons.Default.Memory
+    ),
+    Graficos(
+        title = "Gráficos",
+        description = "Driver Vulkan, sincronização VSync, resolução e cache de shaders",
+        icon = Icons.Default.Palette
+    ),
+    Controles(
+        title = "Controles",
+        description = "Controle virtual na tela, layouts predefinidos, giroscópio e sensibilidade",
+        icon = Icons.Default.SportsEsports,
+        iconRes = R.drawable.ryujinx_neo_icone
+    ),
+    Sistema(
+        title = "Sistema",
+        description = "Idioma do console, região, firmware e chaves de segurança (prod.keys)",
+        icon = Icons.Default.Devices
+    ),
+    Jogos(
+        title = "Jogos e Dados",
+        description = "Diretórios de jogos, atualizações, DLCs e gerenciamento de arquivos",
+        icon = Icons.Default.Folder
+    ),
+    Avancado(
+        title = "Avançado",
+        description = "Registros de log, integridade do sistema de arquivos e serviços ausentes",
+        icon = Icons.Default.Build
+    ),
+    Sobre(
+        title = "Sobre",
+        description = "Informações da versão, branch neo-v2-nce2 e créditos do projeto",
+        icon = Icons.Default.Info,
+        iconRes = R.drawable.ryujinx_neo_icone
+    )
+}
 
 class SettingViews {
     companion object {
         const val EXPANSTION_TRANSITION_DURATION = 450
         const val IMPORT_CODE = 12341
-
-        @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
         @Composable
         fun Main(settingsViewModel: SettingsViewModel, mainViewModel: MainViewModel) {
             val loaded = remember { mutableStateOf(false) }
@@ -148,7 +193,6 @@ class SettingViews {
                 mutableStateOf(QuickSettings(mainViewModel.activity).showPerformanceOverlay)
             }
             val controllerStickSensitivity = remember { mutableFloatStateOf(1.0f) }
-
             val controllerScale = remember {
                 mutableFloatStateOf(QuickSettings(mainViewModel.activity).controllerScale)
             }
@@ -162,12 +206,10 @@ class SettingViews {
             val enableTraceLogs = remember { mutableStateOf(true) }
             val enableDebugLogs = remember { mutableStateOf(true) }
             val enableGraphicsLogs = remember { mutableStateOf(true) }
-            val isNavigating = remember { mutableStateOf(false) }
 
             val orientationPref = remember {
                 mutableStateOf(QuickSettings(mainViewModel.activity).orientationPreference)
             }
-
             val systemLanguage = remember { mutableStateOf(SystemLanguage.AmericanEnglish) }
             val regionCode = remember { mutableStateOf(RegionCode.USA) }
 
@@ -176,6 +218,8 @@ class SettingViews {
             }
             val threadToggleInitialized = remember { mutableStateOf(false) }
             val isDriverSelectorOpen = remember { mutableStateOf(false) }
+
+            val selectedCategory = remember { mutableStateOf<SettingsCategory?>(null) }
 
             if (!loaded.value) {
                 settingsViewModel.initializeState(
@@ -221,7 +265,7 @@ class SettingViews {
                 loaded.value = true
             }
 
-            fun saveAllSettings() {
+            val save = {
                 settingsViewModel.save(
                     memoryManagerMode,
                     useNce,
@@ -267,548 +311,645 @@ class SettingViews {
                 qs.disableThreadedRendering = disableThreadedRendering.value
                 qs.showPerformanceOverlay = showPerformanceOverlay.value
                 qs.virtualControllerPreset = vcPreset.value
-                qs.save()
             }
 
-            BackHandler {
-                saveAllSettings()
+            // Hardware Back handling
+            BackHandler(enabled = selectedCategory.value != null) {
+                save()
+                selectedCategory.value = null
+            }
+            BackHandler(enabled = selectedCategory.value == null) {
+                save()
                 mainViewModel.navController?.popBackStack()
             }
 
-            Scaffold(
-                modifier = Modifier.fillMaxSize(),
-                topBar = {
-                    TopAppBar(
-                        title = { Text(text = "Configurações", fontWeight = FontWeight.SemiBold) },
-                        navigationIcon = {
-                            IconButton(onClick = {
-                                saveAllSettings()
-                                if (!isNavigating.value) {
-                                    isNavigating.value = true
-                                    mainViewModel.navController?.popBackStack()
-                                    CoroutineScope(Dispatchers.Main).launch {
-                                        delay(500)
-                                        isNavigating.value = false
-                                    }
-                                }
-                            }) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Voltar"
-                                )
-                            }
-                        }
-                    )
-                }
-            ) { contentPadding ->
+            // Main Dual Panel Container
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xFF141416))
+            ) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(contentPadding)
-                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    // ==========================================
-                    // 1. GERAL
-                    // ==========================================
-                    ExpandableView(onCardArrowClick = { }, title = "Geral", icon = Icons.Outlined.Tune, isFirst = true) {
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            OrientationDropdown(
-                                selectedOrientation = orientationPref.value,
-                                onOrientationSelected = { sel ->
-                                    orientationPref.value = sel
-                                    val qs = QuickSettings(mainViewModel.activity)
-                                    qs.orientationPreference = sel
-                                    qs.save()
-                                    val act = mainViewModel.activity
-                                    act.requestedOrientation = sel.value
-                                    val rot = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                                        act.display?.rotation
-                                    } else {
-                                        null
-                                    }
-                                    mainViewModel.gameHost?.onOrientationOrSizeChanged(rot)
-                                }
-                            )
-                            showPerformanceOverlay.SwitchSelector(label = "Mostrar estatísticas na tela")
-                            enablePerformanceMode.SwitchSelector(label = "Modo de alto desempenho")
-                        }
-                    }
+                    val activeCat = selectedCategory.value
 
-                    // ==========================================
-                    // 2. EMULAÇÃO
-                    // ==========================================
-                    ExpandableView(onCardArrowClick = { }, title = "Emulação", icon = Icons.Outlined.Memory) {
-                        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                            Text(
-                                "Execução de CPU",
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                ChoiceCard("NCE (Nativo)", useNce.value, Modifier.weight(1f)) { useNce.value = true }
-                                ChoiceCard("JIT (Dinâmico)", !useNce.value, Modifier.weight(1f)) { useNce.value = false }
-                            }
-
-                            enablePptc.SwitchSelector(label = "PPTC (Profiled Persistent Translation Cache)")
-                            enableLowPowerPptc.SwitchSelector(label = "PPTC de baixo consumo")
-                            enableJitCacheEviction.SwitchSelector(label = "Limpeza de cache JIT")
-
-                            Text(
-                                "Memory Slack",
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                ChoiceCard("Ligado (12 GiB)", memorySlackEnabled.value, Modifier.weight(1f)) { memorySlackEnabled.value = true }
-                                ChoiceCard("Desligado (0 GiB)", !memorySlackEnabled.value, Modifier.weight(1f)) { memorySlackEnabled.value = false }
-                            }
-
-                            MemoryModeDropdown(
-                                selectedMemoryManagerMode = memoryManagerMode.value,
-                                onModeSelected = { mode -> memoryManagerMode.value = mode }
-                            )
-
-                            MemoryDropdown(
-                                selectedMemoryConfiguration = memoryConfiguration.value,
-                                onConfigurationSelected = { conf -> memoryConfiguration.value = conf }
-                            )
-                        }
-                    }
-
-                    // ==========================================
-                    // 3. GRÁFICOS
-                    // ==========================================
-                    ExpandableView(onCardArrowClick = { }, title = "Gráficos", icon = Icons.Outlined.Panorama) {
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp)
-                                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                            ) {
-                                ActionButton(
-                                    onClick = { isDriverSelectorOpen.value = !isDriverSelectorOpen.value },
-                                    text = "Instalar driver Vulkan",
-                                    icon = Icons.Default.Build,
-                                    modifier = Modifier.weight(1f),
-                                    isFullWidth = false,
-                                )
-                            }
-
-                            SimpleAlertDialog.Custom(
-                                showDialog = isDriverSelectorOpen,
-                                onDismissRequest = { isDriverSelectorOpen.value = false },
-                                properties = DialogProperties(usePlatformDefaultWidth = false),
-                            ) {
-                                VulkanDriverViews.Main(settingsViewModel.activity, isDriverSelectorOpen)
-                            }
-
-                            Text(
-                                "Sincronização vertical (VSync)",
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                ChoiceCard("Switch (60 Hz)", vSyncMode.value == VSyncMode.Switch, Modifier.weight(1f)) { vSyncMode.value = VSyncMode.Switch }
-                                ChoiceCard("Ilimitado", vSyncMode.value == VSyncMode.Unbounded, Modifier.weight(1f)) { vSyncMode.value = VSyncMode.Unbounded }
-                            }
-
-                            Text(
-                                "Escala de resolução",
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                listOf(0.5f to "0.5x", 0.75f to "0.75x", 1f to "1.0x", 2f to "2.0x", 3f to "3.0x").forEach { (v, lbl) ->
-                                    ChoiceCard(lbl, resScale.floatValue == v, Modifier.weight(1f)) { resScale.floatValue = v }
-                                }
-                            }
-
-                            Text(
-                                "Filtro anisotrópico",
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                listOf(0f to "Auto", 2f to "4x", 3f to "8x", 4f to "16x").forEach { (v, lbl) ->
-                                    ChoiceCard(lbl, maxAnisotropy.floatValue == v, Modifier.weight(1f)) { maxAnisotropy.floatValue = v }
-                                }
-                            }
-
-                            enableDocked.SwitchSelector(label = "Modo Docked")
-                            enableShaderCache.SwitchSelector(label = "Cache de shaders")
-                            enableShaderLoopSafety.SwitchSelector(label = "Proteção de loop de shader")
-                            enableTextureRecompression.SwitchSelector(label = "Recompressão de texturas")
-                            enableMacroHLE.SwitchSelector(label = "Macro HLE")
-                            stretchToFullscreen.SwitchSelector(label = "Esticar para tela inteira")
-
-                            LaunchedEffect(disableThreadedRendering.value) {
-                                if (threadToggleInitialized.value) {
-                                    val backendVal = if (disableThreadedRendering.value) 1 else 2
-                                    KenjinxNative.graphicsSetBackendThreading(backendVal)
-                                } else {
-                                    threadToggleInitialized.value = true
-                                }
-                            }
-                            disableThreadedRendering.SwitchSelector(label = "Desativar renderização threaded")
-                        }
-                    }
-
-                    // ==========================================
-                    // 4. CONTROLES
-                    // ==========================================
-                    ExpandableView(onCardArrowClick = { }, title = "Controles", icon = Icons.Outlined.VideogameAsset) {
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            useVirtualController.SwitchSelector(label = "Controle na tela")
-
-                            if (useVirtualController.value) {
-                                Text(
-                                    "Layout do controle",
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    listOf(
-                                        VirtualControllerPreset.Default to "Padrão",
-                                        VirtualControllerPreset.Layout2 to "Layout 2",
-                                        VirtualControllerPreset.Layout3 to "Layout 3"
-                                    ).forEach { (preset, label) ->
-                                        ChoiceCard(label, vcPreset.value == preset, Modifier.weight(1f)) { vcPreset.value = preset }
-                                    }
-                                }
-                                Row(
-                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    listOf(
-                                        VirtualControllerPreset.Layout4 to "Layout 4",
-                                        VirtualControllerPreset.Layout5 to "Layout 5",
-                                        VirtualControllerPreset.Layout6 to "Layout 6"
-                                    ).forEach { (preset, label) ->
-                                        ChoiceCard(label, vcPreset.value == preset, Modifier.weight(1f)) { vcPreset.value = preset }
-                                    }
-                                }
-                            }
-
-                            useSwitchLayout.SwitchSelector(label = "Inverter A/B e X/Y (Layout Switch)")
-                            enableMotion.SwitchSelector(label = "Movimento (Giroscópio)")
-
-                            val stickInteractionSource = remember { MutableInteractionSource() }
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp)
-                                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                            ) {
-                                Text(
-                                    text = "Sensibilidade dos analógicos",
-                                    modifier = Modifier.align(Alignment.CenterVertically)
-                                )
-                                Slider(
-                                    modifier = Modifier.width(200.dp),
-                                    value = controllerStickSensitivity.floatValue,
-                                    onValueChange = { controllerStickSensitivity.floatValue = it },
-                                    valueRange = 0.5f..2.0f,
-                                    steps = 15,
-                                    interactionSource = stickInteractionSource
-                                )
-                            }
-
-                            val scaleInteractionSource = remember { MutableInteractionSource() }
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp)
-                                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                            ) {
-                                Text(
-                                    text = "Escala do controle na tela",
-                                    modifier = Modifier.align(Alignment.CenterVertically)
-                                )
-                                Slider(
-                                    modifier = Modifier.width(200.dp),
-                                    value = controllerScale.floatValue,
-                                    onValueChange = { controllerScale.floatValue = it.coerceIn(0.5f, 1.5f) },
-                                    valueRange = 0.5f..1.5f,
-                                    steps = 20,
-                                    interactionSource = scaleInteractionSource
-                                )
-                            }
-                        }
-                    }
-
-                    // ==========================================
-                    // 5. SISTEMA
-                    // ==========================================
-                    ExpandableView(onCardArrowClick = { }, title = "Sistema", icon = Icons.Outlined.Settings) {
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            LanguageDropdown(
-                                selectedLanguage = systemLanguage.value,
-                                onLanguageSelected = { lang -> systemLanguage.value = lang }
-                            )
-
-                            RegionDropdown(
-                                selectedRegion = regionCode.value,
-                                onRegionSelected = { reg -> regionCode.value = reg }
-                            )
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp)
-                                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text("Firmware do console")
-                                Text(
-                                    firmwareVersion.value.ifBlank { "Não instalado" },
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp)
-                                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                            ) {
-                                ActionButton(
-                                    onClick = { showKeyDialog.value = true },
-                                    text = "Instalar Keys (prod.keys)",
-                                    icon = Icons.Default.Build,
-                                    modifier = Modifier.weight(1f),
-                                    isFullWidth = false,
-                                )
-                            }
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp)
-                                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                            ) {
-                                ActionButton(
-                                    onClick = { showFirwmareDialog.value = true },
-                                    text = "Instalar Firmware",
-                                    icon = Icons.Default.Build,
-                                    modifier = Modifier.weight(1f),
-                                    isFullWidth = false,
-                                )
-                            }
-                        }
-                    }
-
-                    // ==========================================
-                    // 6. JOGOS E DADOS
-                    // ==========================================
-                    ExpandableView(onCardArrowClick = { }, title = "Jogos e dados", icon = Icons.Outlined.Folder) {
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp)
-                                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                            ) {
-                                ActionButton(
-                                    onClick = { settingsViewModel.openGameFolder() },
-                                    text = "Adicionar pasta de jogos",
-                                    icon = Icons.Default.Add,
-                                    modifier = Modifier.weight(1f),
-                                    isFullWidth = false,
-                                )
-                            }
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp)
-                                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                            ) {
-                                ActionButton(
-                                    onClick = { settingsViewModel.openUpdatesFolder() },
-                                    text = "Selecionar pasta de Updates/DLC",
-                                    icon = Icons.Outlined.Folder,
-                                    modifier = Modifier.weight(1f),
-                                    isFullWidth = false,
-                                )
-                            }
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp)
-                                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                            ) {
-                                ActionButton(
-                                    onClick = {
-                                        fun createIntent(action: String): Intent {
-                                            val intent = Intent(action)
-                                            intent.addCategory(Intent.CATEGORY_DEFAULT)
-                                            intent.data = DocumentsContract.buildRootUri(
-                                                DocumentProvider.AUTHORITY,
-                                                DocumentProvider.ROOT_ID
-                                            )
-                                            intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or Intent.FLAG_GRANT_PREFIX_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-                                            return intent
-                                        }
-                                        try {
-                                            mainViewModel.activity.startActivity(createIntent(Intent.ACTION_VIEW))
-                                            return@ActionButton
-                                        } catch (_: ActivityNotFoundException) {}
-                                        try {
-                                            mainViewModel.activity.startActivity(createIntent("android.provider.action.BROWSE"))
-                                            return@ActionButton
-                                        } catch (_: ActivityNotFoundException) {}
-                                        try {
-                                            mainViewModel.activity.startActivity(createIntent("com.google.android.documentsui"))
-                                            return@ActionButton
-                                        } catch (_: ActivityNotFoundException) {}
-                                        try {
-                                            mainViewModel.activity.startActivity(createIntent("com.android.documentsui"))
-                                            return@ActionButton
-                                        } catch (_: ActivityNotFoundException) {}
-                                    },
-                                    text = "Abrir pasta de dados",
-                                    icon = Icons.Default.Home,
-                                    modifier = Modifier.weight(1f),
-                                    isFullWidth = false,
-                                )
-                            }
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp)
-                                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                            ) {
-                                ActionButton(
-                                    onClick = { showDataImportDialog.value = true },
-                                    text = "Importar dados da aplicação (ZIP)",
-                                    icon = Icons.Default.FileDownload,
-                                    modifier = Modifier.weight(1f),
-                                    isFullWidth = false,
-                                )
-                            }
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp)
-                                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                            ) {
-                                ActionButton(
-                                    onClick = { showDataResetDialog.value = true },
-                                    text = "Redefinir dados da aplicação",
-                                    icon = Icons.Default.Create,
-                                    modifier = Modifier.weight(1f),
-                                    isFullWidth = false,
-                                )
-                            }
-                        }
-                    }
-
-                    // ==========================================
-                    // 7. AVANÇADO
-                    // ==========================================
-                    ExpandableView(onCardArrowClick = { }, title = "Avançado", icon = Icons.Outlined.Code) {
-                        Column(modifier = Modifier.fillMaxWidth()) {
-                            enableFsIntegrityChecks.SwitchSelector(label = "Verificações de integridade do FS")
-                            ignoreMissingServices.SwitchSelector(label = "Ignorar serviços ausentes")
-
-                            enableStubLogs.SwitchSelector(label = "Stub Logs")
-                            enableInfoLogs.SwitchSelector(label = "Info Logs")
-                            enableWarningLogs.SwitchSelector(label = "Warning Logs")
-                            enableErrorLogs.SwitchSelector(label = "Error Logs")
-                            enableGuestLogs.SwitchSelector(label = "Guest Logs")
-                            enableTraceLogs.SwitchSelector(label = "Trace Logs")
-                            enableFsAccessLogs.SwitchSelector(label = "FS Access Logs")
-                            enableDebugLogs.SwitchSelector(label = "Debug Logs")
-                            enableGraphicsLogs.SwitchSelector(label = "Graphics Logs")
-
-                            FsGlobalAccessLogModeDropdown(
-                                selectedFsGlobalAccess = fsGlobalAccessLogMode.intValue,
-                                onFsGlobalAccessSelected = { fsGlobalAccess ->
-                                    fsGlobalAccessLogMode.intValue = fsGlobalAccess
-                                }
-                            )
-
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp)
-                                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                            ) {
-                                ActionButton(
-                                    onClick = { mainViewModel.logging.requestExport() },
-                                    text = "Enviar logs",
-                                    icon = Icons.Default.MailOutline,
-                                    modifier = Modifier.weight(1f),
-                                    isFullWidth = false,
-                                )
-                            }
-                        }
-                    }
-
-                    // ==========================================
-                    // 8. SOBRE
-                    // ==========================================
-                    ExpandableView(onCardArrowClick = { }, title = "Sobre", icon = Icons.Outlined.Info) {
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                            modifier = Modifier.fillMaxWidth().padding(8.dp)
+                    // Caixinha Superior (Header Panel)
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(72.dp),
+                        shape = RoundedCornerShape(18.dp),
+                        color = Color(0xFF454545),
+                        shadowElevation = 6.dp
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                Text("NEO", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                                Text("Kenji-NX • Branch neo-v2-nce2", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text(
-                                    "Emulador de Nintendo Switch para Android focado em desempenho com motor NCE armv8.2-a e interface minimalista.",
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                                Text("Base estável: 7cb21885e", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            if (activeCat == null) {
+                                // Root Header: Back to Games, Logo, Title
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    IconButton(
+                                        onClick = {
+                                            save()
+                                            mainViewModel.navController?.popBackStack()
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                            contentDescription = "Voltar",
+                                            tint = Color.White
+                                        )
+                                    }
+                                    Image(
+                                        painter = painterResource(R.drawable.ryujinx_neo_logo),
+                                        contentDescription = "Ryujinx Neo",
+                                        contentScale = ContentScale.Fit,
+                                        modifier = Modifier.height(30.dp)
+                                    )
+                                    Text(
+                                        "Configurações",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 18.sp,
+                                        color = Color.White
+                                    )
+                                }
+                                TextButton(
+                                    onClick = {
+                                        save()
+                                        mainViewModel.navController?.popBackStack()
+                                    }
+                                ) {
+                                    Text("Fechar", color = Color.White, fontWeight = FontWeight.Bold)
+                                }
+                            } else {
+                                // Dedicated Section Header: Back Arrow, Title, Subtitle, Save button
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    IconButton(
+                                        onClick = {
+                                            save()
+                                            selectedCategory.value = null
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                            contentDescription = "Voltar às Configurações",
+                                            tint = Color.White
+                                        )
+                                    }
+                                    Column {
+                                        Text(
+                                            text = activeCat.title,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 18.sp,
+                                            color = Color.White
+                                        )
+                                        Text(
+                                            text = activeCat.description,
+                                            fontSize = 12.sp,
+                                            color = Color(0xFFD0D0D0),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
+                                TextButton(
+                                    onClick = {
+                                        save()
+                                        selectedCategory.value = null
+                                    }
+                                ) {
+                                    Text("Salvar", color = Color.White, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+
+                    // Caixinha Principal (Content Panel)
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        shape = RoundedCornerShape(18.dp),
+                        color = Color(0xFF454545),
+                        shadowElevation = 6.dp
+                    ) {
+                        if (activeCat == null) {
+                            // Grade de Cards de Navegação (Menu Principal de Configurações)
+                            LazyVerticalGrid(
+                                columns = GridCells.Adaptive(minSize = 280.dp),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                                verticalArrangement = Arrangement.spacedBy(14.dp),
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                items(SettingsCategory.entries) { cat ->
+                                    CategoryNavCard(cat) {
+                                        selectedCategory.value = cat
+                                    }
+                                }
+                            }
+                        } else {
+                            // Janela Nativa Dedicada da Seção Selecionada
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(20.dp)
+                                    .verticalScroll(rememberScrollState()),
+                                verticalArrangement = Arrangement.spacedBy(18.dp)
+                            ) {
+                                when (activeCat) {
+                                    SettingsCategory.Geral -> {
+                                        SectionTitle("Orientação da Tela")
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            listOf<Pair<OrientationPreference, String>>(
+                                                OrientationPreference.SensorLandscape to "Horizontal",
+                                                OrientationPreference.SensorPortrait to "Vertical",
+                                                OrientationPreference.Sensor to "Sensor"
+                                            ).forEach { (pref, label) ->
+                                                ChoiceCard(
+                                                    label = label,
+                                                    selected = orientationPref.value == pref,
+                                                    modifier = Modifier.weight(1f)
+                                                ) {
+                                                    orientationPref.value = pref
+                                                    QuickSettings(mainViewModel.activity).orientationPreference = pref
+                                                }
+                                            }
+                                        }
+
+                                        HighContrastToggle(
+                                            title = "Mostrar estatísticas de desempenho",
+                                            description = "Exibe FPS, tempos de quadro e uso de memória sobre a tela do jogo",
+                                            checked = showPerformanceOverlay.value,
+                                            onCheckedChange = { showPerformanceOverlay.value = it }
+                                        )
+
+                                        HighContrastToggle(
+                                            title = "Modo de alto desempenho",
+                                            description = "Aumenta a prioridade do processo de emulação e frequências operacionais",
+                                            checked = enablePerformanceMode.value,
+                                            onCheckedChange = { enablePerformanceMode.value = it }
+                                        )
+                                    }
+
+                                    SettingsCategory.Emulacao -> {
+                                        SectionTitle("Modo de Execução da CPU")
+                                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                            ChoiceCard(
+                                                label = "NCE (Execução Nativa)",
+                                                selected = useNce.value,
+                                                modifier = Modifier.weight(1f)
+                                            ) { useNce.value = true }
+                                            ChoiceCard(
+                                                label = "JIT (Interpretador Dinâmico)",
+                                                selected = !useNce.value,
+                                                modifier = Modifier.weight(1f)
+                                            ) { useNce.value = false }
+                                        }
+
+                                        HighContrastToggle(
+                                            title = "Cache PPTC (Compilação em Perfil)",
+                                            description = "Salva o código traduzido em disco para carregamento instantâneo",
+                                            checked = enablePptc.value,
+                                            onCheckedChange = { enablePptc.value = it }
+                                        )
+
+                                        HighContrastToggle(
+                                            title = "PPTC de baixo consumo",
+                                            description = "Reduz o consumo de bateria limitando threads de compilação em segundo plano",
+                                            checked = enableLowPowerPptc.value,
+                                            onCheckedChange = { enableLowPowerPptc.value = it }
+                                        )
+
+                                        HighContrastToggle(
+                                            title = "Limpeza de cache do JIT",
+                                            description = "Descarta periodicamente blocos de tradução órfãos na memória",
+                                            checked = enableJitCacheEviction.value,
+                                            onCheckedChange = { enableJitCacheEviction.value = it }
+                                        )
+
+                                        SectionTitle("Expansão de Memória Slack")
+                                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                            ChoiceCard(
+                                                label = "Ligado (12 GiB)",
+                                                selected = memorySlackEnabled.value,
+                                                modifier = Modifier.weight(1f)
+                                            ) { memorySlackEnabled.value = true }
+                                            ChoiceCard(
+                                                label = "Desligado (0 GiB)",
+                                                selected = !memorySlackEnabled.value,
+                                                modifier = Modifier.weight(1f)
+                                            ) { memorySlackEnabled.value = false }
+                                        }
+
+                                        SectionTitle("Gerenciador de Memória")
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            listOf<Pair<MemoryManagerMode, String>>(
+                                                MemoryManagerMode.HostMappedUnsafe to "Host Mapeado (Rápido)",
+                                                MemoryManagerMode.SoftwarePageTable to "Software (Seguro)"
+                                            ).forEach { (mode, label) ->
+                                                ChoiceCard(
+                                                    label = label,
+                                                    selected = memoryManagerMode.value == mode,
+                                                    modifier = Modifier.weight(1f)
+                                                ) { memoryManagerMode.value = mode }
+                                            }
+                                        }
+
+                                        SectionTitle("Tamanho da DRAM")
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            listOf<Pair<MemoryConfiguration, String>>(
+                                                MemoryConfiguration.MemoryConfiguration4GiB to "4 GiB (Padrão)",
+                                                MemoryConfiguration.MemoryConfiguration6GiB to "6 GiB",
+                                                MemoryConfiguration.MemoryConfiguration8GiB to "8 GiB",
+                                                MemoryConfiguration.MemoryConfiguration12GiB to "12 GiB"
+                                            ).forEach { (cfg, label) ->
+                                                ChoiceCard(
+                                                    label = label,
+                                                    selected = memoryConfiguration.value == cfg,
+                                                    modifier = Modifier.weight(1f)
+                                                ) { memoryConfiguration.value = cfg }
+                                            }
+                                        }
+                                    }
+
+                                    SettingsCategory.Graficos -> {
+                                        SectionTitle("Driver Vulkan")
+                                        ActionButtonRow(
+                                            title = "Selecionar Driver Gráfico",
+                                            description = "Gerenciar drivers Vulkan personalizados e do sistema",
+                                            buttonText = "Configurar Driver"
+                                        ) { isDriverSelectorOpen.value = true }
+
+                                        SectionTitle("Sincronização Vertical (VSync)")
+                                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                            ChoiceCard(
+                                                label = "Switch (60 Hz)",
+                                                selected = vSyncMode.value == VSyncMode.Switch,
+                                                modifier = Modifier.weight(1f)
+                                            ) { vSyncMode.value = VSyncMode.Switch }
+                                            ChoiceCard(
+                                                label = "Ilimitado",
+                                                selected = vSyncMode.value == VSyncMode.Unbounded,
+                                                modifier = Modifier.weight(1f)
+                                            ) { vSyncMode.value = VSyncMode.Unbounded }
+                                        }
+
+                                        SectionTitle("Escala de Resolução")
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            listOf<Pair<Float, String>>(0.5f to "0.5x", 0.75f to "0.75x", 1.0f to "1x", 2.0f to "2x", 3.0f to "3x").forEach { (scale, label) ->
+                                                ChoiceCard(
+                                                    label = label,
+                                                    selected = resScale.floatValue == scale,
+                                                    modifier = Modifier.weight(1f)
+                                                ) { resScale.floatValue = scale }
+                                            }
+                                        }
+
+                                        SectionTitle("Filtro Anisotrópico")
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            listOf<Pair<Float, String>>(-1.0f to "Automático", 4.0f to "4x", 8.0f to "8x", 16.0f to "16x").forEach { (aniso, label) ->
+                                                ChoiceCard(
+                                                    label = label,
+                                                    selected = maxAnisotropy.floatValue == aniso,
+                                                    modifier = Modifier.weight(1f)
+                                                ) { maxAnisotropy.floatValue = aniso }
+                                            }
+                                        }
+
+                                        HighContrastToggle(
+                                            title = "Modo Docked (TV)",
+                                            description = "Aumenta resolução interna para perfil docked quando suportado",
+                                            checked = enableDocked.value,
+                                            onCheckedChange = { enableDocked.value = it }
+                                        )
+
+                                        HighContrastToggle(
+                                            title = "Cache de Shaders",
+                                            description = "Armazena shaders compilados para eliminar travamentos e stuttering",
+                                            checked = enableShaderCache.value,
+                                            onCheckedChange = { enableShaderCache.value = it }
+                                        )
+
+                                        HighContrastToggle(
+                                            title = "Proteção de Loops em Shaders (Shader Loop Safety)",
+                                            description = "Previne congelamentos causados por loops infinitos de GPU",
+                                            checked = enableShaderLoopSafety.value,
+                                            onCheckedChange = { enableShaderLoopSafety.value = it }
+                                        )
+
+                                        HighContrastToggle(
+                                            title = "Recompressão de Texturas",
+                                            description = "Reduz o uso de VRAM recomprimindo formatos pesados de textura",
+                                            checked = enableTextureRecompression.value,
+                                            onCheckedChange = { enableTextureRecompression.value = it }
+                                        )
+
+                                        HighContrastToggle(
+                                            title = "Macro HLE",
+                                            description = "Acelera operações gráficas através de emulação de alto nível",
+                                            checked = enableMacroHLE.value,
+                                            onCheckedChange = { enableMacroHLE.value = it }
+                                        )
+
+                                        HighContrastToggle(
+                                            title = "Esticar para Tela Inteira",
+                                            description = "Preenche as bordas da tela ignorando a proporção 16:9",
+                                            checked = stretchToFullscreen.value,
+                                            onCheckedChange = { stretchToFullscreen.value = it }
+                                        )
+
+                                        HighContrastToggle(
+                                            title = "Renderização em Múltiplas Threads",
+                                            description = "Executa comandos de renderização em threads dedicadas para mais FPS",
+                                            checked = !disableThreadedRendering.value,
+                                            onCheckedChange = {
+                                                disableThreadedRendering.value = !it
+                                                QuickSettings(mainViewModel.activity).disableThreadedRendering = !it
+                                            }
+                                        )
+                                    }
+
+                                    SettingsCategory.Controles -> {
+                                        HighContrastToggle(
+                                            title = "Controle Virtual na Tela",
+                                            description = "Exibe botões touch overlay para jogar diretamente na tela",
+                                            checked = useVirtualController.value,
+                                            onCheckedChange = { useVirtualController.value = it }
+                                        )
+
+                                        SectionTitle("Layout Predefinido do Controle")
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            listOf<Pair<QuickSettings.VirtualControllerPreset, String>>(
+                                                QuickSettings.VirtualControllerPreset.Default to "Padrão",
+                                                QuickSettings.VirtualControllerPreset.Layout2 to "Layout 2",
+                                                QuickSettings.VirtualControllerPreset.Layout3 to "Layout 3",
+                                                QuickSettings.VirtualControllerPreset.Layout4 to "Layout 4",
+                                                QuickSettings.VirtualControllerPreset.Layout5 to "Layout 5",
+                                                QuickSettings.VirtualControllerPreset.Layout6 to "Layout 6"
+                                            ).forEach { (preset, label) ->
+                                                ChoiceCard(
+                                                    label = label,
+                                                    selected = vcPreset.value == preset,
+                                                    modifier = Modifier.weight(1f)
+                                                ) {
+                                                    vcPreset.value = preset
+                                                    QuickSettings(mainViewModel.activity).virtualControllerPreset = preset
+                                                }
+                                            }
+                                        }
+
+                                        HighContrastToggle(
+                                            title = "Inverter A/B e X/Y (Layout Switch)",
+                                            description = "Mantém a posição nativa do botão Nintendo Switch",
+                                            checked = useSwitchLayout.value,
+                                            onCheckedChange = { useSwitchLayout.value = it }
+                                        )
+
+                                        HighContrastToggle(
+                                            title = "Giroscópio / Sensor de Movimento",
+                                            description = "Utiliza os sensores do aparelho como sensor de movimento dos Joy-Cons",
+                                            checked = enableMotion.value,
+                                            onCheckedChange = { enableMotion.value = it }
+                                        )
+
+                                        SectionTitle("Sensibilidade dos Analógicos: %.2fx".format(controllerStickSensitivity.floatValue))
+                                        Slider(
+                                            value = controllerStickSensitivity.floatValue,
+                                            onValueChange = { controllerStickSensitivity.floatValue = it },
+                                            valueRange = 0.5f..2.0f,
+                                            steps = 15,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+
+                                        SectionTitle("Escala dos Botões Touch: %.2fx".format(controllerScale.floatValue))
+                                        Slider(
+                                            value = controllerScale.floatValue,
+                                            onValueChange = {
+                                                controllerScale.floatValue = it
+                                                QuickSettings(mainViewModel.activity).controllerScale = it
+                                            },
+                                            valueRange = 0.5f..2.0f,
+                                            steps = 15,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                    }
+
+                                    SettingsCategory.Sistema -> {
+                                        SectionTitle("Idioma do Sistema")
+                                        val langList = listOf<Pair<SystemLanguage, String>>(
+                                            SystemLanguage.BrazilianPortuguese to "Português (Brasil)",
+                                            SystemLanguage.AmericanEnglish to "English (US)",
+                                            SystemLanguage.LatinAmericanSpanish to "Español (LatAm)",
+                                            SystemLanguage.Portuguese to "Português (Portugal)",
+                                            SystemLanguage.BritishEnglish to "English (UK)",
+                                            SystemLanguage.Spanish to "Español (Espanha)",
+                                            SystemLanguage.Japanese to "Japonês",
+                                            SystemLanguage.French to "Français",
+                                            SystemLanguage.German to "Deutsch",
+                                            SystemLanguage.Italian to "Italiano",
+                                            SystemLanguage.Russian to "Russo",
+                                            SystemLanguage.SimplifiedChinese to "Chinês (Simplificado)"
+                                        )
+                                        LazyVerticalGrid(
+                                            columns = GridCells.Adaptive(minSize = 140.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                                            modifier = Modifier.height(180.dp)
+                                        ) {
+                                            items(langList) { (lang, label) ->
+                                                ChoiceCard(
+                                                    label = label,
+                                                    selected = systemLanguage.value == lang
+                                                ) { systemLanguage.value = lang }
+                                            }
+                                        }
+
+                                        SectionTitle("Região do Console")
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            listOf<Pair<RegionCode, String>>(
+                                                RegionCode.USA to "EUA",
+                                                RegionCode.Europe to "Europa",
+                                                RegionCode.Japan to "Japão",
+                                                RegionCode.Australia to "Austrália"
+                                            ).forEach { (reg, label) ->
+                                                ChoiceCard(
+                                                    label = label,
+                                                    selected = regionCode.value == reg,
+                                                    modifier = Modifier.weight(1f)
+                                                ) { regionCode.value = reg }
+                                            }
+                                        }
+
+                                        SectionTitle("Instalação de Chaves e Firmware")
+                                        ActionButtonRow(
+                                            title = "Instalar Chaves (prod.keys)",
+                                            description = "Chaves decodificadoras necessárias para carregar os jogos",
+                                            buttonText = "Instalar Keys"
+                                        ) { showKeyDialog.value = true }
+
+                                        ActionButtonRow(
+                                            title = "Instalar Firmware",
+                                            description = "Versão atual: ${firmwareVersion.value.ifBlank { "Nenhum instalado" }}",
+                                            buttonText = "Instalar Firmware"
+                                        ) { showFirwmareDialog.value = true }
+                                    }
+
+                                    SettingsCategory.Jogos -> {
+                                        SectionTitle("Diretórios de Jogos")
+                                        ActionButtonRow(
+                                            title = "Adicionar Pasta de Jogos",
+                                            description = "Selecione o diretório onde suas ROMs estão armazenadas",
+                                            buttonText = "Adicionar Pasta"
+                                        ) { settingsViewModel.openGameFolder() }
+
+                                        ActionButtonRow(
+                                            title = "Pasta de Atualizações e DLCs",
+                                            description = "Diretório de patches e expansões instaladas",
+                                            buttonText = "Selecionar Pasta"
+                                        ) { settingsViewModel.openUpdatesFolder() }
+
+                                        SectionTitle("Gerenciamento de Dados")
+                                        ActionButtonRow(
+                                            title = "Abrir Pasta de Dados",
+                                            description = "Acessar arquivos internos do emulador no gerenciador de arquivos",
+                                            buttonText = "Abrir"
+                                        ) {
+                                            val intent = Intent(Intent.ACTION_VIEW).apply {
+                                                setDataAndType(
+                                                    DocumentsContract.buildRootUri(
+                                                        "${mainViewModel.activity.packageName}.providers",
+                                                        "root"
+                                                    ),
+                                                    "vnd.android.document/root"
+                                                )
+                                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                            }
+                                            try {
+                                                mainViewModel.activity.startActivity(intent)
+                                            } catch (_: ActivityNotFoundException) {}
+                                        }
+
+                                        ActionButtonRow(
+                                            title = "Importar Dados (ZIP)",
+                                            description = "Restaurar saves, configurações e firmware de um backup",
+                                            buttonText = "Importar"
+                                        ) { showDataImportDialog.value = true }
+
+                                        ActionButtonRow(
+                                            title = "Redefinir Dados da Aplicação",
+                                            description = "Limpar todos os dados e restaurar o emulador para os padrões de fábrica",
+                                            buttonText = "Redefinir"
+                                        ) { showDataResetDialog.value = true }
+                                    }
+
+                                    SettingsCategory.Avancado -> {
+                                        HighContrastToggle(
+                                            title = "Verificações de Integridade do FS",
+                                            description = "Valida assinaturas de integridade do sistema de arquivos ao carregar",
+                                            checked = enableFsIntegrityChecks.value,
+                                            onCheckedChange = { enableFsIntegrityChecks.value = it }
+                                        )
+
+                                        HighContrastToggle(
+                                            title = "Ignorar Serviços Ausentes",
+                                            description = "Evita travamentos caso o jogo requisite serviços ainda não emulados",
+                                            checked = ignoreMissingServices.value,
+                                            onCheckedChange = { ignoreMissingServices.value = it }
+                                        )
+
+                                        SectionTitle("Registros de Log e Diagnóstico")
+                                        HighContrastToggle(
+                                            title = "Logs de Stub",
+                                            description = "Registra chamadas a funções não implementadas",
+                                            checked = enableStubLogs.value,
+                                            onCheckedChange = { enableStubLogs.value = it }
+                                        )
+                                        HighContrastToggle(
+                                            title = "Logs de Informações (Info)",
+                                            description = "Registros gerais do processo de emulação",
+                                            checked = enableInfoLogs.value,
+                                            onCheckedChange = { enableInfoLogs.value = it }
+                                        )
+                                        HighContrastToggle(
+                                            title = "Logs de Avisos (Warning)",
+                                            description = "Alertas de operações inesperadas",
+                                            checked = enableWarningLogs.value,
+                                            onCheckedChange = { enableWarningLogs.value = it }
+                                        )
+                                        HighContrastToggle(
+                                            title = "Logs de Erros (Error)",
+                                            description = "Falhas críticas durante a execução",
+                                            checked = enableErrorLogs.value,
+                                            onCheckedChange = { enableErrorLogs.value = it }
+                                        )
+                                        HighContrastToggle(
+                                            title = "Logs de Gráficos (Graphics)",
+                                            description = "Depuração avançada do pipeline Vulkan",
+                                            checked = enableGraphicsLogs.value,
+                                            onCheckedChange = { enableGraphicsLogs.value = it }
+                                        )
+                                    }
+
+                                    SettingsCategory.Sobre -> {
+                                        Surface(
+                                            shape = RoundedCornerShape(14.dp),
+                                            color = Color(0xFF2E2E32),
+                                            border = BorderStroke(1.dp, Color(0xFF5A5A60)),
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Column(
+                                                modifier = Modifier.padding(20.dp),
+                                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                                            ) {
+                                                Image(
+                                                    painter = painterResource(R.drawable.ryujinx_neo_logo),
+                                                    contentDescription = "Ryujinx Neo",
+                                                    contentScale = ContentScale.Fit,
+                                                    modifier = Modifier.height(44.dp)
+                                                )
+                                                Text(
+                                                    "Ryujinx Neo - Emulador de Nintendo Switch",
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 16.sp,
+                                                    color = Color.White
+                                                )
+                                                Text(
+                                                    "Branch: neo-v2-nce2\nMotor NCE Armv8.2-A nativo com proteção de loop de shader e memória Slack.",
+                                                    fontSize = 13.sp,
+                                                    color = Color(0xFFD0D0D0)
+                                                )
+                                                Text(
+                                                    "Interface reformulada com caixinhas modulares de alto contraste e mockups de cartucho.",
+                                                    fontSize = 12.sp,
+                                                    color = Color(0xFFA0A0A0)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
                 }
+            }
 
-                // Dialogs
+                            // Dialogs
                 SimpleAlertDialog.Custom(
                         showDialog = showKeyDialog,
                         onDismissRequest = {
@@ -1530,266 +1671,184 @@ class SettingViews {
                         }
                     }
             }
-        }
 
-@Composable
-        fun LanguageDropdown(
-            selectedLanguage: SystemLanguage,
-            onLanguageSelected: (SystemLanguage) -> Unit
+        @Composable
+        private fun CategoryNavCard(
+            category: SettingsCategory,
+            onClick: () -> Unit
         ) {
-            val options = SystemLanguage.entries.toTypedArray()
-            DropdownSelector(
-                label = "System Language",
-                selectedValue = selectedLanguage,
-                options = options.toList(),
-                getDisplayText = { lang ->
-                    when (lang) {
-                        SystemLanguage.Japanese -> "Japanese"
-                        SystemLanguage.AmericanEnglish -> "English (US)"
-                        SystemLanguage.French -> "French"
-                        SystemLanguage.German -> "German"
-                        SystemLanguage.Italian -> "Italian"
-                        SystemLanguage.Spanish -> "Spanish (EU)"
-                        SystemLanguage.Chinese -> "Chinese"
-                        SystemLanguage.Korean -> "Korean"
-                        SystemLanguage.Dutch -> "Dutch"
-                        SystemLanguage.Portuguese -> "Portuguese (EU)"
-                        SystemLanguage.Russian -> "Russian"
-                        SystemLanguage.Taiwanese -> "Chinese (Taiwan)"
-                        SystemLanguage.BritishEnglish -> "English (UK)"
-                        SystemLanguage.CanadianFrench -> "French (Canada)"
-                        SystemLanguage.LatinAmericanSpanish -> "Spanish (LatAm)"
-                        SystemLanguage.SimplifiedChinese -> "Chinese (Simplified)"
-                        SystemLanguage.TraditionalChinese -> "Chinese (Traditional)"
-                        SystemLanguage.BrazilianPortuguese -> "Portuguese (Brazil)"
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = Color(0xFF2E2E32),
+                border = BorderStroke(1.dp, Color(0xFF5A5A60)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(96.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .clickable(onClick = onClick)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = Color.White.copy(alpha = 0.12f),
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                if (category.iconRes != null) {
+                                    Image(
+                                        painter = painterResource(category.iconRes),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = category.icon,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(26.dp)
+                                    )
+                                }
+                            }
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = category.title,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                color = Color.White
+                            )
+                            Text(
+                                text = category.description,
+                                fontSize = 12.sp,
+                                color = Color(0xFFC0C0C0),
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
-                },
-                onOptionSelected = onLanguageSelected
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "Abrir",
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
+
+        @Composable
+        private fun SectionTitle(title: String) {
+            Text(
+                text = title,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                color = Color.White,
+                modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
             )
         }
 
         @Composable
-        fun RegionDropdown(
-            selectedRegion: RegionCode,
-            onRegionSelected: (RegionCode) -> Unit
+        private fun HighContrastToggle(
+            title: String,
+            description: String,
+            checked: Boolean,
+            onCheckedChange: (Boolean) -> Unit
         ) {
-            val options = RegionCode.entries.toTypedArray()
-            DropdownSelector(
-                label = "Region",
-                selectedValue = selectedRegion,
-                options = options.toList(),
-                getDisplayText = { region ->
-                    when (region) {
-                        RegionCode.Japan -> "Japan"
-                        RegionCode.USA -> "USA"
-                        RegionCode.Europe -> "Europe"
-                        RegionCode.Australia -> "Australia"
-                        RegionCode.China -> "China"
-                        RegionCode.Korea -> "Korea"
-                        RegionCode.Taiwan -> "Taiwan"
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = Color(0xFF2E2E32),
+                border = BorderStroke(1.dp, Color(0xFF505056)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable { onCheckedChange(!checked) }
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                        Text(
+                            text = title,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 14.sp,
+                            color = Color.White
+                        )
+                        Text(
+                            text = description,
+                            fontSize = 12.sp,
+                            color = Color(0xFFB0B0B8)
+                        )
                     }
-                },
-                onOptionSelected = onRegionSelected
-            )
+                    Switch(
+                        checked = checked,
+                        onCheckedChange = null,
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = Color(0xFF6A6A75),
+                            uncheckedThumbColor = Color(0xFF909090),
+                            uncheckedTrackColor = Color(0xFF222226)
+                        )
+                    )
+                }
+            }
         }
 
-        // ---- Dropdown for orientation ----
         @Composable
-        fun OrientationDropdown(
-            selectedOrientation: OrientationPreference,
-            onOrientationSelected: (OrientationPreference) -> Unit
+        private fun ActionButtonRow(
+            title: String,
+            description: String,
+            buttonText: String,
+            onClick: () -> Unit
         ) {
-            val options = listOf(
-                OrientationPreference.Sensor,
-                OrientationPreference.SensorLandscape,
-                OrientationPreference.SensorPortrait
-            )
-
-            DropdownSelector(
-                label = "Screen Orientation",
-                selectedValue = selectedOrientation,
-                options = options,
-                getDisplayText = { opt ->
-                    when (opt) {
-                        OrientationPreference.Sensor -> "Sensor"
-                        OrientationPreference.SensorLandscape -> "Sensor Landscape"
-                        OrientationPreference.SensorPortrait -> "Sensor Portrait"
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = Color(0xFF2E2E32),
+                border = BorderStroke(1.dp, Color(0xFF505056)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+                        Text(
+                            text = title,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 14.sp,
+                            color = Color.White
+                        )
+                        Text(
+                            text = description,
+                            fontSize = 12.sp,
+                            color = Color(0xFFB0B0B8)
+                        )
                     }
-                },
-                onOptionSelected = onOrientationSelected
-            )
-        }
-
-        @Composable
-        fun VirtualControllerPresetDropdown(
-            selectedPreset: VirtualControllerPreset,
-            onPresetSelected: (VirtualControllerPreset) -> Unit
-        ) {
-            val options = listOf(
-                VirtualControllerPreset.Default,
-                VirtualControllerPreset.Layout2,
-                VirtualControllerPreset.Layout3,
-                VirtualControllerPreset.Layout4,
-                VirtualControllerPreset.Layout5,
-                VirtualControllerPreset.Layout6
-            )
-
-            DropdownSelector(
-                label = "Controller Layout",
-                selectedValue = selectedPreset,
-                options = options,
-                getDisplayText = { opt ->
-                    when (opt) {
-                        VirtualControllerPreset.Default -> "Default"
-                        VirtualControllerPreset.Layout2 -> "Layout 2"
-                        VirtualControllerPreset.Layout3 -> "Layout 3"
-                        VirtualControllerPreset.Layout4 -> "Layout 4"
-                        VirtualControllerPreset.Layout5 -> "Layout 5"
-                        VirtualControllerPreset.Layout6 -> "Layout 6"
+                    Button(
+                        onClick = onClick,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.White,
+                            contentColor = Color.Black
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(buttonText, fontWeight = FontWeight.Bold)
                     }
-                },
-                onOptionSelected = onPresetSelected
-            )
-        }
-
-
-        @Composable
-        fun MemoryModeDropdown(
-            selectedMemoryManagerMode: MemoryManagerMode,
-            onModeSelected: (MemoryManagerMode) -> Unit
-        ) {
-            val modes = MemoryManagerMode.entries.toTypedArray()
-
-            DropdownSelector(
-                label = "Memory Manager Mode",
-                selectedValue = selectedMemoryManagerMode,
-                options = modes.toList(),
-                getDisplayText = { mode ->
-                    when(mode) {
-                        MemoryManagerMode.SoftwarePageTable -> "Software"
-                        MemoryManagerMode.HostMapped -> "Host (fast)"
-                        MemoryManagerMode.HostMappedUnsafe -> "Host Unchecked (fastest, unsafe)"
-                    }
-                },
-                onOptionSelected = onModeSelected
-            )
-        }
-
-        @Composable
-        fun VSyncDropdown(
-            selectedVSyncMode: VSyncMode,
-            onModeSelected: (VSyncMode) -> Unit
-        ) {
-            val modes = VSyncMode.entries.toTypedArray()
-
-            DropdownSelector(
-                label = "VSync",
-                selectedValue = selectedVSyncMode,
-                options = modes.toList(),
-                getDisplayText = { mode ->
-                    when(mode) {
-                        VSyncMode.Switch -> "Switch"
-                        VSyncMode.Unbounded -> "Unbounded"
-                    }
-                },
-                onOptionSelected = onModeSelected
-            )
-        }
-
-        @Composable
-        fun MemoryDropdown(
-            selectedMemoryConfiguration: MemoryConfiguration,
-            onConfigurationSelected: (MemoryConfiguration) -> Unit
-        ) {
-            val modes = MemoryConfiguration.entries.toTypedArray()
-
-            DropdownSelector(
-                label = "DRAM Size",
-                selectedValue = selectedMemoryConfiguration,
-                options = modes.toList(),
-                getDisplayText = { configuration ->
-                    when(configuration) {
-                        MemoryConfiguration.MemoryConfiguration4GiB -> "4GiB"
-                        MemoryConfiguration.MemoryConfiguration6GiB -> "6GiB"
-                        MemoryConfiguration.MemoryConfiguration8GiB -> "8GiB"
-                        MemoryConfiguration.MemoryConfiguration10GiB -> "10GiB"
-                        MemoryConfiguration.MemoryConfiguration12GiB -> "12GiB"
-                    }
-                },
-                onOptionSelected = onConfigurationSelected
-            )
-        }
-
-        @Composable
-        fun ResolutionScaleDropdown(
-            selectedScale: Float,
-            onScaleSelected: (Float) -> Unit
-        ) {
-            val scaleOptions = listOf(
-                0.5f to "0.5x (360p/540p)",
-                0.75f to "0.75x (540p/810p)",
-                1f to "1.0x (720p/1080p)",
-                2f to "2.0x (1440p/2160p)",
-                3f to "3.0x (2160p/3240p)",
-                4f to "4.0x (2800p/4320p)"
-            )
-
-            DropdownSelector(
-                label = "Resolution Scale",
-                selectedValue = selectedScale,
-                options = scaleOptions.map { it.first },
-                getDisplayText = { scale ->
-                    scaleOptions.find { it.first == scale }?.second ?: "${scale}x"
-                },
-                onOptionSelected = onScaleSelected
-            )
-        }
-
-        @Composable
-        fun AnisotropicFilteringDropdown(
-            selectedAnisotropy: Float,
-            onAnisotropySelected: (Float) -> Unit
-        ) {
-            val anisotropyOptions = listOf(
-                0.0f to "0x",
-                1.0f to "2x",
-                2.0f to "4x",
-                3.0f to "8x",
-                4.0f to "16x"
-            )
-
-            DropdownSelector(
-                label = "Anisotropic Filtering",
-                selectedValue = selectedAnisotropy,
-                options = anisotropyOptions.map { it.first },
-                getDisplayText = { anisotropy ->
-                    anisotropyOptions.find { it.first == anisotropy }?.second ?: "${anisotropy}x"
-                },
-                onOptionSelected = onAnisotropySelected
-            )
-        }
-
-        @Composable
-        fun FsGlobalAccessLogModeDropdown(
-            selectedFsGlobalAccess: Int,
-            onFsGlobalAccessSelected: (Int) -> Unit
-        ) {
-            val fsGlobalAccessOptions = listOf(
-                0 to "0",
-                1 to "1",
-                2 to "2",
-                3 to "3"
-            )
-
-            DropdownSelector(
-                label = "Fs Global Access Log Mode",
-                selectedValue = selectedFsGlobalAccess,
-                options = fsGlobalAccessOptions.map { it.first },
-                getDisplayText = { fsGlobalAccess ->
-                    fsGlobalAccessOptions.find { it.first == fsGlobalAccess }?.second ?: "${fsGlobalAccess}x"
-                },
-                onOptionSelected = onFsGlobalAccessSelected
-            )
+                }
+            }
         }
     }
 }
