@@ -9,12 +9,10 @@ namespace Ryujinx.Cpu.Nce
     public static class NcePatcher
     {
         private const int ScratchBaseReg = 19;
-        private const int LinuxUContextX0Offset = 184;
         private const int LinuxUContextSpOffset = 432;
         private const int LinuxUContextPcOffset = 440;
         private const int LinuxUContextPstateOffset = 448;
         private const int DarwinUContextMContextOffset = 48;
-        private const int DarwinMContextX0Offset = 16;
         private const int DarwinMContextSpOffset = 264;
         private const int DarwinMContextPcOffset = 272;
 
@@ -595,12 +593,11 @@ namespace Ryujinx.Cpu.Nce
 
             if (OperatingSystem.IsLinux() || PlatformInfo.IsBionic)
             {
-                WriteFaultRegisterSnapshot(
+                WriteFaultExecutionStateSnapshot(
                     asm,
                     Gpr(scratchRegs[0]),
                     Gpr(2),
                     Gpr(scratchRegs[1]),
-                    LinuxUContextX0Offset,
                     LinuxUContextSpOffset,
                     LinuxUContextPcOffset,
                     LinuxUContextPstateOffset);
@@ -608,12 +605,11 @@ namespace Ryujinx.Cpu.Nce
             else if (OperatingSystem.IsMacOS() || OperatingSystem.IsIOS())
             {
                 asm.LdrRiUn(Gpr(scratchRegs[2]), Gpr(2), DarwinUContextMContextOffset);
-                WriteFaultRegisterSnapshot(
+                WriteFaultExecutionStateSnapshot(
                     asm,
                     Gpr(scratchRegs[0]),
                     Gpr(scratchRegs[2]),
                     Gpr(scratchRegs[1]),
-                    DarwinMContextX0Offset,
                     DarwinMContextSpOffset,
                     DarwinMContextPcOffset,
                     -1);
@@ -651,22 +647,18 @@ namespace Ryujinx.Cpu.Nce
             return asm.GetCode();
         }
 
-        private static void WriteFaultRegisterSnapshot(
+        private static void WriteFaultExecutionStateSnapshot(
             Assembler asm,
             Operand ctx,
             Operand signalContext,
             Operand tmp,
-            int x0Offset,
             int spOffset,
             int pcOffset,
             int pstateOffset)
         {
-            for (int index = 0; index < 31; index++)
-            {
-                asm.LdrRiUn(tmp, signalContext, x0Offset + index * sizeof(ulong));
-                asm.StrRiUn(tmp, ctx, NceNativeContext.GetXOffset(index));
-            }
-
+            // NEOV2 NCE R3: tracked-memory faults are a normal hot path. Copying all 31
+            // guest registers on every handled SIGSEGV added work that no normal tracking
+            // callback consumes. Keep only the execution state used asynchronously.
             asm.LdrRiUn(tmp, signalContext, spOffset);
             asm.StrRiUn(tmp, ctx, NceNativeContext.GetGuestSPOffset());
 

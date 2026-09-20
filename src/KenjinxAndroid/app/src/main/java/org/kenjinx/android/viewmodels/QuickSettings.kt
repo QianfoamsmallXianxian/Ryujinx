@@ -47,7 +47,7 @@ class QuickSettings(val activity: Activity) {
     var vSyncMode: VSyncMode
     var useNce: Boolean
     var memoryConfiguration: MemoryConfiguration
-    var memorySlack: MemorySlack
+    var memorySlackEnabled: Boolean
     var useVirtualController: Boolean
     // Amiibo slots (URIs + names)
     var amiibo1Uri: String?
@@ -63,6 +63,7 @@ class QuickSettings(val activity: Activity) {
 
     var memoryManagerMode: MemoryManagerMode
     var enableShaderCache: Boolean
+    var enableShaderLoopSafety: Boolean
     var enableTextureRecompression: Boolean
     var enableMacroHLE: Boolean
     var stretchToFullscreen: Boolean
@@ -118,7 +119,13 @@ class QuickSettings(val activity: Activity) {
         memoryManagerMode = MemoryManagerMode.entries.toTypedArray()[sharedPref.getInt("memoryManagerMode", MemoryManagerMode.HostMappedUnsafe.ordinal)]
         useNce = sharedPref.getBoolean("useNce", false)
         memoryConfiguration = MemoryConfiguration.entries.toTypedArray()[sharedPref.getInt("memoryConfiguration", MemoryConfiguration.MemoryConfiguration4GiB.ordinal)]
-        memorySlack = MemorySlack.entries.toTypedArray()[sharedPref.getInt("memorySlack", MemorySlack.Slack12GiB.ordinal)]
+        // NEOV2: migrate the former 0/4/8/12 GiB selector to a simple 0/12 GiB switch.
+        // Any previously enabled slack value becomes the supported 12 GiB mode.
+        memorySlackEnabled = if (sharedPref.contains("memorySlackEnabled")) {
+            sharedPref.getBoolean("memorySlackEnabled", true)
+        } else {
+            sharedPref.getInt("memorySlack", 3) != 0
+        }
         vSyncMode = VSyncMode.entries.toTypedArray()[sharedPref.getInt("vSyncMode", VSyncMode.Switch.ordinal)]
         enableDocked = sharedPref.getBoolean("enableDocked", true)
         enablePptc = sharedPref.getBoolean("enablePptc", true)
@@ -128,6 +135,7 @@ class QuickSettings(val activity: Activity) {
         fsGlobalAccessLogMode = sharedPref.getInt("fsGlobalAccessLogMode", 0)
         ignoreMissingServices = sharedPref.getBoolean("ignoreMissingServices", false)
         enableShaderCache = sharedPref.getBoolean("enableShaderCache", true)
+        enableShaderLoopSafety = sharedPref.getBoolean("enableShaderLoopSafety", false)
         enableTextureRecompression = sharedPref.getBoolean("enableTextureRecompression", false)
         enableMacroHLE = sharedPref.getBoolean("enableMacroHLE", true)
         stretchToFullscreen = sharedPref.getBoolean("stretchToFullscreen", false)
@@ -184,7 +192,8 @@ class QuickSettings(val activity: Activity) {
             putInt("memoryManagerMode", memoryManagerMode.ordinal)
             putBoolean("useNce", useNce)
             putInt("memoryConfiguration", memoryConfiguration.ordinal)
-            putInt("memorySlack", memorySlack.ordinal)
+            putBoolean("memorySlackEnabled", memorySlackEnabled)
+            remove("memorySlack")
             putInt("vSyncMode", vSyncMode.ordinal)
             putBoolean("enableDocked", enableDocked)
             putBoolean("enablePptc", enablePptc)
@@ -194,6 +203,7 @@ class QuickSettings(val activity: Activity) {
             putInt("fsGlobalAccessLogMode", fsGlobalAccessLogMode)
             putBoolean("ignoreMissingServices", ignoreMissingServices)
             putBoolean("enableShaderCache", enableShaderCache)
+            putBoolean("enableShaderLoopSafety", enableShaderLoopSafety)
             putBoolean("enableTextureRecompression", enableTextureRecompression)
             putBoolean("enableMacroHLE", enableMacroHLE)
             putBoolean("stretchToFullscreen", stretchToFullscreen)

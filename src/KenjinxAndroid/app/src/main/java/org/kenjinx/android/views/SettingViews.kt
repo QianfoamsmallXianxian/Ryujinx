@@ -75,7 +75,6 @@ import org.kenjinx.android.viewmodels.KeyInstallState
 import org.kenjinx.android.viewmodels.MainViewModel
 import org.kenjinx.android.viewmodels.SettingsViewModel
 import org.kenjinx.android.viewmodels.MemoryConfiguration
-import org.kenjinx.android.viewmodels.MemorySlack
 import org.kenjinx.android.viewmodels.MemoryManagerMode
 import org.kenjinx.android.viewmodels.VSyncMode
 import org.kenjinx.android.widgets.ActionButton
@@ -110,7 +109,7 @@ class SettingViews {
             val memoryManagerMode = remember { mutableStateOf(MemoryManagerMode.HostMappedUnsafe) }
             val useNce = remember { mutableStateOf(false)  }
             val memoryConfiguration = remember { mutableStateOf(MemoryConfiguration.MemoryConfiguration4GiB)  }
-            val memorySlack = remember { mutableStateOf(MemorySlack.Slack12GiB) }
+            val memorySlackEnabled = remember { mutableStateOf(true) }
             val vSyncMode = remember { mutableStateOf(VSyncMode.Switch) }
             val enableDocked = remember { mutableStateOf(false) }
             val enablePptc = remember { mutableStateOf(false) }
@@ -120,6 +119,7 @@ class SettingViews {
             val fsGlobalAccessLogMode = remember { mutableIntStateOf(0) }
             val ignoreMissingServices = remember { mutableStateOf(false) }
             val enableShaderCache = remember { mutableStateOf(false) }
+            val enableShaderLoopSafety = remember { mutableStateOf(false) }
             val enableTextureRecompression = remember { mutableStateOf(false) }
             val enableMacroHLE = remember { mutableStateOf(false) }
             val stretchToFullscreen = remember { mutableStateOf(false) }
@@ -189,7 +189,7 @@ class SettingViews {
                     memoryManagerMode,
                     useNce,
                     memoryConfiguration,
-                    memorySlack,
+                    memorySlackEnabled,
                     vSyncMode,
                     enableDocked,
                     enablePptc,
@@ -199,6 +199,7 @@ class SettingViews {
                     fsGlobalAccessLogMode,
                     ignoreMissingServices,
                     enableShaderCache,
+                    enableShaderLoopSafety,
                     enableTextureRecompression,
                     enableMacroHLE,
                     stretchToFullscreen,
@@ -236,7 +237,7 @@ class SettingViews {
                                     memoryManagerMode,
                                     useNce,
                                     memoryConfiguration,
-                                    memorySlack,
+                                    memorySlackEnabled,
                                     vSyncMode,
                                     enableDocked,
                                     enablePptc,
@@ -246,6 +247,7 @@ class SettingViews {
                                     fsGlobalAccessLogMode,
                                     ignoreMissingServices,
                                     enableShaderCache,
+                                    enableShaderLoopSafety,
                                     enableTextureRecompression,
                                     enableMacroHLE,
                                     stretchToFullscreen,
@@ -1414,12 +1416,7 @@ class SettingViews {
                                     memoryConfiguration.value = configuration
                                 }
                             )
-                            MemorySlackDropdown(
-                                selectedMemorySlack = memorySlack.value,
-                                onSlackSelected = { slack ->
-                                    memorySlack.value = slack
-                                }
-                            )
+                            memorySlackEnabled.SwitchSelector(label = "Memory Slack (12 GiB)")
 
                             enableFsIntegrityChecks.SwitchSelector(label = "Fs Integrity Check")
                             ignoreMissingServices.SwitchSelector(label = "Ignore Missing Services")
@@ -1443,6 +1440,7 @@ class SettingViews {
                     ExpandableView(onCardArrowClick = { }, title = "Graphics", icon = Icons.Outlined.Panorama) {
                         Column(modifier = Modifier.fillMaxWidth()) {
                             enableShaderCache.SwitchSelector(label = "Shader Cache")
+                            enableShaderLoopSafety.SwitchSelector(label = "Shader Loop Safety (8192 iterations)")
                             enableTextureRecompression.SwitchSelector(label = "Texture Recompression")
                             enableMacroHLE.SwitchSelector(label = "Macro HLE")
 
@@ -1755,30 +1753,6 @@ class SettingViews {
                     }
                 },
                 onOptionSelected = onModeSelected
-            )
-        }
-
-        @Composable
-        fun MemorySlackDropdown(
-            selectedMemorySlack: MemorySlack,
-            onSlackSelected: (MemorySlack) -> Unit
-        ) {
-            val slacks = MemorySlack.entries.toTypedArray()
-
-            DropdownSelector(
-                label = "Memory Slack",
-                selectedValue = selectedMemorySlack,
-                options = slacks.toList(),
-                getDisplayText = { slack ->
-                    when(slack) {
-                        MemorySlack.None -> "0 GiB"
-                        MemorySlack.Slack4GiB -> "4 GiB"
-                        MemorySlack.Slack8GiB -> "8 GiB"
-                        MemorySlack.Slack12GiB -> "12 GiB (Default)"
-                    }
-                },
-                onOptionSelected = onSlackSelected,
-                description = "Extra memory reported to the guest for MapPhysicalMemory. Lower it if large games fail to boot."
             )
         }
 

@@ -516,6 +516,7 @@ namespace LibKenjinx
                 bool enableMacroJit,
                 bool enableMacroHLE,
                 bool enableShaderCache,
+                bool enableShaderLoopSafety,
                 bool enableTextureRecompression,
                 int backendThreading)
         {
@@ -530,6 +531,7 @@ namespace LibKenjinx
                 EnableMacroJit = enableMacroJit,
                 EnableMacroHLE = enableMacroHLE,
                 EnableShaderCache = enableShaderCache,
+                EnableShaderLoopSafety = enableShaderLoopSafety,
                 EnableTextureRecompression = enableTextureRecompression,
                 BackendThreading = (BackendThreading)backendThreading
             });

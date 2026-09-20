@@ -144,7 +144,7 @@ namespace Ryujinx.Cpu.Nce
 
             Logger.Info?.Print(
                 LogClass.Cpu,
-                $"[NEOV2-NCE2] backend active; boundedContextIndex={NcePatcher.UsesThreadContextIndex}; altSignalStack=128KiB");
+                $"[NEOV2-NCE2-R3] backend active; boundedContextIndex={NcePatcher.UsesThreadContextIndex}; altSignalStack=128KiB; compactFaultSnapshot=True");
         }
 
         /// <inheritdoc/>

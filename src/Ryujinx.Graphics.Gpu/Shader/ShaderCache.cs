@@ -117,8 +117,13 @@ namespace Ryujinx.Graphics.Gpu.Shader
         /// </summary>
         private static string GetDiskCachePath()
         {
+            // Keep the former guarded cache in its original directory so MUA3 can reuse it.
+            // The accuracy-first mode gets a separate cache and cannot accidentally load
+            // binaries that already contain the loop counter.
+            string cacheDirectory = GraphicsConfig.EnableShaderLoopSafety ? "shader" : "shader-no-loop-guard";
+
             return GraphicsConfig.EnableShaderCache && GraphicsConfig.TitleId != null
-                ? Path.Combine(AppDataManager.GamesDirPath, GraphicsConfig.TitleId.ToLower(), "cache", "shader")
+                ? Path.Combine(AppDataManager.GamesDirPath, GraphicsConfig.TitleId.ToLower(), "cache", cacheDirectory)
                 : null;
         }
 

@@ -59,6 +59,13 @@ namespace Ryujinx.Graphics.Gpu
         public static bool EnableShaderCache;
 
         /// <summary>
+        /// Limits shader loops to a finite per-invocation budget. This is a compatibility
+        /// workaround for malformed shaders and is disabled by default because legitimate
+        /// long-running loops can otherwise produce graphical corruption.
+        /// </summary>
+        public static bool EnableShaderLoopSafety;
+
+        /// <summary>
         /// Enables or disables shader SPIR-V compilation.
         /// </summary>
         public static bool EnableSpirvCompilationOnVulkan = true;

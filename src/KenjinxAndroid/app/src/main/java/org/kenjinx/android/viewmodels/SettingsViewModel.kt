@@ -44,7 +44,7 @@ class SettingsViewModel(val activity: MainActivity) {
         memoryManagerMode: MutableState<MemoryManagerMode>,
         useNce: MutableState<Boolean>,
         memoryConfiguration: MutableState<MemoryConfiguration>,
-        memorySlack: MutableState<MemorySlack>,
+        memorySlackEnabled: MutableState<Boolean>,
         vSyncMode: MutableState<VSyncMode>,
         enableDocked: MutableState<Boolean>,
         enablePptc: MutableState<Boolean>,
@@ -54,6 +54,7 @@ class SettingsViewModel(val activity: MainActivity) {
         fsGlobalAccessLogMode: MutableState<Int>,
         ignoreMissingServices: MutableState<Boolean>,
         enableShaderCache: MutableState<Boolean>,
+        enableShaderLoopSafety: MutableState<Boolean>,
         enableTextureRecompression: MutableState<Boolean>,
         enableMacroHLE: MutableState<Boolean>,
         stretchToFullscreen: MutableState<Boolean>,
@@ -80,7 +81,11 @@ class SettingsViewModel(val activity: MainActivity) {
         memoryManagerMode.value = MemoryManagerMode.entries.toTypedArray()[sharedPref.getInt("memoryManagerMode", MemoryManagerMode.HostMappedUnsafe.ordinal)]
         useNce.value = sharedPref.getBoolean("useNce", false)
         memoryConfiguration.value = MemoryConfiguration.entries.toTypedArray()[sharedPref.getInt("memoryConfiguration", MemoryConfiguration.MemoryConfiguration4GiB.ordinal)]
-        memorySlack.value = MemorySlack.entries.toTypedArray()[sharedPref.getInt("memorySlack", MemorySlack.Slack12GiB.ordinal)]
+        memorySlackEnabled.value = if (sharedPref.contains("memorySlackEnabled")) {
+            sharedPref.getBoolean("memorySlackEnabled", true)
+        } else {
+            sharedPref.getInt("memorySlack", 3) != 0
+        }
         vSyncMode.value = VSyncMode.entries.toTypedArray()[sharedPref.getInt("vSyncMode", VSyncMode.Switch.ordinal)]
         enableDocked.value = sharedPref.getBoolean("enableDocked", true)
         enablePptc.value = sharedPref.getBoolean("enablePptc", true)
@@ -90,6 +95,7 @@ class SettingsViewModel(val activity: MainActivity) {
         fsGlobalAccessLogMode.value = sharedPref.getInt("fsGlobalAccessLogMode", 0)
         ignoreMissingServices.value = sharedPref.getBoolean("ignoreMissingServices", false)
         enableShaderCache.value = sharedPref.getBoolean("enableShaderCache", true)
+        enableShaderLoopSafety.value = sharedPref.getBoolean("enableShaderLoopSafety", false)
         enableTextureRecompression.value = sharedPref.getBoolean("enableTextureRecompression", false)
         enableMacroHLE.value = sharedPref.getBoolean("enableMacroHLE", false)
         stretchToFullscreen.value = sharedPref.getBoolean("stretchToFullscreen", false)
@@ -122,7 +128,7 @@ class SettingsViewModel(val activity: MainActivity) {
         memoryManagerMode: MutableState<MemoryManagerMode>,
         useNce: MutableState<Boolean>,
         memoryConfiguration: MutableState<MemoryConfiguration>,
-        memorySlack: MutableState<MemorySlack>,
+        memorySlackEnabled: MutableState<Boolean>,
         vSyncMode: MutableState<VSyncMode>,
         enableDocked: MutableState<Boolean>,
         enablePptc: MutableState<Boolean>,
@@ -132,6 +138,7 @@ class SettingsViewModel(val activity: MainActivity) {
         fsGlobalAccessLogMode: MutableState<Int>,
         ignoreMissingServices: MutableState<Boolean>,
         enableShaderCache: MutableState<Boolean>,
+        enableShaderLoopSafety: MutableState<Boolean>,
         enableTextureRecompression: MutableState<Boolean>,
         enableMacroHLE: MutableState<Boolean>,
         stretchToFullscreen: MutableState<Boolean>,
@@ -160,7 +167,8 @@ class SettingsViewModel(val activity: MainActivity) {
             putInt("memoryManagerMode", memoryManagerMode.value.ordinal)
             putBoolean("useNce", useNce.value)
             putInt("memoryConfiguration", memoryConfiguration.value.ordinal)
-            putInt("memorySlack", memorySlack.value.ordinal)
+            putBoolean("memorySlackEnabled", memorySlackEnabled.value)
+            remove("memorySlack")
             putInt("vSyncMode", vSyncMode.value.ordinal)
             putBoolean("enableDocked", enableDocked.value)
             putBoolean("enablePptc", enablePptc.value)
@@ -170,6 +178,7 @@ class SettingsViewModel(val activity: MainActivity) {
             putInt("fsGlobalAccessLogMode", fsGlobalAccessLogMode.value)
             putBoolean("ignoreMissingServices", ignoreMissingServices.value)
             putBoolean("enableShaderCache", enableShaderCache.value)
+            putBoolean("enableShaderLoopSafety", enableShaderLoopSafety.value)
             putBoolean("enableTextureRecompression", enableTextureRecompression.value)
             putBoolean("enableMacroHLE", enableMacroHLE.value)
             putBoolean("stretchToFullscreen", stretchToFullscreen.value)

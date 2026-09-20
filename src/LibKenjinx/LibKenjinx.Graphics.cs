@@ -1,6 +1,7 @@
 using LibKenjinx.Android;
 using Ryujinx.Common;
 using Ryujinx.Common.Configuration;
+using Ryujinx.Common.Logging;
 using Ryujinx.Cpu;
 using Ryujinx.Graphics.GAL;
 using Ryujinx.Graphics.GAL.Multithreading;
@@ -42,7 +43,14 @@ namespace LibKenjinx
             GraphicsConfig.EnableMacroJit = graphicsConfiguration.EnableMacroJit;
             GraphicsConfig.EnableMacroHLE = graphicsConfiguration.EnableMacroHLE;
             GraphicsConfig.EnableShaderCache = graphicsConfiguration.EnableShaderCache;
+            GraphicsConfig.EnableShaderLoopSafety = graphicsConfiguration.EnableShaderLoopSafety;
             GraphicsConfig.EnableTextureRecompression = graphicsConfiguration.EnableTextureRecompression;
+
+            Logger.Info?.Print(
+                Ryujinx.Common.Logging.LogClass.Gpu,
+                graphicsConfiguration.EnableShaderLoopSafety
+                    ? "[NEOV2-LOOP-GUARD] enabled; limit=8192"
+                    : "[NEOV2-LOOP-GUARD] disabled");
 
             GraphicsConfiguration = graphicsConfiguration;
 
@@ -258,6 +266,7 @@ namespace LibKenjinx
         public bool EnableMacroJit;
         public bool EnableMacroHLE;
         public bool EnableShaderCache;
+        public bool EnableShaderLoopSafety;
         public bool EnableTextureRecompression;
         public BackendThreading BackendThreading;
         public AspectRatio AspectRatio; // <- important
@@ -271,6 +280,7 @@ namespace LibKenjinx
             EnableMacroJit = false;
             EnableMacroHLE = true;
             EnableShaderCache = true;
+            EnableShaderLoopSafety = false;
             EnableTextureRecompression = false;
             BackendThreading = BackendThreading.Auto;
             AspectRatio = AspectRatio.Fixed16x9;

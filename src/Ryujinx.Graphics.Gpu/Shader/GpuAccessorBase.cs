@@ -233,6 +233,8 @@ namespace Ryujinx.Graphics.Gpu.Shader
 
         public bool QueryHostSupportsShaderNonUniformIndexing() => _context.Capabilities.SupportsShaderNonUniformIndexing;
 
+        public bool QueryShaderLoopSafetyEnabled() => GraphicsConfig.EnableShaderLoopSafety;
+
         public bool QueryHostSupportsSnormBufferTextureFormat() => _context.Capabilities.SupportsSnormBufferTextureFormat;
 
         public bool QueryHostSupportsTextureGatherOffsets() => _context.Capabilities.SupportsTextureGatherOffsets;

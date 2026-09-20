@@ -347,6 +347,14 @@ namespace Ryujinx.Graphics.Shader
         }
 
         /// <summary>
+        /// Queries whether generated SPIR-V loops should include a finite safety budget.
+        /// </summary>
+        bool QueryShaderLoopSafetyEnabled()
+        {
+            return false;
+        }
+
+        /// <summary>
         /// Queries host GPU support for signed normalized buffer texture formats.
         /// </summary>
         /// <returns>True if the GPU and driver supports the formats, false otherwise</returns>

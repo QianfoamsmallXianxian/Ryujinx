@@ -38,6 +38,7 @@ interface KenjinxNativeJna : Library {
         enableMacroJit: Boolean = false,
         enableMacroHLE: Boolean = true,
         enableShaderCache: Boolean = true,
+        enableShaderLoopSafety: Boolean = false,
         enableTextureRecompression: Boolean = false,
         backendThreading: Int = BackendThreading.Auto.ordinal
     ): Boolean
@@ -172,6 +173,7 @@ object KenjinxNative : KenjinxNativeJna by jnaInstance {
         enableMacroJit: Boolean,
         enableMacroHLE: Boolean,
         enableShaderCache: Boolean,
+        enableShaderLoopSafety: Boolean,
         enableTextureRecompression: Boolean,
         backendThreading: Int
     ): Boolean {
@@ -197,6 +199,7 @@ object KenjinxNative : KenjinxNativeJna by jnaInstance {
                 enableMacroJit,
                 enableMacroHLE,
                 enableShaderCache,
+                enableShaderLoopSafety,
                 enableTextureRecompression,
                 firstChoice
             )
@@ -215,6 +218,7 @@ object KenjinxNative : KenjinxNativeJna by jnaInstance {
                     enableMacroJit,
                     enableMacroHLE,
                     enableShaderCache,
+                    enableShaderLoopSafety,
                     enableTextureRecompression,
                     THREADING_SINGLE
                 )

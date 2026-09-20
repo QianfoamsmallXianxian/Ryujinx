@@ -390,7 +390,10 @@ namespace Ryujinx.Graphics.Shader.CodeGen.Spirv
 
                         SpvInstruction condition = context.Get(AggregateType.Bool, e.Block.Condition);
 
-                        condition = AddLoopSafetyCheck(context, condition);
+                        if (parameters.HostCapabilities.EnableShaderLoopSafety)
+                        {
+                            condition = AddLoopSafetyCheck(context, condition);
+                        }
 
                         context.BranchConditional(condition, loopTarget, context.GetNextLabel(mergeBlock));
                     }

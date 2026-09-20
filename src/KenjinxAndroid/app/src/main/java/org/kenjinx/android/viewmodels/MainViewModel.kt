@@ -183,6 +183,7 @@ class MainViewModel(val activity: MainActivity) {
         var success = KenjinxNative.graphicsInitialize(
             enableMacroHLE = settings.enableMacroHLE,
             enableShaderCache = settings.enableShaderCache,
+            enableShaderLoopSafety = settings.enableShaderLoopSafety,
             enableTextureRecompression = settings.enableTextureRecompression,
             rescale = settings.resScale,
             maxAnisotropy = settings.maxAnisotropy,
@@ -255,7 +256,7 @@ class MainViewModel(val activity: MainActivity) {
                     settings.memoryManagerMode.ordinal,
                     settings.useNce,
                     settings.memoryConfiguration.ordinal,
-                    settings.memorySlack.gigabytes,
+                    if (settings.memorySlackEnabled) 12 else 0,
                     /* OLD: was fixed -> SystemLanguage.AmericanEnglish.ordinal */
                     loadSystemLanguage().ordinal,
                     /* OLD: was fixed -> RegionCode.USA.ordinal */
@@ -298,6 +299,7 @@ class MainViewModel(val activity: MainActivity) {
         var success = KenjinxNative.graphicsInitialize(
             enableMacroHLE = settings.enableMacroHLE,
             enableShaderCache = settings.enableShaderCache,
+            enableShaderLoopSafety = settings.enableShaderLoopSafety,
             enableTextureRecompression = settings.enableTextureRecompression,
             rescale = settings.resScale,
             maxAnisotropy = settings.maxAnisotropy,
@@ -371,7 +373,7 @@ class MainViewModel(val activity: MainActivity) {
                     settings.memoryManagerMode.ordinal,
                     settings.useNce,
                     settings.memoryConfiguration.ordinal,
-                    settings.memorySlack.gigabytes,
+                    if (settings.memorySlackEnabled) 12 else 0,
                     /* OLD: was fixed -> SystemLanguage.AmericanEnglish.ordinal */
                     loadSystemLanguage().ordinal,
                     /* OLD: was fixed -> RegionCode.USA.ordinal */
