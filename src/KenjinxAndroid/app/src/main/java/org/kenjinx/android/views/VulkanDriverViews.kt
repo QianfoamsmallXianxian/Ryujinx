@@ -1,40 +1,42 @@
-package org.kenjinx.android.views
+﻿package org.kenjinx.android.views
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.kenjinx.android.MainActivity
 import org.kenjinx.android.viewmodels.VulkanDriverViewModel
@@ -43,189 +45,239 @@ class VulkanDriverViews {
     companion object {
         @Composable
         fun Main(activity: MainActivity, openDialog: MutableState<Boolean>) {
-            val driverViewModel = VulkanDriverViewModel(activity)
-            val isChanged = remember { mutableStateOf(false) }
+            val driverViewModel = remember(activity) { VulkanDriverViewModel(activity) }
             val refresh = remember { mutableStateOf(false) }
-            val drivers = driverViewModel.getAvailableDrivers()
-            val selectedDriver = remember { mutableIntStateOf(0) }
+            var drivers by remember { mutableStateOf(driverViewModel.getAvailableDrivers().toList()) }
+            var selectedPath by remember { mutableStateOf(driverViewModel.selected) }
+            var showDownloaderDialog by remember { mutableStateOf(false) }
 
-            if (refresh.value) {
-                isChanged.value = true
-                refresh.value = false
+            fun selectDriver(path: String) {
+                selectedPath = path
+                driverViewModel.selected = path
+                // A escolha feita no card deve sobreviver ao fechamento e
+                // reabertura da tela, sem depender do botão inferior Salvar.
+                driverViewModel.saveSelected()
             }
 
-            if (!isChanged.value) {
-                selectedDriver.intValue =
-                    drivers.indexOfFirst { it.driverPath == driverViewModel.selected } + 1
-                isChanged.value = true
+            LaunchedEffect(refresh.value) {
+                if (refresh.value) {
+                    drivers = driverViewModel.getAvailableDrivers().toList()
+                    refresh.value = false
+                }
             }
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(modifier = Modifier.align(Alignment.Start)) {
-                    IconButton(
-                        onClick = {
-                            driverViewModel.removeSelected()
-                            refresh.value = true
-                        }
-                    ) {
-                        Icon(
-                            Icons.Filled.Delete,
-                            contentDescription = "Remove"
+
+            Column(
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "Drivers Vulkan",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Escolha o driver usado globalmente pelo emulador.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    modifier = Modifier.fillMaxWidth().height(248.dp),
+                    contentPadding = PaddingValues(2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    item {
+                        DriverCard(
+                            title = "Driver do sistema",
+                            version = "Android / fabricante do dispositivo",
+                            description = "Usa o driver Vulkan instalado no sistema.",
+                            sourceTag = "Sistema",
+                            selected = selectedPath.isEmpty(),
+                            onClick = { selectDriver("") }
                         )
                     }
-                    IconButton(
-                        onClick = {
-                            driverViewModel.add(refresh)
-                            refresh.value = true
-                            selectedDriver.intValue = 0
-                            driverViewModel.selected = ""
-                        }
-                    ) {
-                        Icon(
-                            Icons.Filled.Add,
-                            contentDescription = "Add"
-                        )
-                    }
-                    IconButton(
-                        onClick = {
-                            driverViewModel.saveSelected()
-                            openDialog.value = false
-                        },
-                    ) {
-                        Icon(
-                            Icons.Filled.Edit,
-                            contentDescription = "Save"
+                    items(drivers, key = { it.driverPath }) { driver ->
+                        DriverCard(
+                            title = driver.name.ifBlank { driver.libraryName },
+                            version = listOf(driver.vendor, driver.driverVersion)
+                                .filter { it.isNotBlank() }
+                                .joinToString(" • ")
+                                .ifBlank { driver.packageVersion },
+                            description = driver.description.ifBlank { driver.libraryName },
+                            sourceTag = driver.sourceTag,
+                            selected = selectedPath == driver.driverPath,
+                            onClick = { selectDriver(driver.driverPath) }
                         )
                     }
                 }
-                Spacer(modifier = Modifier.height(8.dp))
-                Column {
-                    Text(text = "Driver List", textAlign = TextAlign.Center)
-                    Box(
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .height(150.dp)
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedButton(onClick = { driverViewModel.add(refresh) }) {
+                        Text("Adicionar driver")
+                    }
+                    Button(
+                        onClick = { showDownloaderDialog = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
-                        val scrollState = rememberScrollState()
+                        Icon(
+                            imageVector = Icons.Default.CloudDownload,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Baixar drivers")
+                    }
+                    OutlinedButton(
+                        enabled = selectedPath.isNotEmpty(),
+                        onClick = {
+                            driverViewModel.selected = selectedPath
+                            driverViewModel.removeSelected()
+                            selectedPath = ""
+                            drivers = driverViewModel.getAvailableDrivers().toList()
+                        }
+                    ) {
+                        Text("Excluir selecionado")
+                    }
 
-                        val needsScrollbar by remember {
-                            derivedStateOf {
-                                scrollState.maxValue > 0
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    OutlinedButton(onClick = { openDialog.value = false }) {
+                        Text("Cancelar")
+                    }
+                    Button(
+                        onClick = {
+                            driverViewModel.selected = selectedPath
+                            driverViewModel.saveSelected()
+                            openDialog.value = false
+                        }
+                    ) {
+                        Text("Salvar")
+                    }
+                }
+            }
+
+            if (showDownloaderDialog) {
+                DriverDownloaderDialog(
+                    activity = activity,
+                    onDismiss = { showDownloaderDialog = false },
+                    onDriverInstalled = {
+                        refresh.value = true
+                    }
+                )
+            }
+        }
+
+        @Composable
+        private fun DriverCard(
+            title: String,
+            version: String,
+            description: String,
+            sourceTag: String = "",
+            selected: Boolean,
+            onClick: () -> Unit
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(156.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .clickable(onClick = onClick),
+                shape = RoundedCornerShape(16.dp),
+                color = if (selected) {
+                    MaterialTheme.colorScheme.primaryContainer
+                } else {
+                    MaterialTheme.colorScheme.surface
+                },
+                border = BorderStroke(
+                    if (selected) 2.dp else 1.dp,
+                    if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                ),
+                tonalElevation = if (selected) 3.dp else 0.dp
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = title,
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        if (sourceTag.isNotBlank()) {
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = if (selected) {
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant
+                                },
+                                modifier = Modifier.padding(horizontal = 4.dp)
+                            ) {
+                                Text(
+                                    text = sourceTag,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
                             }
                         }
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .fillMaxHeight()
-                                .padding(end = if (needsScrollbar) 16.dp else 0.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            shape = MaterialTheme.shapes.medium
+                        if (selected) {
+                            Text(
+                                text = "ATIVO",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                    Text(
+                        text = version,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        if (selected) {
+                            Text(
+                                text = "Driver selecionado",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.align(Alignment.CenterVertically)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+                        OutlinedButton(
+                            onClick = onClick,
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                         ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .verticalScroll(
-                                        scrollState
-                                    )
-                                    .padding(8.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 4.dp)
-                                        .clickable {
-                                            selectedDriver.intValue = 0
-                                            isChanged.value = true
-                                            driverViewModel.selected = ""
-                                        },
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    RadioButton(
-                                        selected = selectedDriver.intValue == 0 || driverViewModel.selected.isEmpty(),
-                                        onClick = {
-                                            selectedDriver.intValue = 0
-                                            isChanged.value = true
-                                            driverViewModel.selected = ""
-                                        }
-                                    )
-                                    Text(
-                                        text = "Default",
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(start = 8.dp)
-                                    )
-                                }
-                                var driverIndex = 1
-                                for (driver in drivers) {
-                                    val ind = driverIndex
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(
-                                                vertical = 4.dp
-                                            )
-                                            .clickable {
-                                                selectedDriver.intValue = ind
-                                                isChanged.value = true
-                                                driverViewModel.selected = driver.driverPath
-                                            },
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        RadioButton(
-                                            selected = selectedDriver.intValue == ind,
-                                            onClick = {
-                                                selectedDriver.intValue = ind
-                                                isChanged.value = true
-                                                driverViewModel.selected = driver.driverPath
-                                            }
-                                        )
-                                        Column(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .padding(
-                                                    start = 8.dp
-                                                )
-                                        ) {
-                                            Text(text = driver.libraryName)
-                                            Text(text = driver.driverVersion)
-                                            Text(text = driver.description)
-                                        }
-                                    }
-                                    driverIndex++
-                                }
-
-                                Spacer(
-                                    modifier = Modifier.height(
-                                        8.dp
-                                    )
-                                )
-                            }
-                        }
-
-                        if (needsScrollbar) {
-                            Box(
-                                modifier = Modifier
-                                    .align(Alignment.CenterEnd)
-                                    .width(6.dp)
-                                    .fillMaxHeight()
-                                    .background(Color.LightGray.copy(alpha = 0.3f))
-                            ) {
-                                val thumbRatio = 150.dp.value / (150.dp.value + scrollState.maxValue)
-                                val thumbSize = (150.dp.value * thumbRatio).coerceAtLeast(40f)
-                                val scrollRatio = scrollState.value.toFloat() / scrollState.maxValue.toFloat()
-                                val maxOffset = 150.dp.value - (thumbSize * 0.7f)
-                                val thumbOffset = maxOffset * scrollRatio
-
-                                Box(
-                                    modifier = Modifier
-                                        .width(6.dp)
-                                        .height((thumbSize * 0.7f).dp)
-                                        .offset(y = thumbOffset.dp)
-                                        .background(
-                                            color = MaterialTheme.colorScheme.tertiary,
-                                            shape = MaterialTheme.shapes.small
-                                        )
-                                )
-                            }
+                            Text(if (selected) "Selecionado" else "Usar este")
                         }
                     }
                 }

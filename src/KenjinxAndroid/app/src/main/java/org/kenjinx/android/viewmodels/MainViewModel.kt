@@ -1,5 +1,7 @@
 package org.kenjinx.android.viewmodels
 
+import org.kenjinx.android.driver.DriverPreparationManager
+
 import android.annotation.SuppressLint
 import android.net.Uri
 import android.os.SystemClock
@@ -224,38 +226,23 @@ class MainViewModel(val activity: MainActivity) {
 
         val driverViewModel = VulkanDriverViewModel(activity)
         val drivers = driverViewModel.getAvailableDrivers()
-        var driverHandle = 0L
-
-        if (driverViewModel.selected.isNotEmpty()) {
-            val metaData = drivers.find { it.driverPath == driverViewModel.selected }
-
-            metaData?.apply {
-                val privatePath = activity.filesDir
-                val privateDriverPath = privatePath.canonicalPath + "/driver/"
-                val pD = File(privateDriverPath)
-                if (pD.exists())
-                    pD.deleteRecursively()
-
-                pD.mkdirs()
-
-                val driver = File(driverViewModel.selected)
-                val parent = driver.parentFile
-                if (parent != null) {
-                    for (file in parent.walkTopDown()) {
-                        if (file.absolutePath == parent.absolutePath)
-                            continue
-                        file.copyTo(File(privateDriverPath + file.name), true)
-                    }
-                }
-
-                driverHandle = NativeHelpers.instance.loadDriver(
-                    activity.applicationInfo.nativeLibraryDir!! + "/",
-                    privateDriverPath,
-                    this.libraryName
-                )
-            }
-
+        val gameDriver = GameSettingsStore(activity, game.titleId.orEmpty())
+        val selectedDriverPath = if (
+            gameDriver.isEnabled &&
+            gameDriver.driverOverride.isNotEmpty() &&
+            drivers.any { it.driverPath == gameDriver.driverOverride }
+        ) {
+            gameDriver.driverOverride
+        } else {
+            driverViewModel.selected
         }
+
+        val driverLoadResult = DriverPreparationManager.prepareAndLoadDriver(
+            activity,
+            selectedDriverPath,
+            drivers
+        )
+        val driverHandle = driverLoadResult.handle
 
         val extensions = nativeInterop.VkRequiredExtensions
 
@@ -341,38 +328,12 @@ class MainViewModel(val activity: MainActivity) {
         val driverViewModel = VulkanDriverViewModel(activity)
         val drivers = driverViewModel.getAvailableDrivers()
 
-        var driverHandle = 0L
-
-        if (driverViewModel.selected.isNotEmpty()) {
-            val metaData = drivers.find { it.driverPath == driverViewModel.selected }
-
-            metaData?.apply {
-                val privatePath = activity.filesDir
-                val privateDriverPath = privatePath.canonicalPath + "/driver/"
-                val pD = File(privateDriverPath)
-                if (pD.exists())
-                    pD.deleteRecursively()
-
-                pD.mkdirs()
-
-                val driver = File(driverViewModel.selected)
-                val parent = driver.parentFile
-                if (parent != null) {
-                    for (file in parent.walkTopDown()) {
-                        if (file.absolutePath == parent.absolutePath)
-                            continue
-                        file.copyTo(File(privateDriverPath + file.name), true)
-                    }
-                }
-
-                driverHandle = NativeHelpers.instance.loadDriver(
-                    activity.applicationInfo.nativeLibraryDir!! + "/",
-                    privateDriverPath,
-                    this.libraryName
-                )
-            }
-
-        }
+        val driverLoadResult = DriverPreparationManager.prepareAndLoadDriver(
+            activity,
+            driverViewModel.selected,
+            drivers
+        )
+        val driverHandle = driverLoadResult.handle
 
         val extensions = nativeInterop.VkRequiredExtensions
 

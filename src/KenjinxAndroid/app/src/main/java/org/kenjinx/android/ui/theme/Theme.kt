@@ -1,6 +1,7 @@
 package org.kenjinx.android.ui.theme
 
 import android.app.Activity
+import android.content.Context
 import android.os.Build
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -11,12 +12,36 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
+
+object NeoThemeState {
+    private const val PreferencesName = "neo_interface"
+    private const val DarkModeKey = "darkMode"
+
+    var isDark by mutableStateOf(false)
+        private set
+
+    fun initialize(context: Context) {
+        isDark = context.getSharedPreferences(PreferencesName, Context.MODE_PRIVATE)
+            .getBoolean(DarkModeKey, false)
+    }
+
+    fun toggle(context: Context) {
+        isDark = !isDark
+        context.getSharedPreferences(PreferencesName, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(DarkModeKey, isDark)
+            .apply()
+    }
+}
 
 private val DarkColorScheme = darkColorScheme(
     primary = Gray90,

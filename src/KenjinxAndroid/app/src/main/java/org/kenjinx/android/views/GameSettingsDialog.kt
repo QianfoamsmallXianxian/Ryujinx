@@ -1,6 +1,5 @@
 package org.kenjinx.android.views
 
-import android.app.Activity
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -36,18 +35,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import org.kenjinx.android.viewmodels.GameSettingsStore
 import org.kenjinx.android.viewmodels.QuickSettings
 import org.kenjinx.android.viewmodels.VSyncMode
+import org.kenjinx.android.viewmodels.VulkanDriverViewModel
+import org.kenjinx.android.MainActivity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GameSettingsDialog(
-    activity: Activity,
+    activity: MainActivity,
     titleId: String,
     titleName: String,
     onDismiss: () -> Unit
@@ -71,6 +71,9 @@ fun GameSettingsDialog(
     var vsync by remember(titleId) { mutableStateOf(initial.vSyncMode) }
     var resScale by remember(titleId) { mutableStateOf(initial.resScale) }
     var anisotropy by remember(titleId) { mutableStateOf(initial.maxAnisotropy) }
+    val driverViewModel = remember(titleId) { VulkanDriverViewModel(activity) }
+    val availableDrivers = remember(titleId) { driverViewModel.getAvailableDrivers().toList() }
+    var driverOverride by remember(titleId) { mutableStateOf(store.driverOverride) }
 
     val save = {
         if (custom) {
@@ -94,6 +97,7 @@ fun GameSettingsDialog(
                     this.maxAnisotropy = anisotropy
                 }
             )
+            store.driverOverride = driverOverride
         } else {
             store.isEnabled = false
         }
@@ -163,6 +167,16 @@ fun GameSettingsDialog(
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Text("Gráficos", style = MaterialTheme.typography.titleSmall)
+                        Text("Driver Vulkan", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        val driverOptions = listOf("" to "Usar driver global") +
+                            availableDrivers.map { it.driverPath to "${it.name} · ${it.driverVersion}" }
+                        GameSettingSelect(
+                            selectedLabel = driverOptions.firstOrNull { it.first == driverOverride }?.second
+                                ?: "Usar driver global",
+                            options = driverOptions,
+                            enabled = custom,
+                            onSelected = { driverOverride = it }
+                        )
                         ToggleRow("Limitar à velocidade do Switch", vsync == VSyncMode.Switch, custom) {
                             vsync = if (it) VSyncMode.Switch else VSyncMode.Unbounded
                         }
@@ -226,6 +240,7 @@ fun GameSettingsDialog(
                         vsync = def.vSyncMode
                         resScale = def.resScale
                         anisotropy = def.maxAnisotropy
+                        driverOverride = ""
                     }) {
                         Text("Restaurar global")
                     }
@@ -260,7 +275,7 @@ private fun <T> GameSettingSelect(
                 .clip(RoundedCornerShape(12.dp))
                 .clickable(enabled = enabled) { expanded = true },
             shape = RoundedCornerShape(12.dp),
-            color = if (enabled) Color.White else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+            color = if (enabled) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
         ) {
             Row(
@@ -274,7 +289,7 @@ private fun <T> GameSettingSelect(
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface
         ) {
             options.forEach { (value, label) ->
                 DropdownMenuItem(
@@ -312,7 +327,7 @@ fun ChoiceCard(
         ),
         color = when {
             !enabled -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-            selected -> Color(0xFFD6DAE1)
+            selected -> MaterialTheme.colorScheme.primaryContainer
             else -> MaterialTheme.colorScheme.surface
         }
     ) {

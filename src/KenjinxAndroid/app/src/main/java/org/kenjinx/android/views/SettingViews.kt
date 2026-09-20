@@ -337,15 +337,18 @@ class SettingViews {
                     .fillMaxSize()
                     .background(
                         Brush.verticalGradient(
-                            listOf(Color(0xFFF4F5F7), Color(0xFFE8EAEE))
+                            listOf(
+                                MaterialTheme.colorScheme.background,
+                                MaterialTheme.colorScheme.surfaceVariant
+                            )
                         )
                     )
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     val activeCat = selectedCategory.value
 
@@ -353,7 +356,7 @@ class SettingViews {
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(80.dp),
+                            .height(60.dp),
                         shape = RoundedCornerShape(0.dp),
                         color = Color.Transparent,
                         shadowElevation = 0.dp
@@ -380,14 +383,14 @@ class SettingViews {
                                         Icon(
                                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                             contentDescription = "Voltar",
-                                            tint = Color(0xFF20242B)
+                                            tint = MaterialTheme.colorScheme.onBackground
                                         )
                                     }
                                     Text(
                                         "Configurações",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 22.sp,
-                                        color = Color(0xFF20242B)
+                                        color = MaterialTheme.colorScheme.onBackground
                                     )
                                 }
                             } else {
@@ -406,7 +409,7 @@ class SettingViews {
                                         Icon(
                                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                             contentDescription = "Voltar às Configurações",
-                                            tint = Color(0xFF20242B)
+                                            tint = MaterialTheme.colorScheme.onBackground
                                         )
                                     }
                                     Column {
@@ -414,12 +417,12 @@ class SettingViews {
                                             text = activeCat.title,
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 18.sp,
-                                            color = Color(0xFF20242B)
+                                            color = MaterialTheme.colorScheme.onBackground
                                         )
                                         Text(
                                             text = activeCat.description,
                                             fontSize = 12.sp,
-                                            color = Color(0xFF676D77),
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
@@ -431,7 +434,7 @@ class SettingViews {
                                         selectedCategory.value = null
                                     }
                                 ) {
-                                    Text("Salvar", color = Color(0xFF20242B), fontWeight = FontWeight.Bold)
+                                    Text("Salvar", color = MaterialTheme.colorScheme.onBackground, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
@@ -471,8 +474,8 @@ class SettingViews {
                                 Surface(
                                     modifier = Modifier.fillMaxSize(),
                                     shape = RoundedCornerShape(24.dp),
-                                    color = Color.White,
-                                    border = BorderStroke(1.dp, Color(0xFFD3D7DD)),
+                                    color = MaterialTheme.colorScheme.surface,
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                                     shadowElevation = 1.dp
                                 ) {
                                     Column(
@@ -886,8 +889,8 @@ class SettingViews {
                                     SettingsCategory.Sobre -> {
                                         Surface(
                                             shape = RoundedCornerShape(14.dp),
-                                            color = Color.White,
-                                            border = BorderStroke(1.dp, Color(0xFFD3D7DD)),
+                                            color = MaterialTheme.colorScheme.surface,
+                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
                                             Column(
@@ -895,7 +898,13 @@ class SettingViews {
                                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                                             ) {
                                                 Image(
-                                                    painter = painterResource(R.drawable.ryujinx_neo_logo),
+                                                    painter = painterResource(
+                                                        if (org.kenjinx.android.ui.theme.NeoThemeState.isDark) {
+                                                            R.drawable.ryujinx_neo_logo_light
+                                                        } else {
+                                                            R.drawable.ryujinx_neo_logo
+                                                        }
+                                                    ),
                                                     contentDescription = "Ryujinx Neo",
                                                     contentScale = ContentScale.Fit,
                                                     modifier = Modifier.height(44.dp)
@@ -904,17 +913,17 @@ class SettingViews {
                                                     "Ryujinx Neo - Emulador de Nintendo Switch",
                                                     fontWeight = FontWeight.Bold,
                                                     fontSize = 16.sp,
-                                                    color = Color(0xFF20242B)
+                                                    color = MaterialTheme.colorScheme.onSurface
                                                 )
                                                 Text(
                                                     "Branch: neo-v2-nce2\nMotor NCE Armv8.2-A nativo com proteção de loop de shader e memória Slack.",
                                                     fontSize = 13.sp,
-                                                    color = Color(0xFF676D77)
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                                 )
                                                 Text(
                                                     "Interface reformulada com caixinhas modulares de alto contraste e mockups de cartucho.",
                                                     fontSize = 12.sp,
-                                                    color = Color(0xFFA0A0A0)
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
                                                 )
                                             }
                                         }
@@ -929,6 +938,15 @@ class SettingViews {
             }
 
                             // Dialogs
+                SimpleAlertDialog.Custom(
+                    showDialog = isDriverSelectorOpen,
+                    onDismissRequest = { isDriverSelectorOpen.value = false },
+                    properties = DialogProperties(usePlatformDefaultWidth = false),
+                    widthFraction = 0.82f
+                ) {
+                    VulkanDriverViews.Main(settingsViewModel.activity, isDriverSelectorOpen)
+                }
+
                 SimpleAlertDialog.Custom(
                         showDialog = showKeyDialog,
                         onDismissRequest = {
@@ -1665,8 +1683,8 @@ class SettingViews {
                         .clip(RoundedCornerShape(14.dp))
                         .clickable { expanded = true },
                     shape = RoundedCornerShape(14.dp),
-                    color = Color.White,
-                    border = BorderStroke(1.dp, Color(0xFFC8CCD3))
+                    color = MaterialTheme.colorScheme.surface,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 13.dp),
@@ -1675,20 +1693,20 @@ class SettingViews {
                         Text(
                             selectedLabel,
                             modifier = Modifier.weight(1f),
-                            color = Color(0xFF252930),
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.Medium
                         )
-                        Icon(Icons.Default.ArrowDropDown, contentDescription = "Abrir opções", tint = Color(0xFF626873))
+                        Icon(Icons.Default.ArrowDropDown, contentDescription = "Abrir opções", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 DropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
-                    containerColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surface
                 ) {
                     options.forEach { (value, label) ->
                         DropdownMenuItem(
-                            text = { Text(label, color = Color(0xFF252930)) },
+                            text = { Text(label, color = MaterialTheme.colorScheme.onSurface) },
                             onClick = {
                                 onSelected(value)
                                 expanded = false
@@ -1706,8 +1724,8 @@ class SettingViews {
         ) {
             Surface(
                 shape = RoundedCornerShape(18.dp),
-                color = Color.White,
-                border = BorderStroke(1.dp, Color(0xFFD3D7DD)),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(92.dp)
@@ -1728,7 +1746,7 @@ class SettingViews {
                     ) {
                         Surface(
                             shape = RoundedCornerShape(14.dp),
-                            color = Color(0xFFE9EBEF),
+                            color = MaterialTheme.colorScheme.surfaceVariant,
                             modifier = Modifier.size(48.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
@@ -1742,7 +1760,7 @@ class SettingViews {
                                     Icon(
                                         imageVector = category.icon,
                                         contentDescription = null,
-                                        tint = Color(0xFF30343C),
+                                        tint = MaterialTheme.colorScheme.onSurface,
                                         modifier = Modifier.size(26.dp)
                                     )
                                 }
@@ -1753,12 +1771,12 @@ class SettingViews {
                                 text = category.title,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp,
-                                color = Color(0xFF20242B)
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = category.description,
                                 fontSize = 12.sp,
-                                color = Color(0xFF676D77),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -1767,7 +1785,7 @@ class SettingViews {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = "Abrir",
-                        tint = Color(0xFF30343C),
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -1780,7 +1798,7 @@ class SettingViews {
                 text = title,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
-                color = Color(0xFF20242B),
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
             )
         }
@@ -1794,8 +1812,8 @@ class SettingViews {
         ) {
             Surface(
                 shape = RoundedCornerShape(14.dp),
-                color = Color.White,
-                border = BorderStroke(1.dp, Color(0xFFD3D7DD)),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp))
@@ -1811,22 +1829,22 @@ class SettingViews {
                             text = title,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 14.sp,
-                            color = Color(0xFF20242B)
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = description,
                             fontSize = 12.sp,
-                            color = Color(0xFF676D77)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     Switch(
                         checked = checked,
                         onCheckedChange = null,
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = Color(0xFF343A44),
-                            uncheckedThumbColor = Color(0xFF8D929C),
-                            uncheckedTrackColor = Color(0xFFD5D8DE)
+                            checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                            checkedTrackColor = MaterialTheme.colorScheme.primary,
+                            uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
                         )
                     )
                 }
@@ -1842,8 +1860,8 @@ class SettingViews {
         ) {
             Surface(
                 shape = RoundedCornerShape(14.dp),
-                color = Color.White,
-                border = BorderStroke(1.dp, Color(0xFFD3D7DD)),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -1856,19 +1874,19 @@ class SettingViews {
                             text = title,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 14.sp,
-                            color = Color(0xFF20242B)
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = description,
                             fontSize = 12.sp,
-                            color = Color(0xFF676D77)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     Button(
                         onClick = onClick,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF252930),
-                            contentColor = Color.White
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
                         ),
                         shape = RoundedCornerShape(8.dp)
                     ) {

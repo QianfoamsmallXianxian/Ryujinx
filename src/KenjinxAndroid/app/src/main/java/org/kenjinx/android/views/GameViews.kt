@@ -243,8 +243,11 @@ class GameViews {
                                 verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
                                 item {
-                                    Text("NEO", style = MaterialTheme.typography.headlineSmall)
-                                    Text("Controles rápidos", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(
+                                        "Controles rápidos",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 }
                                 item {
                                     DrawerToggle("Controle na tela", showController.value) {

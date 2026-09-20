@@ -25,6 +25,13 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             }
         }
 
+    /** Empty means follow the globally selected Vulkan driver. */
+    var driverOverride: String
+        get() = if (!isValid) "" else preferences.getString(key("driverOverride"), "").orEmpty()
+        set(value) {
+            if (isValid) preferences.edit { putString(key("driverOverride"), value) }
+        }
+
     fun applyTo(settings: QuickSettings): QuickSettings {
         if (!isValid || !isEnabled) return settings
 
@@ -104,5 +111,21 @@ class GameSettingsStore(activity: Activity, titleId: String) {
 
     companion object {
         private const val PREFERENCES_NAME = "neo_per_game_settings"
+
+        fun cleanupOrphanedDriver(context: Context, deletedDriverPath: String) {
+            if (deletedDriverPath.isBlank()) return
+            try {
+                val prefs = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
+                val keysToClean = prefs.all.filter { (key, value) ->
+                    key.endsWith(".driverOverride") && value == deletedDriverPath
+                }.keys
+
+                if (keysToClean.isNotEmpty()) {
+                    prefs.edit {
+                        keysToClean.forEach(::remove)
+                    }
+                }
+            } catch (_: Exception) {}
+        }
     }
 }
