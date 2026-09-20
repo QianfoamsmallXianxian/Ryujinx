@@ -4,15 +4,20 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddBox
@@ -51,6 +56,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import org.kenjinx.android.viewmodels.GameModel
 import java.io.File
 import java.util.Locale
@@ -87,16 +93,32 @@ fun GameActionsDialog(
         }
     }
 
-    BasicAlertDialog(onDismissRequest = onDismiss) {
+    val actions = listOf(
+        DialogAction(Icons.Default.PlayArrow, "Jogar", "Iniciar emulação", true, onPlay),
+        DialogAction(Icons.Default.Settings, "Configurar", "Perfil deste jogo", false, onConfigure),
+        DialogAction(Icons.Default.SystemUpdate, "Atualizações", "Patches e versões", false, onUpdates),
+        DialogAction(Icons.Default.Extension, "DLCs", "Conteúdos adicionais", false, onDlc),
+        DialogAction(Icons.Default.ViewModule, "Mods", "Gerenciar modificações", false, onMods),
+        DialogAction(Icons.Default.Code, "Cheats", "Códigos de trapaça", false, onCheats),
+        DialogAction(Icons.Default.Save, "Saves", "Importar ou exportar", false, onSaves),
+        DialogAction(Icons.Default.Contactless, "Amiibo", "Configurar slots", false, onAmiibo),
+        DialogAction(Icons.Default.AddBox, "Criar atalho", "Adicionar à tela inicial", false, onCreateShortcut)
+    )
+
+    BasicAlertDialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Surface(
             modifier = Modifier
-                .widthIn(max = 520.dp)
-                .heightIn(max = 660.dp),
-            shape = RoundedCornerShape(20.dp),
+                .fillMaxWidth(0.74f)
+                .aspectRatio(4f / 3f)
+                .heightIn(max = 600.dp),
+            shape = RoundedCornerShape(28.dp),
             color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 6.dp
+            tonalElevation = 10.dp
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp)) {
                 // Header: Game Image, Title, ID, Size, Close
                 Row(
                     modifier = Modifier
@@ -110,8 +132,8 @@ fun GameActionsDialog(
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
-                                .size(48.dp)
-                                .clip(RoundedCornerShape(8.dp))
+                                .size(58.dp)
+                                .clip(RoundedCornerShape(12.dp))
                         )
                         Spacer(Modifier.width(12.dp))
                     }
@@ -143,82 +165,20 @@ fun GameActionsDialog(
                     }
                 }
 
-                // Scrollable Actions List
-                LazyColumn(
-                    modifier = Modifier.weight(1f, fill = false),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                // Landscape 4:3 action area, arranged in two columns for handhelds.
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    item {
+                    items(actions) { action ->
                         ActionCard(
-                            icon = Icons.Default.PlayArrow,
-                            title = "Jogar",
-                            subtitle = "Iniciar emulação deste título",
-                            isPrimary = true,
-                            onClick = onPlay
-                        )
-                    }
-                    item {
-                        ActionCard(
-                            icon = Icons.Default.Settings,
-                            title = "Configurar",
-                            subtitle = "Perfil individual ou global de emulação",
-                            onClick = onConfigure
-                        )
-                    }
-                    item {
-                        ActionCard(
-                            icon = Icons.Default.SystemUpdate,
-                            title = "Atualizações",
-                            subtitle = "Gerenciar patches e versões",
-                            onClick = onUpdates
-                        )
-                    }
-                    item {
-                        ActionCard(
-                            icon = Icons.Default.Extension,
-                            title = "DLCs",
-                            subtitle = "Gerenciar conteúdos adicionais instalados",
-                            onClick = onDlc
-                        )
-                    }
-                    item {
-                        ActionCard(
-                            icon = Icons.Default.ViewModule,
-                            title = "Mods",
-                            subtitle = "Importar e ativar modificações",
-                            onClick = onMods
-                        )
-                    }
-                    item {
-                        ActionCard(
-                            icon = Icons.Default.Code,
-                            title = "Cheats",
-                            subtitle = "Códigos de trapaça para este jogo",
-                            onClick = onCheats
-                        )
-                    }
-                    item {
-                        ActionCard(
-                            icon = Icons.Default.Save,
-                            title = "Saves",
-                            subtitle = "Exportar ou importar progresso salvo",
-                            onClick = onSaves
-                        )
-                    }
-                    item {
-                        ActionCard(
-                            icon = Icons.Default.Contactless,
-                            title = "Amiibo",
-                            subtitle = "Configurar slots de Amiibo",
-                            onClick = onAmiibo
-                        )
-                    }
-                    item {
-                        ActionCard(
-                            icon = Icons.Default.AddBox,
-                            title = "Criar atalho",
-                            subtitle = "Adicionar ícone à tela inicial do Android",
-                            onClick = onCreateShortcut
+                            icon = action.icon,
+                            title = action.title,
+                            subtitle = action.subtitle,
+                            isPrimary = action.isPrimary,
+                            onClick = action.onClick
                         )
                     }
                     item {
@@ -280,6 +240,7 @@ private fun ActionCard(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = 76.dp)
             .clip(RoundedCornerShape(12.dp))
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
@@ -320,3 +281,11 @@ private fun ActionCard(
         }
     }
 }
+
+private data class DialogAction(
+    val icon: ImageVector,
+    val title: String,
+    val subtitle: String,
+    val isPrimary: Boolean,
+    val onClick: () -> Unit
+)

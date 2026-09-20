@@ -95,6 +95,14 @@ class QuickSettings(val activity: Activity) {
     private var sharedPref: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity)
 
     init {
+        // NEO UI refresh: use the conventional Android/Xbox face-button order once.
+        // The preference remains user-selectable after this migration.
+        if (!sharedPref.getBoolean("neoFaceButtonDefaultV1", false)) {
+            sharedPref.edit {
+                putBoolean("useSwitchLayout", false)
+                putBoolean("neoFaceButtonDefaultV1", true)
+            }
+        }
         // Load Amiibo slots
         amiibo1Uri = sharedPref.getString("amiibo1Uri", null)
         amiibo1Name = sharedPref.getString("amiibo1Name", null)
@@ -147,7 +155,7 @@ class QuickSettings(val activity: Activity) {
             sharedPref.getInt("virtualControllerPreset", VirtualControllerPreset.Default.ordinal)
         ]
         isGrid = sharedPref.getBoolean("isGrid", true)
-        useSwitchLayout = sharedPref.getBoolean("useSwitchLayout", true)
+        useSwitchLayout = sharedPref.getBoolean("useSwitchLayout", false)
         enableMotion = sharedPref.getBoolean("enableMotion", true)
         enablePerformanceMode = sharedPref.getBoolean("enablePerformanceMode", true)
         showPerformanceOverlay = sharedPref.getBoolean("showPerformanceOverlay", false)

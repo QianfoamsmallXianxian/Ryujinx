@@ -51,6 +51,7 @@ import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -62,6 +63,8 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -75,6 +78,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -103,45 +107,43 @@ enum class SettingsCategory(
 ) {
     Geral(
         title = "Geral",
-        description = "Orientação da tela, exibição de estatísticas e modo de alto desempenho",
+        description = "Tela, estatísticas e desempenho",
         icon = Icons.Default.Tune
     ),
     Emulacao(
         title = "Emulação e CPU",
-        description = "Modo NCE vs JIT, PPTC de baixo consumo e expansão de memória Slack",
+        description = "NCE, JIT, PPTC e memória",
         icon = Icons.Default.Memory
     ),
     Graficos(
         title = "Gráficos",
-        description = "Driver Vulkan, sincronização VSync, resolução e cache de shaders",
+        description = "Driver, VSync, resolução e shaders",
         icon = Icons.Default.Palette
     ),
     Controles(
         title = "Controles",
-        description = "Controle virtual na tela, layouts predefinidos, giroscópio e sensibilidade",
-        icon = Icons.Default.SportsEsports,
-        iconRes = R.drawable.ryujinx_neo_icone
+        description = "Layout, toque, giroscópio e sensibilidade",
+        icon = Icons.Default.SportsEsports
     ),
     Sistema(
         title = "Sistema",
-        description = "Idioma do console, região, firmware e chaves de segurança (prod.keys)",
+        description = "Idioma, região, firmware e chaves",
         icon = Icons.Default.Devices
     ),
     Jogos(
         title = "Jogos e Dados",
-        description = "Diretórios de jogos, atualizações, DLCs e gerenciamento de arquivos",
+        description = "Pastas, atualizações, DLCs e dados",
         icon = Icons.Default.Folder
     ),
     Avancado(
         title = "Avançado",
-        description = "Registros de log, integridade do sistema de arquivos e serviços ausentes",
+        description = "Logs, integridade e compatibilidade",
         icon = Icons.Default.Build
     ),
     Sobre(
         title = "Sobre",
-        description = "Informações da versão, branch neo-v2-nce2 e créditos do projeto",
-        icon = Icons.Default.Info,
-        iconRes = R.drawable.ryujinx_neo_icone
+        description = "Versão, projeto e créditos",
+        icon = Icons.Default.Info
     )
 }
 
@@ -150,7 +152,11 @@ class SettingViews {
         const val EXPANSTION_TRANSITION_DURATION = 450
         const val IMPORT_CODE = 12341
         @Composable
-        fun Main(settingsViewModel: SettingsViewModel, mainViewModel: MainViewModel) {
+        fun Main(
+            settingsViewModel: SettingsViewModel,
+            mainViewModel: MainViewModel,
+            initialCategory: String? = null
+        ) {
             val loaded = remember { mutableStateOf(false) }
             val memoryManagerMode = remember { mutableStateOf(MemoryManagerMode.HostMappedUnsafe) }
             val useNce = remember { mutableStateOf(false) }
@@ -183,7 +189,7 @@ class SettingViews {
             val dataImportState = remember { mutableStateOf(DataImportState.File) }
             val dataFile = remember { mutableStateOf<DocumentFile?>(null) }
             val isGrid = remember { mutableStateOf(true) }
-            val useSwitchLayout = remember { mutableStateOf(true) }
+            val useSwitchLayout = remember { mutableStateOf(false) }
             val enableMotion = remember { mutableStateOf(true) }
             val vcPreset = remember {
                 mutableStateOf(QuickSettings(mainViewModel.activity).virtualControllerPreset)
@@ -219,7 +225,9 @@ class SettingViews {
             val threadToggleInitialized = remember { mutableStateOf(false) }
             val isDriverSelectorOpen = remember { mutableStateOf(false) }
 
-            val selectedCategory = remember { mutableStateOf<SettingsCategory?>(null) }
+            val selectedCategory = remember(initialCategory) {
+                mutableStateOf(SettingsCategory.entries.firstOrNull { it.name == initialCategory })
+            }
 
             if (!loaded.value) {
                 settingsViewModel.initializeState(
@@ -327,7 +335,11 @@ class SettingViews {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFF141416))
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color(0xFFF4F5F7), Color(0xFFE8EAEE))
+                        )
+                    )
             ) {
                 Column(
                     modifier = Modifier
@@ -341,10 +353,10 @@ class SettingViews {
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(72.dp),
-                        shape = RoundedCornerShape(18.dp),
-                        color = Color(0xFF454545),
-                        shadowElevation = 6.dp
+                            .height(80.dp),
+                        shape = RoundedCornerShape(0.dp),
+                        color = Color.Transparent,
+                        shadowElevation = 0.dp
                     ) {
                         Row(
                             modifier = Modifier
@@ -354,7 +366,7 @@ class SettingViews {
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             if (activeCat == null) {
-                                // Root Header: Back to Games, Logo, Title
+                                // Root header: clean navigation, without duplicated branding.
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -368,29 +380,15 @@ class SettingViews {
                                         Icon(
                                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                             contentDescription = "Voltar",
-                                            tint = Color.White
+                                            tint = Color(0xFF20242B)
                                         )
                                     }
-                                    Image(
-                                        painter = painterResource(R.drawable.ryujinx_neo_logo),
-                                        contentDescription = "Ryujinx Neo",
-                                        contentScale = ContentScale.Fit,
-                                        modifier = Modifier.height(30.dp)
-                                    )
                                     Text(
                                         "Configurações",
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 18.sp,
-                                        color = Color.White
+                                        fontSize = 22.sp,
+                                        color = Color(0xFF20242B)
                                     )
-                                }
-                                TextButton(
-                                    onClick = {
-                                        save()
-                                        mainViewModel.navController?.popBackStack()
-                                    }
-                                ) {
-                                    Text("Fechar", color = Color.White, fontWeight = FontWeight.Bold)
                                 }
                             } else {
                                 // Dedicated Section Header: Back Arrow, Title, Subtitle, Save button
@@ -408,7 +406,7 @@ class SettingViews {
                                         Icon(
                                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                             contentDescription = "Voltar às Configurações",
-                                            tint = Color.White
+                                            tint = Color(0xFF20242B)
                                         )
                                     }
                                     Column {
@@ -416,12 +414,12 @@ class SettingViews {
                                             text = activeCat.title,
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 18.sp,
-                                            color = Color.White
+                                            color = Color(0xFF20242B)
                                         )
                                         Text(
                                             text = activeCat.description,
                                             fontSize = 12.sp,
-                                            color = Color(0xFFD0D0D0),
+                                            color = Color(0xFF676D77),
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
@@ -433,7 +431,7 @@ class SettingViews {
                                         selectedCategory.value = null
                                     }
                                 ) {
-                                    Text("Salvar", color = Color.White, fontWeight = FontWeight.Bold)
+                                    Text("Salvar", color = Color(0xFF20242B), fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
@@ -444,9 +442,9 @@ class SettingViews {
                         modifier = Modifier
                             .fillMaxWidth()
                             .weight(1f),
-                        shape = RoundedCornerShape(18.dp),
-                        color = Color(0xFF454545),
-                        shadowElevation = 6.dp
+                        shape = RoundedCornerShape(0.dp),
+                        color = Color.Transparent,
+                        shadowElevation = 0.dp
                     ) {
                         if (activeCat == null) {
                             // Grade de Cards de Navegação (Menu Principal de Configurações)
@@ -464,15 +462,27 @@ class SettingViews {
                                 }
                             }
                         } else {
-                            // Janela Nativa Dedicada da Seção Selecionada
-                            Column(
+                            // Focused category content. Navigation stays in the main settings menu.
+                            Row(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .padding(20.dp)
-                                    .verticalScroll(rememberScrollState()),
-                                verticalArrangement = Arrangement.spacedBy(18.dp)
+                                    .padding(12.dp)
                             ) {
-                                when (activeCat) {
+                                Surface(
+                                    modifier = Modifier.fillMaxSize(),
+                                    shape = RoundedCornerShape(24.dp),
+                                    color = Color.White,
+                                    border = BorderStroke(1.dp, Color(0xFFD3D7DD)),
+                                    shadowElevation = 1.dp
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(horizontal = 24.dp, vertical = 18.dp)
+                                            .verticalScroll(rememberScrollState()),
+                                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                                    ) {
+                                    when (activeCat) {
                                     SettingsCategory.Geral -> {
                                         SectionTitle("Orientação da Tela")
                                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -501,30 +511,24 @@ class SettingViews {
 
                                         HighContrastToggle(
                                             title = "Modo de alto desempenho",
-                                            description = "Aumenta a prioridade do processo de emulação e frequências operacionais",
+                                            description = "Solicita maior prioridade de execução para reduzir quedas de desempenho",
                                             checked = enablePerformanceMode.value,
                                             onCheckedChange = { enablePerformanceMode.value = it }
                                         )
                                     }
 
                                     SettingsCategory.Emulacao -> {
-                                        SectionTitle("Modo de Execução da CPU")
-                                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                            ChoiceCard(
-                                                label = "NCE (Execução Nativa)",
-                                                selected = useNce.value,
-                                                modifier = Modifier.weight(1f)
-                                            ) { useNce.value = true }
-                                            ChoiceCard(
-                                                label = "JIT (Interpretador Dinâmico)",
-                                                selected = !useNce.value,
-                                                modifier = Modifier.weight(1f)
-                                            ) { useNce.value = false }
-                                        }
+                                        SectionTitle("Execução da CPU")
+                                        HighContrastToggle(
+                                            title = "Usar execução nativa (NCE)",
+                                            description = "Ativado usa NCE; desativado usa compilação dinâmica JIT",
+                                            checked = useNce.value,
+                                            onCheckedChange = { useNce.value = it }
+                                        )
 
                                         HighContrastToggle(
                                             title = "Cache PPTC (Compilação em Perfil)",
-                                            description = "Salva o código traduzido em disco para carregamento instantâneo",
+                                            description = "Salva código traduzido em disco para reduzir o tempo de inicialização futura",
                                             checked = enablePptc.value,
                                             onCheckedChange = { enablePptc.value = it }
                                         )
@@ -543,49 +547,34 @@ class SettingViews {
                                             onCheckedChange = { enableJitCacheEviction.value = it }
                                         )
 
-                                        SectionTitle("Expansão de Memória Slack")
-                                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                            ChoiceCard(
-                                                label = "Ligado (12 GiB)",
-                                                selected = memorySlackEnabled.value,
-                                                modifier = Modifier.weight(1f)
-                                            ) { memorySlackEnabled.value = true }
-                                            ChoiceCard(
-                                                label = "Desligado (0 GiB)",
-                                                selected = !memorySlackEnabled.value,
-                                                modifier = Modifier.weight(1f)
-                                            ) { memorySlackEnabled.value = false }
-                                        }
+                                        HighContrastToggle(
+                                            title = "Memory Slack de 12 GiB",
+                                            description = "Amplia o espaço de endereçamento reservado; desativado usa 0 GiB adicional",
+                                            checked = memorySlackEnabled.value,
+                                            onCheckedChange = { memorySlackEnabled.value = it }
+                                        )
 
-                                        SectionTitle("Gerenciador de Memória")
-                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            listOf<Pair<MemoryManagerMode, String>>(
-                                                MemoryManagerMode.HostMappedUnsafe to "Host Mapeado (Rápido)",
-                                                MemoryManagerMode.SoftwarePageTable to "Software (Seguro)"
-                                            ).forEach { (mode, label) ->
-                                                ChoiceCard(
-                                                    label = label,
-                                                    selected = memoryManagerMode.value == mode,
-                                                    modifier = Modifier.weight(1f)
-                                                ) { memoryManagerMode.value = mode }
+                                        HighContrastToggle(
+                                            title = "Gerenciador de memória seguro",
+                                            description = "Ativado usa tabela de páginas por software; desativado usa host mapeado, mais rápido",
+                                            checked = memoryManagerMode.value == MemoryManagerMode.SoftwarePageTable,
+                                            onCheckedChange = {
+                                                memoryManagerMode.value = if (it) MemoryManagerMode.SoftwarePageTable else MemoryManagerMode.HostMappedUnsafe
                                             }
-                                        }
+                                        )
 
                                         SectionTitle("Tamanho da DRAM")
-                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            listOf<Pair<MemoryConfiguration, String>>(
-                                                MemoryConfiguration.MemoryConfiguration4GiB to "4 GiB (Padrão)",
-                                                MemoryConfiguration.MemoryConfiguration6GiB to "6 GiB",
-                                                MemoryConfiguration.MemoryConfiguration8GiB to "8 GiB",
-                                                MemoryConfiguration.MemoryConfiguration12GiB to "12 GiB"
-                                            ).forEach { (cfg, label) ->
-                                                ChoiceCard(
-                                                    label = label,
-                                                    selected = memoryConfiguration.value == cfg,
-                                                    modifier = Modifier.weight(1f)
-                                                ) { memoryConfiguration.value = cfg }
-                                            }
-                                        }
+                                        val dramOptions = listOf<Pair<MemoryConfiguration, String>>(
+                                            MemoryConfiguration.MemoryConfiguration4GiB to "4 GiB (Padrão)",
+                                            MemoryConfiguration.MemoryConfiguration6GiB to "6 GiB",
+                                            MemoryConfiguration.MemoryConfiguration8GiB to "8 GiB",
+                                            MemoryConfiguration.MemoryConfiguration12GiB to "12 GiB"
+                                        )
+                                        CompactSelect(
+                                            selectedLabel = dramOptions.first { it.first == memoryConfiguration.value }.second,
+                                            options = dramOptions,
+                                            onSelected = { memoryConfiguration.value = it }
+                                        )
                                     }
 
                                     SettingsCategory.Graficos -> {
@@ -593,22 +582,15 @@ class SettingViews {
                                         ActionButtonRow(
                                             title = "Selecionar Driver Gráfico",
                                             description = "Gerenciar drivers Vulkan personalizados e do sistema",
-                                            buttonText = "Configurar Driver"
+                                            buttonText = "Configurar driver"
                                         ) { isDriverSelectorOpen.value = true }
 
-                                        SectionTitle("Sincronização Vertical (VSync)")
-                                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                            ChoiceCard(
-                                                label = "Switch (60 Hz)",
-                                                selected = vSyncMode.value == VSyncMode.Switch,
-                                                modifier = Modifier.weight(1f)
-                                            ) { vSyncMode.value = VSyncMode.Switch }
-                                            ChoiceCard(
-                                                label = "Ilimitado",
-                                                selected = vSyncMode.value == VSyncMode.Unbounded,
-                                                modifier = Modifier.weight(1f)
-                                            ) { vSyncMode.value = VSyncMode.Unbounded }
-                                        }
+                                        HighContrastToggle(
+                                            title = "Limitar à velocidade do Switch",
+                                            description = "Ativado respeita o limite do jogo; desativado libera a taxa de quadros",
+                                            checked = vSyncMode.value == VSyncMode.Switch,
+                                            onCheckedChange = { vSyncMode.value = if (it) VSyncMode.Switch else VSyncMode.Unbounded }
+                                        )
 
                                         SectionTitle("Escala de Resolução")
                                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -641,14 +623,14 @@ class SettingViews {
 
                                         HighContrastToggle(
                                             title = "Cache de Shaders",
-                                            description = "Armazena shaders compilados para eliminar travamentos e stuttering",
+                                            description = "Reutiliza shaders compilados para reduzir recompilações e engasgos",
                                             checked = enableShaderCache.value,
                                             onCheckedChange = { enableShaderCache.value = it }
                                         )
 
                                         HighContrastToggle(
                                             title = "Proteção de Loops em Shaders (Shader Loop Safety)",
-                                            description = "Previne congelamentos causados por loops infinitos de GPU",
+                                            description = "Limita loops de shader que podem prender a GPU; pode causar falhas visuais em alguns jogos",
                                             checked = enableShaderLoopSafety.value,
                                             onCheckedChange = { enableShaderLoopSafety.value = it }
                                         )
@@ -676,7 +658,7 @@ class SettingViews {
 
                                         HighContrastToggle(
                                             title = "Renderização em Múltiplas Threads",
-                                            description = "Executa comandos de renderização em threads dedicadas para mais FPS",
+                                            description = "Processa comandos gráficos em uma thread dedicada; pode melhorar fluidez ou compatibilidade",
                                             checked = !disableThreadedRendering.value,
                                             onCheckedChange = {
                                                 disableThreadedRendering.value = !it
@@ -688,35 +670,32 @@ class SettingViews {
                                     SettingsCategory.Controles -> {
                                         HighContrastToggle(
                                             title = "Controle Virtual na Tela",
-                                            description = "Exibe botões touch overlay para jogar diretamente na tela",
+                                            description = "Exibe os botões virtuais sobre a tela do jogo",
                                             checked = useVirtualController.value,
                                             onCheckedChange = { useVirtualController.value = it }
                                         )
 
                                         SectionTitle("Layout Predefinido do Controle")
-                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            listOf<Pair<QuickSettings.VirtualControllerPreset, String>>(
-                                                QuickSettings.VirtualControllerPreset.Default to "Padrão",
-                                                QuickSettings.VirtualControllerPreset.Layout2 to "Layout 2",
-                                                QuickSettings.VirtualControllerPreset.Layout3 to "Layout 3",
-                                                QuickSettings.VirtualControllerPreset.Layout4 to "Layout 4",
-                                                QuickSettings.VirtualControllerPreset.Layout5 to "Layout 5",
-                                                QuickSettings.VirtualControllerPreset.Layout6 to "Layout 6"
-                                            ).forEach { (preset, label) ->
-                                                ChoiceCard(
-                                                    label = label,
-                                                    selected = vcPreset.value == preset,
-                                                    modifier = Modifier.weight(1f)
-                                                ) {
-                                                    vcPreset.value = preset
-                                                    QuickSettings(mainViewModel.activity).virtualControllerPreset = preset
-                                                }
+                                        val controllerLayouts = listOf<Pair<QuickSettings.VirtualControllerPreset, String>>(
+                                            QuickSettings.VirtualControllerPreset.Default to "Padrão",
+                                            QuickSettings.VirtualControllerPreset.Layout2 to "Layout 2",
+                                            QuickSettings.VirtualControllerPreset.Layout3 to "Layout 3",
+                                            QuickSettings.VirtualControllerPreset.Layout4 to "Layout 4",
+                                            QuickSettings.VirtualControllerPreset.Layout5 to "Layout 5",
+                                            QuickSettings.VirtualControllerPreset.Layout6 to "Layout 6"
+                                        )
+                                        CompactSelect(
+                                            selectedLabel = controllerLayouts.first { it.first == vcPreset.value }.second,
+                                            options = controllerLayouts,
+                                            onSelected = {
+                                                vcPreset.value = it
+                                                QuickSettings(mainViewModel.activity).virtualControllerPreset = it
                                             }
-                                        }
+                                        )
 
                                         HighContrastToggle(
                                             title = "Inverter A/B e X/Y (Layout Switch)",
-                                            description = "Mantém a posição nativa do botão Nintendo Switch",
+                                            description = "Troca a posição física dos botões; desativado por padrão",
                                             checked = useSwitchLayout.value,
                                             onCheckedChange = { useSwitchLayout.value = it }
                                         )
@@ -766,19 +745,11 @@ class SettingViews {
                                             SystemLanguage.Russian to "Russo",
                                             SystemLanguage.SimplifiedChinese to "Chinês (Simplificado)"
                                         )
-                                        LazyVerticalGrid(
-                                            columns = GridCells.Adaptive(minSize = 140.dp),
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                                            modifier = Modifier.height(180.dp)
-                                        ) {
-                                            items(langList) { (lang, label) ->
-                                                ChoiceCard(
-                                                    label = label,
-                                                    selected = systemLanguage.value == lang
-                                                ) { systemLanguage.value = lang }
-                                            }
-                                        }
+                                        CompactSelect(
+                                            selectedLabel = langList.first { it.first == systemLanguage.value }.second,
+                                            options = langList,
+                                            onSelected = { systemLanguage.value = it }
+                                        )
 
                                         SectionTitle("Região do Console")
                                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -800,13 +771,13 @@ class SettingViews {
                                         ActionButtonRow(
                                             title = "Instalar Chaves (prod.keys)",
                                             description = "Chaves decodificadoras necessárias para carregar os jogos",
-                                            buttonText = "Instalar Keys"
+                                            buttonText = "Instalar chaves"
                                         ) { showKeyDialog.value = true }
 
                                         ActionButtonRow(
                                             title = "Instalar Firmware",
                                             description = "Versão atual: ${firmwareVersion.value.ifBlank { "Nenhum instalado" }}",
-                                            buttonText = "Instalar Firmware"
+                                            buttonText = "Instalar firmware"
                                         ) { showFirwmareDialog.value = true }
                                     }
 
@@ -815,13 +786,13 @@ class SettingViews {
                                         ActionButtonRow(
                                             title = "Adicionar Pasta de Jogos",
                                             description = "Selecione o diretório onde suas ROMs estão armazenadas",
-                                            buttonText = "Adicionar Pasta"
+                                            buttonText = "Adicionar pasta"
                                         ) { settingsViewModel.openGameFolder() }
 
                                         ActionButtonRow(
                                             title = "Pasta de Atualizações e DLCs",
                                             description = "Diretório de patches e expansões instaladas",
-                                            buttonText = "Selecionar Pasta"
+                                            buttonText = "Selecionar pasta"
                                         ) { settingsViewModel.openUpdatesFolder() }
 
                                         SectionTitle("Gerenciamento de Dados")
@@ -860,20 +831,26 @@ class SettingViews {
 
                                     SettingsCategory.Avancado -> {
                                         HighContrastToggle(
-                                            title = "Verificações de Integridade do FS",
-                                            description = "Valida assinaturas de integridade do sistema de arquivos ao carregar",
+                                            title = "Integridade do sistema de arquivos",
+                                            description = "Valida a integridade dos arquivos de conteúdo durante o carregamento",
                                             checked = enableFsIntegrityChecks.value,
                                             onCheckedChange = { enableFsIntegrityChecks.value = it }
                                         )
 
                                         HighContrastToggle(
                                             title = "Ignorar Serviços Ausentes",
-                                            description = "Evita travamentos caso o jogo requisite serviços ainda não emulados",
+                                            description = "Permite continuar quando um jogo solicita serviços ainda não implementados; pode causar erros",
                                             checked = ignoreMissingServices.value,
                                             onCheckedChange = { ignoreMissingServices.value = it }
                                         )
 
                                         SectionTitle("Registros de Log e Diagnóstico")
+                                        ActionButtonRow(
+                                            title = "Compartilhar logs",
+                                            description = "Compacta os registros disponíveis e abre o menu de compartilhamento do Android",
+                                            buttonText = "Compartilhar"
+                                        ) { mainViewModel.logging.requestExport() }
+
                                         HighContrastToggle(
                                             title = "Logs de Stub",
                                             description = "Registra chamadas a funções não implementadas",
@@ -909,8 +886,8 @@ class SettingViews {
                                     SettingsCategory.Sobre -> {
                                         Surface(
                                             shape = RoundedCornerShape(14.dp),
-                                            color = Color(0xFF2E2E32),
-                                            border = BorderStroke(1.dp, Color(0xFF5A5A60)),
+                                            color = Color.White,
+                                            border = BorderStroke(1.dp, Color(0xFFD3D7DD)),
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
                                             Column(
@@ -927,12 +904,12 @@ class SettingViews {
                                                     "Ryujinx Neo - Emulador de Nintendo Switch",
                                                     fontWeight = FontWeight.Bold,
                                                     fontSize = 16.sp,
-                                                    color = Color.White
+                                                    color = Color(0xFF20242B)
                                                 )
                                                 Text(
                                                     "Branch: neo-v2-nce2\nMotor NCE Armv8.2-A nativo com proteção de loop de shader e memória Slack.",
                                                     fontSize = 13.sp,
-                                                    color = Color(0xFFD0D0D0)
+                                                    color = Color(0xFF676D77)
                                                 )
                                                 Text(
                                                     "Interface reformulada com caixinhas modulares de alto contraste e mockups de cartucho.",
@@ -941,6 +918,8 @@ class SettingViews {
                                                 )
                                             }
                                         }
+                                    }
+                                    }
                                     }
                                 }
                             }
@@ -968,7 +947,7 @@ class SettingViews {
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "Key Installation",
+                                text = "Instalação de chaves",
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(bottom = 16.dp),
@@ -978,7 +957,7 @@ class SettingViews {
                             when (keyInstallState.value) {
                                 KeyInstallState.File -> {
                                     Text(
-                                        text = "Select a key file to install key from.",
+                                        text = "Selecione o arquivo de chaves que deseja instalar.",
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(start = 8.dp, bottom = 8.dp),
@@ -1000,7 +979,7 @@ class SettingViews {
                                                 .weight(1f)
                                                 .padding(horizontal = 8.dp)
                                         ) {
-                                            Text(text = "Select File")
+                                            Text(text = "Selecionar arquivo")
                                         }
                                         Button(
                                             onClick = {
@@ -1011,13 +990,13 @@ class SettingViews {
                                                 .weight(1f)
                                                 .padding(horizontal = 8.dp)
                                         ) {
-                                            Text(text = "Cancel")
+                                            Text(text = "Cancelar")
                                         }
                                     }
                                 }
                                 KeyInstallState.Query -> {
                                     Text(
-                                        text = "Key file will be installed. Do you want to continue?",
+                                        text = "O arquivo de chaves será instalado. Deseja continuar?",
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(start = 8.dp, bottom = 8.dp),
@@ -1044,7 +1023,7 @@ class SettingViews {
                                                 .weight(1f)
                                                 .padding(horizontal = 8.dp)
                                         ) {
-                                            Text(text = "Yes")
+                                            Text(text = "Sim")
                                         }
                                         Button(
                                             onClick = {
@@ -1055,13 +1034,13 @@ class SettingViews {
                                                 .weight(1f)
                                                 .padding(horizontal = 8.dp)
                                         ) {
-                                            Text(text = "No")
+                                            Text(text = "Não")
                                         }
                                     }
                                 }
                                 KeyInstallState.Install -> {
                                     Text(
-                                        text = "Installing key file...",
+                                        text = "Instalando arquivo de chaves...",
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(start = 8.dp, bottom = 8.dp),
@@ -1075,7 +1054,7 @@ class SettingViews {
                                 }
                                 KeyInstallState.Done -> {
                                     Text(
-                                        text = "Key file installed.",
+                                        text = "Arquivo de chaves instalado.",
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(start = 8.dp, bottom = 8.dp),
@@ -1096,7 +1075,7 @@ class SettingViews {
                                                 .weight(1f)
                                                 .padding(horizontal = 8.dp)
                                         ) {
-                                            Text(text = "Close")
+                                            Text(text = "Fechar")
                                         }
                                     }
                                 }
@@ -1105,7 +1084,7 @@ class SettingViews {
                                     if (file != null) {
                                         if (file.extension == "key") {
                                             Text(
-                                                text = "Unknown Error has occurred. Please check logs.",
+                                                text = "Ocorreu um erro desconhecido. Consulte os logs.",
                                                 modifier = Modifier
                                                     .fillMaxWidth()
                                                     .padding(start = 8.dp, bottom = 8.dp),
@@ -1113,7 +1092,7 @@ class SettingViews {
                                             )
                                         } else {
                                             Text(
-                                                text = "File type is not supported.",
+                                                text = "Este tipo de arquivo não é compatível.",
                                                 modifier = Modifier
                                                     .fillMaxWidth()
                                                     .padding(start = 8.dp, bottom = 8.dp),
@@ -1122,7 +1101,7 @@ class SettingViews {
                                         }
                                     } else {
                                         Text(
-                                            text = "File type is not supported.",
+                                            text = "Este tipo de arquivo não é compatível.",
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .padding(start = 8.dp, bottom = 8.dp),
@@ -1145,7 +1124,7 @@ class SettingViews {
                                                 .weight(1f)
                                                 .padding(horizontal = 8.dp)
                                         ) {
-                                            Text(text = "Close")
+                                            Text(text = "Fechar")
                                         }
                                     }
                                 }
@@ -1171,7 +1150,7 @@ class SettingViews {
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "Firmware Installation",
+                                text = "Instalação de firmware",
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(bottom = 16.dp),
@@ -1181,7 +1160,7 @@ class SettingViews {
                             when (firmwareInstallState.value) {
                                 FirmwareInstallState.File -> {
                                     Text(
-                                        text = "Select a zip or xci file to install firmware from.",
+                                        text = "Selecione um arquivo ZIP ou XCI que contenha o firmware.",
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(start = 8.dp, bottom = 8.dp),
@@ -1201,7 +1180,7 @@ class SettingViews {
                                                 .weight(1f)
                                                 .padding(horizontal = 8.dp)
                                         ) {
-                                            Text(text = "Select File")
+                                            Text(text = "Selecionar arquivo")
                                         }
                                         Button(
                                             onClick = {
@@ -1212,13 +1191,13 @@ class SettingViews {
                                                 .weight(1f)
                                                 .padding(horizontal = 8.dp)
                                         ) {
-                                            Text(text = "Cancel")
+                                            Text(text = "Cancelar")
                                         }
                                     }
                                 }
                                 FirmwareInstallState.Query -> {
                                     Text(
-                                        text = "Firmware ${settingsViewModel.selectedFirmwareVersion} will be installed. Do you want to continue?",
+                                        text = "O firmware ${settingsViewModel.selectedFirmwareVersion} será instalado. Deseja continuar?",
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(start = 8.dp, bottom = 8.dp),
@@ -1243,7 +1222,7 @@ class SettingViews {
                                                 .weight(1f)
                                                 .padding(horizontal = 8.dp)
                                         ) {
-                                            Text(text = "Yes")
+                                            Text(text = "Sim")
                                         }
                                         Button(
                                             onClick = {
@@ -1254,13 +1233,13 @@ class SettingViews {
                                                 .weight(1f)
                                                 .padding(horizontal = 8.dp)
                                         ) {
-                                            Text(text = "No")
+                                            Text(text = "Não")
                                         }
                                     }
                                 }
                                 FirmwareInstallState.Verifying -> {
                                     Text(
-                                        text = "Verifying selected file...",
+                                        text = "Verificando o arquivo selecionado...",
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(start = 8.dp, bottom = 8.dp),
@@ -1274,7 +1253,7 @@ class SettingViews {
                                 }
                                 FirmwareInstallState.Install -> {
                                     Text(
-                                        text = "Installing firmware ${settingsViewModel.selectedFirmwareVersion}...",
+                                        text = "Instalando o firmware ${settingsViewModel.selectedFirmwareVersion}...",
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(start = 8.dp, bottom = 8.dp),
@@ -1311,7 +1290,7 @@ class SettingViews {
                                                 .weight(1f)
                                                 .padding(horizontal = 8.dp)
                                         ) {
-                                            Text(text = "Close")
+                                            Text(text = "Fechar")
                                         }
                                     }
                                 }
@@ -1321,7 +1300,7 @@ class SettingViews {
                                         if (file.extension == "xci" || file.extension == "zip") {
                                             if (settingsViewModel.selectedFirmwareVersion.isEmpty()) {
                                                 Text(
-                                                    text = "Unable to find version in selected file.",
+                                                    text = "Não foi possível identificar a versão no arquivo selecionado.",
                                                     modifier = Modifier
                                                         .fillMaxWidth()
                                                         .padding(start = 8.dp, bottom = 8.dp),
@@ -1329,7 +1308,7 @@ class SettingViews {
                                                 )
                                             } else {
                                                 Text(
-                                                    text = "Unknown Error has occurred. Please check logs.",
+                                                    text = "Ocorreu um erro desconhecido. Consulte os logs.",
                                                     modifier = Modifier
                                                         .fillMaxWidth()
                                                         .padding(start = 8.dp, bottom = 8.dp),
@@ -1338,7 +1317,7 @@ class SettingViews {
                                             }
                                         } else {
                                             Text(
-                                                text = "File type is not supported.",
+                                                text = "Este tipo de arquivo não é compatível.",
                                                 modifier = Modifier
                                                     .fillMaxWidth()
                                                     .padding(start = 8.dp, bottom = 8.dp),
@@ -1347,7 +1326,7 @@ class SettingViews {
                                         }
                                     } else {
                                         Text(
-                                            text = "File type is not supported.",
+                                            text = "Este tipo de arquivo não é compatível.",
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .padding(start = 8.dp, bottom = 8.dp),
@@ -1370,7 +1349,7 @@ class SettingViews {
                                                 .weight(1f)
                                                 .padding(horizontal = 8.dp)
                                         ) {
-                                            Text(text = "Close")
+                                            Text(text = "Fechar")
                                         }
                                     }
                                 }
@@ -1395,7 +1374,7 @@ class SettingViews {
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "App Data Reinit",
+                                text = "Redefinir dados do aplicativo",
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(bottom = 16.dp),
@@ -1405,7 +1384,7 @@ class SettingViews {
                             when (dataResetState.value) {
                                 DataResetState.Query -> {
                                     Text(
-                                        text = "Current bis, games, profiles and system folders will be reset. Do you want to continue?",
+                                        text = "As pastas BIS, jogos, perfis e sistema serão apagadas e recriadas. Deseja continuar?",
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(start = 8.dp, bottom = 8.dp),
@@ -1427,7 +1406,7 @@ class SettingViews {
                                                 .weight(1f)
                                                 .padding(horizontal = 8.dp)
                                         ) {
-                                            Text(text = "Yes")
+                                            Text(text = "Sim")
                                         }
                                         Button(
                                             onClick = {
@@ -1437,13 +1416,13 @@ class SettingViews {
                                                 .weight(1f)
                                                 .padding(horizontal = 8.dp)
                                         ) {
-                                            Text(text = "No")
+                                            Text(text = "Não")
                                         }
                                     }
                                 }
                                 DataResetState.Reset -> {
                                     Text(
-                                        text = "Resetting app data...",
+                                        text = "Redefinindo os dados do aplicativo...",
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(start = 8.dp, bottom = 8.dp),
@@ -1457,7 +1436,7 @@ class SettingViews {
                                 }
                                 DataResetState.Done -> {
                                     Text(
-                                        text = "Data reset completed successfully.",
+                                        text = "Os dados foram redefinidos com sucesso.",
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(start = 8.dp, bottom = 8.dp),
@@ -1483,7 +1462,7 @@ class SettingViews {
                                                 .weight(1f)
                                                 .padding(horizontal = 8.dp)
                                         ) {
-                                            Text(text = "Close")
+                                            Text(text = "Fechar")
                                         }
                                     }
                                 }
@@ -1509,7 +1488,7 @@ class SettingViews {
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "App Data Import",
+                                text = "Importar dados do aplicativo",
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(bottom = 16.dp),
@@ -1519,7 +1498,7 @@ class SettingViews {
                             when (dataImportState.value) {
                                 DataImportState.File -> {
                                     Text(
-                                        text = "Select a zip file to import bis, games, profiles and system folders from another Android installation.",
+                                        text = "Selecione um arquivo ZIP com as pastas BIS, jogos, perfis e sistema de outra instalação Android.",
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(start = 8.dp, bottom = 8.dp),
@@ -1560,7 +1539,7 @@ class SettingViews {
                                                 .weight(1f)
                                                 .padding(horizontal = 8.dp)
                                         ) {
-                                            Text(text = "Select File")
+                                            Text(text = "Selecionar arquivo")
                                         }
                                         Button(
                                             onClick = {
@@ -1572,13 +1551,13 @@ class SettingViews {
                                                 .weight(1f)
                                                 .padding(horizontal = 8.dp)
                                         ) {
-                                            Text(text = "Cancel")
+                                            Text(text = "Cancelar")
                                         }
                                     }
                                 }
                                 DataImportState.Query -> {
                                     Text(
-                                        text = "Current app data will be wiped and replaced. Do you want to continue?",
+                                        text = "Os dados atuais serão apagados e substituídos. Deseja continuar?",
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(start = 8.dp, bottom = 8.dp),
@@ -1604,7 +1583,7 @@ class SettingViews {
                                                 .weight(1f)
                                                 .padding(horizontal = 8.dp)
                                         ) {
-                                            Text(text = "Yes")
+                                            Text(text = "Sim")
                                         }
                                         Button(
                                             onClick = {
@@ -1615,13 +1594,13 @@ class SettingViews {
                                                 .weight(1f)
                                                 .padding(horizontal = 8.dp)
                                         ) {
-                                            Text(text = "No")
+                                            Text(text = "Não")
                                         }
                                     }
                                 }
                                 DataImportState.Import -> {
                                     Text(
-                                        text = "Importing app data...",
+                                        text = "Importando dados do aplicativo...",
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(start = 8.dp, bottom = 8.dp),
@@ -1636,7 +1615,7 @@ class SettingViews {
 
                                 DataImportState.Done -> {
                                     Text(
-                                        text = "Data import completed successfully.",
+                                        text = "Os dados foram importados com sucesso.",
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(start = 8.dp, bottom = 8.dp),
@@ -1663,7 +1642,7 @@ class SettingViews {
                                                 .weight(1f)
                                                 .padding(horizontal = 8.dp)
                                         ) {
-                                            Text(text = "Close")
+                                            Text(text = "Fechar")
                                         }
                                     }
                                 }
@@ -1673,18 +1652,66 @@ class SettingViews {
             }
 
         @Composable
+        private fun <T> CompactSelect(
+            selectedLabel: String,
+            options: List<Pair<T, String>>,
+            onSelected: (T) -> Unit
+        ) {
+            var expanded by remember { mutableStateOf(false) }
+            Box(modifier = Modifier.width(360.dp)) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .clickable { expanded = true },
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color.White,
+                    border = BorderStroke(1.dp, Color(0xFFC8CCD3))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 13.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            selectedLabel,
+                            modifier = Modifier.weight(1f),
+                            color = Color(0xFF252930),
+                            fontWeight = FontWeight.Medium
+                        )
+                        Icon(Icons.Default.ArrowDropDown, contentDescription = "Abrir opções", tint = Color(0xFF626873))
+                    }
+                }
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    containerColor = Color.White
+                ) {
+                    options.forEach { (value, label) ->
+                        DropdownMenuItem(
+                            text = { Text(label, color = Color(0xFF252930)) },
+                            onClick = {
+                                onSelected(value)
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        @Composable
         private fun CategoryNavCard(
             category: SettingsCategory,
             onClick: () -> Unit
         ) {
             Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = Color(0xFF2E2E32),
-                border = BorderStroke(1.dp, Color(0xFF5A5A60)),
+                shape = RoundedCornerShape(18.dp),
+                color = Color.White,
+                border = BorderStroke(1.dp, Color(0xFFD3D7DD)),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(96.dp)
-                    .clip(RoundedCornerShape(14.dp))
+                    .height(92.dp)
+                    .clip(RoundedCornerShape(18.dp))
                     .clickable(onClick = onClick)
             ) {
                 Row(
@@ -1700,8 +1727,8 @@ class SettingViews {
                         modifier = Modifier.weight(1f)
                     ) {
                         Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = Color.White.copy(alpha = 0.12f),
+                            shape = RoundedCornerShape(14.dp),
+                            color = Color(0xFFE9EBEF),
                             modifier = Modifier.size(48.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
@@ -1715,7 +1742,7 @@ class SettingViews {
                                     Icon(
                                         imageVector = category.icon,
                                         contentDescription = null,
-                                        tint = Color.White,
+                                        tint = Color(0xFF30343C),
                                         modifier = Modifier.size(26.dp)
                                     )
                                 }
@@ -1726,12 +1753,12 @@ class SettingViews {
                                 text = category.title,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp,
-                                color = Color.White
+                                color = Color(0xFF20242B)
                             )
                             Text(
                                 text = category.description,
                                 fontSize = 12.sp,
-                                color = Color(0xFFC0C0C0),
+                                color = Color(0xFF676D77),
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -1740,7 +1767,7 @@ class SettingViews {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = "Abrir",
-                        tint = Color.White,
+                        tint = Color(0xFF30343C),
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -1753,7 +1780,7 @@ class SettingViews {
                 text = title,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
-                color = Color.White,
+                color = Color(0xFF20242B),
                 modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)
             )
         }
@@ -1766,12 +1793,12 @@ class SettingViews {
             onCheckedChange: (Boolean) -> Unit
         ) {
             Surface(
-                shape = RoundedCornerShape(10.dp),
-                color = Color(0xFF2E2E32),
-                border = BorderStroke(1.dp, Color(0xFF505056)),
+                shape = RoundedCornerShape(14.dp),
+                color = Color.White,
+                border = BorderStroke(1.dp, Color(0xFFD3D7DD)),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(14.dp))
                     .clickable { onCheckedChange(!checked) }
             ) {
                 Row(
@@ -1784,12 +1811,12 @@ class SettingViews {
                             text = title,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 14.sp,
-                            color = Color.White
+                            color = Color(0xFF20242B)
                         )
                         Text(
                             text = description,
                             fontSize = 12.sp,
-                            color = Color(0xFFB0B0B8)
+                            color = Color(0xFF676D77)
                         )
                     }
                     Switch(
@@ -1797,9 +1824,9 @@ class SettingViews {
                         onCheckedChange = null,
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = Color.White,
-                            checkedTrackColor = Color(0xFF6A6A75),
-                            uncheckedThumbColor = Color(0xFF909090),
-                            uncheckedTrackColor = Color(0xFF222226)
+                            checkedTrackColor = Color(0xFF343A44),
+                            uncheckedThumbColor = Color(0xFF8D929C),
+                            uncheckedTrackColor = Color(0xFFD5D8DE)
                         )
                     )
                 }
@@ -1814,9 +1841,9 @@ class SettingViews {
             onClick: () -> Unit
         ) {
             Surface(
-                shape = RoundedCornerShape(10.dp),
-                color = Color(0xFF2E2E32),
-                border = BorderStroke(1.dp, Color(0xFF505056)),
+                shape = RoundedCornerShape(14.dp),
+                color = Color.White,
+                border = BorderStroke(1.dp, Color(0xFFD3D7DD)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -1829,19 +1856,19 @@ class SettingViews {
                             text = title,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 14.sp,
-                            color = Color.White
+                            color = Color(0xFF20242B)
                         )
                         Text(
                             text = description,
                             fontSize = 12.sp,
-                            color = Color(0xFFB0B0B8)
+                            color = Color(0xFF676D77)
                         )
                     }
                     Button(
                         onClick = onClick,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.White,
-                            contentColor = Color.Black
+                            containerColor = Color(0xFF252930),
+                            contentColor = Color.White
                         ),
                         shape = RoundedCornerShape(8.dp)
                     ) {

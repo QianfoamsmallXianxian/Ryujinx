@@ -23,13 +23,11 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -41,9 +39,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
 import android.widget.Toast
@@ -149,7 +148,12 @@ class GameViews {
                     if (name.isNullOrBlank()) "Slot $slot" else name
 
                 if (showStats.value) {
-                    GameStats(mainViewModel)
+                    GameStats(
+                        mainViewModel,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(top = 8.dp, end = 10.dp)
+                    )
                 }
 
                 mainViewModel.setProgressStates(showLoading, progressValue, progress)
@@ -201,7 +205,7 @@ class GameViews {
                     Box(
                         modifier = Modifier
                             .align(Alignment.CenterStart)
-                            .width(20.dp)
+                            .width(32.dp)
                             .fillMaxHeight()
                             .pointerInput(Unit) {
                                 var distance = 0f
@@ -449,57 +453,62 @@ class GameViews {
  }
 
  @Composable
- fun GameStats(mainViewModel: MainViewModel) {
+ fun GameStats(mainViewModel: MainViewModel, modifier: Modifier = Modifier) {
  val fifo = remember { mutableDoubleStateOf(0.0) }
  val gameFps = remember { mutableDoubleStateOf(0.0) }
  val gameTime = remember { mutableDoubleStateOf(0.0) }
  val usedMem = remember { mutableIntStateOf(0) }
  val totalMem = remember { mutableIntStateOf(0) }
- val frequencies = remember { mutableListOf<Double>() }
+ val cpuMode = remember { if (mainViewModel.getSettingsForGame().useNce) "NCE" else "JIT" }
+
+ val frameTime = gameTime.doubleValue.takeIf { it.isFinite() && it >= 0.0 } ?: 0.0
+ val usedRamGb = usedMem.intValue / 1024.0
+ val totalRamGb = totalMem.intValue / 1024.0
 
  Surface(
- modifier = Modifier.padding(16.dp),
- color = MaterialTheme.colorScheme.background.copy(0.4f)
+ modifier = modifier,
+ shape = CircleShape,
+ color = Color.Black.copy(alpha = 0.58f),
+ border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f))
  ) {
- CompositionLocalProvider(LocalTextStyle provides TextStyle(fontSize = 10.sp)) {
- Column {
- var gameTimeVal = 0.0
- if (!gameTime.doubleValue.isInfinite())
- gameTimeVal = gameTime.doubleValue
- Text(text = "${String.format(java.util.Locale.getDefault(), "%.3f", fifo.doubleValue)} %")
- Text(text = "${String.format(java.util.Locale.getDefault(), "%.3f", gameFps.doubleValue)} FPS")
- Text(text = "${String.format(java.util.Locale.getDefault(), "%.3f", gameTimeVal)} ms")
- Box(modifier = Modifier.width(96.dp)) {
- Column {
- LazyColumn {
- items(count = frequencies.size) { i ->
- if (i < frequencies.size) {
- val t = frequencies[i]
- Row {
- Text(modifier = Modifier.padding(2.dp), text = "CPU $i")
- Spacer(Modifier.weight(1f))
- Text(text = "$t MHz")
- }
- }
- }
- }
- Row {
- Text(modifier = Modifier.padding(2.dp), text = "Used")
- Spacer(Modifier.weight(1f))
- Text(text = "${usedMem.intValue} MB")
- }
- Row {
- Text(modifier = Modifier.padding(2.dp), text = "Total")
- Spacer(Modifier.weight(1f))
- Text(text = "${totalMem.intValue} MB")
- }
- }
- }
- }
- }
+     Row(
+         modifier = Modifier
+             .padding(horizontal = 12.dp, vertical = 6.dp),
+         horizontalArrangement = Arrangement.spacedBy(8.dp),
+         verticalAlignment = Alignment.CenterVertically
+     ) {
+         StatMetric("CPU", cpuMode)
+         StatDivider()
+         StatMetric("FPS", String.format(Locale.getDefault(), "%.1f", gameFps.doubleValue))
+         StatDivider()
+         StatMetric("QUADRO", "${String.format(Locale.getDefault(), "%.1f", frameTime)} ms")
+         StatDivider()
+         StatMetric("FIFO", "${String.format(Locale.getDefault(), "%.0f", fifo.doubleValue)}%")
+         StatDivider()
+         StatMetric(
+             "RAM",
+             "${String.format(Locale.getDefault(), "%.1f", usedRamGb)}/${String.format(Locale.getDefault(), "%.1f", totalRamGb)} GB"
+         )
+     }
  }
 
- mainViewModel.setStatStates(fifo, gameFps, gameTime, usedMem, totalMem, frequencies)
+ mainViewModel.setStatStates(fifo, gameFps, gameTime, usedMem, totalMem)
+ }
+
+ @Composable
+ private fun StatMetric(label: String, value: String) {
+     Row(
+         verticalAlignment = Alignment.CenterVertically,
+         horizontalArrangement = Arrangement.spacedBy(6.dp)
+     ) {
+         Text(label, color = Color.White.copy(alpha = 0.64f), fontSize = 9.sp, fontWeight = FontWeight.Bold)
+         Text(value, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+     }
+ }
+
+ @Composable
+ private fun StatDivider() {
+     Text("•", color = Color.White.copy(alpha = 0.32f), fontSize = 9.sp)
  }
  }
 }

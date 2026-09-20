@@ -2,7 +2,6 @@ package org.kenjinx.android.ui.theme
 
 import android.app.Activity
 import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
@@ -21,36 +20,48 @@ import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
     primary = Gray90,
-    secondary = Gray80,
+    secondary = NeoAccent,
     tertiary = Gray60,
     background = Gray05,
     surface = Gray10,
     surfaceVariant = Gray20,
-    primaryContainer = Gray40,
+    primaryContainer = Gray30,
+    secondaryContainer = Gray20,
     onPrimary = Gray10,
     onSecondary = Gray90,
     onTertiary = Gray10,
     onBackground = Gray90,
-    onSurface = Gray80
+    onSurface = Gray90,
+    onSurfaceVariant = Gray80,
+    outline = Gray40,
+    error = NeoDanger
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Gray10,
-    secondary = Gray40,
-    tertiary = Gray60,
-    background = Gray98,
+    primary = Color(0xFF20242B),
+    secondary = Color(0xFF59616D),
+    tertiary = Color(0xFF747B86),
+    background = Color(0xFFF3F4F6),
     surface = Color(0xFFFFFFFF),
+    surfaceVariant = Color(0xFFEAECF0),
+    primaryContainer = Color(0xFFD8DCE3),
+    secondaryContainer = Color(0xFFE3E6EB),
     onPrimary = Color.White,
+    onPrimaryContainer = Color(0xFF171A20),
     onSecondary = Color.White,
+    onSecondaryContainer = Color(0xFF252930),
     onTertiary = Color.White,
-    onBackground = Gray20,
-    onSurface = Gray10,
+    onBackground = Color(0xFF17191D),
+    onSurface = Color(0xFF17191D),
+    onSurfaceVariant = Color(0xFF555B65),
+    outline = Color(0xFFC5C9D0),
+    error = Color(0xFFC5333E)
 )
 
 @Suppress("DEPRECATION")
 @Composable
 fun KenjinxAndroidTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    darkTheme: Boolean = false,
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = false,  // Changed from true to false to use our custom colors
     content: @Composable () -> Unit

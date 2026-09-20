@@ -105,7 +105,7 @@ class SettingsViewModel(val activity: MainActivity) {
         maxAnisotropy.value = sharedPref.getFloat("maxAnisotropy", 0f)
         useVirtualController.value = sharedPref.getBoolean("useVirtualController", true)
         isGrid.value = sharedPref.getBoolean("isGrid", true)
-        useSwitchLayout.value = sharedPref.getBoolean("useSwitchLayout", true)
+        useSwitchLayout.value = sharedPref.getBoolean("useSwitchLayout", false)
         enableMotion.value = sharedPref.getBoolean("enableMotion", true)
         enablePerformanceMode.value = sharedPref.getBoolean("enablePerformanceMode", false)
         controllerStickSensitivity.value = sharedPref.getFloat("controllerStickSensitivity", 1.0f)

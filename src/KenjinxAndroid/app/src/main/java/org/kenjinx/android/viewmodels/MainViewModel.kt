@@ -50,7 +50,6 @@ class MainViewModel(val activity: MainActivity) {
     private var fifoState: MutableState<Double>? = null
     private var usedMemState: MutableState<Int>? = null
     private var totalMemState: MutableState<Int>? = null
-    private var frequenciesState: MutableList<Double>? = null
     private var progress: MutableState<String>? = null
     private var progressValue: MutableState<Float>? = null
     private var showLoading: MutableState<Boolean>? = null
@@ -481,15 +480,13 @@ class MainViewModel(val activity: MainActivity) {
         gameFps: MutableState<Double>,
         gameTime: MutableState<Double>,
         usedMem: MutableState<Int>,
-        totalMem: MutableState<Int>,
-        frequencies: MutableList<Double>
+        totalMem: MutableState<Int>
     ) {
         fifoState = fifo
         gameFpsState = gameFps
         gameTimeState = gameTime
         usedMemState = usedMem
         totalMemState = totalMem
-        frequenciesState = frequencies
     }
 
     fun updateStats(
@@ -514,7 +511,6 @@ class MainViewModel(val activity: MainActivity) {
                 )
             }
         }
-        frequenciesState?.let { PerformanceMonitor.getFrequencies(it) }
     }
 
     fun setGameController(controller: IGameController) {
