@@ -20,11 +20,13 @@ import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = AquaGreen60,
-    secondary = Gray60,
-    tertiary = Red40,
-    background = Gray10,
-    surface = Gray20,
+    primary = Gray90,
+    secondary = Gray80,
+    tertiary = Gray60,
+    background = Gray05,
+    surface = Gray10,
+    surfaceVariant = Gray20,
+    primaryContainer = Gray40,
     onPrimary = Gray10,
     onSecondary = Gray90,
     onTertiary = Gray10,
@@ -33,10 +35,10 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Red40,
+    primary = Gray10,
     secondary = Gray40,
-    tertiary = AquaGreen60,
-    background = Color(0xFFF8F8F8),
+    tertiary = Gray60,
+    background = Gray98,
     surface = Color(0xFFFFFFFF),
     onPrimary = Color.White,
     onSecondary = Color.White,
@@ -73,8 +75,10 @@ fun KenjinxAndroidTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
+            window.statusBarColor = colorScheme.background.toArgb()
+            window.navigationBarColor = colorScheme.background.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !darkTheme
         }
     }
 

@@ -143,6 +143,29 @@ class MainViewModel(val activity: MainActivity) {
         val stored = prefs.getString("region_code", "USA") ?: "USA"
         return runCatching { RegionCode.valueOf(stored) }.getOrElse { RegionCode.USA }
     }
+
+    fun getSettingsForGame(game: GameModel? = gameModel): QuickSettings {
+        val settings = QuickSettings(activity)
+        val titleId = game?.titleId.orEmpty()
+        if (titleId.isNotBlank()) {
+            GameSettingsStore(activity, titleId).applyTo(settings)
+        }
+        return settings
+    }
+
+    fun updateActiveGameSettings(update: (QuickSettings) -> Unit) {
+        val settings = getSettingsForGame()
+        update(settings)
+        val titleId = gameModel?.titleId.orEmpty()
+        if (titleId.isNotBlank()) {
+            val store = GameSettingsStore(activity, titleId)
+            if (store.isEnabled) {
+                store.save(settings)
+                return
+            }
+        }
+        settings.save()
+    }
     // -------------------------------------------------------------------------------
 
     fun loadGame(game: GameModel, overrideSettings: Boolean? = false, forceNceAndPptc: Boolean? = false): Int {
@@ -170,7 +193,7 @@ class MainViewModel(val activity: MainActivity) {
         gameModel = game
         isMiiEditorLaunched = false
 
-        val settings = QuickSettings(activity)
+        val settings = getSettingsForGame(game)
 
         if(overrideSettings == true)
         {
@@ -501,7 +524,7 @@ class MainViewModel(val activity: MainActivity) {
     fun navigateToGame() {
         navController?.navigate("game")
         activity.isGameRunning = true
-        if (QuickSettings(activity).enableMotion)
+        if (getSettingsForGame().enableMotion)
             motionSensorManager?.register()
     }
 

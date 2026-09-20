@@ -75,6 +75,8 @@ class SettingsViewModel(val activity: MainActivity) {
         enableTraceLogs: MutableState<Boolean>,
         enableDebugLogs: MutableState<Boolean>,
         enableGraphicsLogs: MutableState<Boolean>,
+        showPerformanceOverlay: MutableState<Boolean>,
+        virtualControllerPreset: MutableState<QuickSettings.VirtualControllerPreset>,
         systemLanguage: MutableState<SystemLanguage>,
         regionCode: MutableState<RegionCode>
     ) {
@@ -159,6 +161,8 @@ class SettingsViewModel(val activity: MainActivity) {
         enableTraceLogs: MutableState<Boolean>,
         enableDebugLogs: MutableState<Boolean>,
         enableGraphicsLogs: MutableState<Boolean>,
+        showPerformanceOverlay: MutableState<Boolean>,
+        virtualControllerPreset: MutableState<QuickSettings.VirtualControllerPreset>,
         systemLanguage: MutableState<SystemLanguage>,
         regionCode: MutableState<RegionCode>
     ) {

@@ -73,6 +73,7 @@ class QuickSettings(val activity: Activity) {
     var useSwitchLayout: Boolean
     var enableMotion: Boolean
     var enablePerformanceMode: Boolean
+    var showPerformanceOverlay: Boolean
     var controllerStickSensitivity: Float
 
     // --- Controller Scale (0.5f..1.5f, Default 1.0f)
@@ -149,6 +150,7 @@ class QuickSettings(val activity: Activity) {
         useSwitchLayout = sharedPref.getBoolean("useSwitchLayout", true)
         enableMotion = sharedPref.getBoolean("enableMotion", true)
         enablePerformanceMode = sharedPref.getBoolean("enablePerformanceMode", true)
+        showPerformanceOverlay = sharedPref.getBoolean("showPerformanceOverlay", false)
         controllerStickSensitivity = sharedPref.getFloat("controllerStickSensitivity", 1.0f)
 
         // --- Reload: Controller Scale
@@ -214,6 +216,7 @@ class QuickSettings(val activity: Activity) {
             putBoolean("useSwitchLayout", useSwitchLayout)
             putBoolean("enableMotion", enableMotion)
             putBoolean("enablePerformanceMode", enablePerformanceMode)
+            putBoolean("showPerformanceOverlay", showPerformanceOverlay)
             putFloat("controllerStickSensitivity", controllerStickSensitivity)
 
             // --- Save Controller Scale

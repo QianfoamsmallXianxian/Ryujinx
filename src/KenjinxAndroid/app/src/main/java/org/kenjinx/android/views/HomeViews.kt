@@ -8,6 +8,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -46,7 +48,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -97,6 +99,12 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Button
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Switch
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.documentfile.provider.DocumentFile
 
@@ -155,6 +163,7 @@ class HomeViews {
             val openTitleUpdateDialog = remember { mutableStateOf(false) }
             val canClose = remember { mutableStateOf(true) }
             val openDlcDialog = remember { mutableStateOf(false) }
+            val openGameSettingsDialog = remember { mutableStateOf(false) }
             val showError = remember { mutableStateOf("") }
             val selectedModel = remember { mutableStateOf(viewModel.mainViewModel?.selected) }
             val query = remember { mutableStateOf("") }
@@ -388,163 +397,74 @@ class HomeViews {
                 }
             }
 
-            // --- Box around scaffold so we can overlay the badge
+            // NEO library: quiet header, search, and a cartridge-only grid.
             Box(Modifier.fillMaxSize()) {
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     topBar = {
-                        Row(
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                                .background(MaterialTheme.colorScheme.surface),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
+                                .background(MaterialTheme.colorScheme.background)
+                                .padding(horizontal = 18.dp, vertical = 12.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             Row(
-                                horizontalArrangement = Arrangement.Start,
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(end = 8.dp)
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .padding(end = 8.dp)
-                                        .size(56.dp)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(
-                                            if (refreshUser && viewModel.mainViewModel?.userViewModel?.openedUser?.userPicture?.isNotEmpty() == true) {
-                                                Color.Transparent
-                                            } else {
-                                                MaterialTheme.colorScheme.surface
-                                            }
-                                        )
-                                        .border(
-                                            width = 1.dp,
-                                            color = MaterialTheme.colorScheme.outline,
-                                            shape = RoundedCornerShape(8.dp)
-                                        )
-                                        .clickable {
-                                            if (!isNavigating.value) {
-                                                isNavigating.value = true
-                                                val currentRoute = navController?.currentDestination?.route
-                                                if (currentRoute != "user") {
-                                                    navController?.navigate("user") {
-                                                        launchSingleTop = true
-                                                        restoreState = true
-                                                    }
-                                                }
-                                                CoroutineScope(Dispatchers.Main).launch {
-                                                    delay(500)
-                                                    isNavigating.value = false
-                                                }
-                                            }
-                                        },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    if (refreshUser && viewModel.mainViewModel?.userViewModel?.openedUser?.userPicture?.isNotEmpty() == true) {
-                                        val pic = viewModel.mainViewModel.userViewModel.openedUser.userPicture
-                                        Image(
-                                            bitmap = BitmapFactory.decodeByteArray(
-                                                pic,
-                                                0,
-                                                pic?.size ?: 0
-                                            ).asImageBitmap(),
-                                            contentDescription = "user image",
-                                            contentScale = ContentScale.Crop,
-                                            modifier = Modifier.fillMaxSize()
-                                        )
-                                    } else {
-                                        Icon(
-                                            Icons.Filled.Person,
-                                            contentDescription = "User",
-                                            modifier = Modifier.size(28.dp),
-                                            tint = MaterialTheme.colorScheme.onSurface
-                                        )
-                                    }
+                                Column {
+                                    Text("NEO", style = MaterialTheme.typography.headlineMedium)
+                                    Text(
+                                        "${viewModel.gameList.size} jogos",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 }
-
-                                // Settings
-                                IconButton(
-                                    onClick = {
-                                        if (!isNavigating.value) {
-                                            isNavigating.value = true
-                                            val currentRoute = navController?.currentDestination?.route
-                                            if (currentRoute != "settings") {
-                                                navController?.navigate("settings") {
-                                                    launchSingleTop = true
-                                                    restoreState = true
-                                                }
-                                            }
-                                            CoroutineScope(Dispatchers.Main).launch {
-                                                delay(500)
-                                                isNavigating.value = false
+                                Row {
+                                    IconButton(onClick = {
+                                        viewModel.requestReload()
+                                        viewModel.ensureReloadIfNecessary()
+                                    }) {
+                                        Icon(Icons.Default.Refresh, contentDescription = "Atualizar")
+                                    }
+                                    IconButton(onClick = {
+                                        val currentRoute = navController?.currentDestination?.route
+                                        if (currentRoute != "settings") {
+                                            navController?.navigate("settings") {
+                                                launchSingleTop = true
+                                                restoreState = true
                                             }
                                         }
-                                    },
-                                    modifier = Modifier
-                                        .size(56.dp)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .border(
-                                            width = 1.dp,
-                                            color = MaterialTheme.colorScheme.outline,
-                                            shape = RoundedCornerShape(8.dp)
-                                        )
-                                ) {
-                                    Icon(Icons.Filled.Settings, contentDescription = "Settings")
+                                    }) {
+                                        Icon(Icons.Filled.Settings, contentDescription = "Configurações")
+                                    }
                                 }
-
                             }
-
                             OutlinedTextField(
                                 value = query.value,
                                 onValueChange = { query.value = it },
                                 modifier = Modifier
-                                    .weight(1f)
+                                    .fillMaxWidth()
                                     .height(56.dp),
                                 placeholder = {
-                                    Text("Search...", modifier = Modifier.padding(bottom = 4.dp))
+                                    Text("Buscar jogo", modifier = Modifier.padding(bottom = 4.dp))
                                 },
                                 leadingIcon = { Icon(Icons.Filled.Search, contentDescription = "Search") },
                                 singleLine = true,
-                                shape = RoundedCornerShape(8.dp),
+                                shape = RoundedCornerShape(18.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedContainerColor = Color.Transparent,
                                     unfocusedContainerColor = Color.Transparent,
                                     disabledContainerColor = Color.Transparent,
                                     errorContainerColor = Color.Transparent,
-                                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                    focusedBorderColor = MaterialTheme.colorScheme.onSurface,
                                     unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                                 )
                             )
                         }
-                    },
-                    floatingActionButton = {
-                        AnimatedVisibility(visible = isFabVisible) {
-                            // Two FABs in a row: Refresh + Import Amiibo
-                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                FloatingActionButton(
-                                    onClick = {
-                                        viewModel.requestReload()
-                                        viewModel.ensureReloadIfNecessary()
-                                    },
-                                    shape = MaterialTheme.shapes.small,
-                                    containerColor = MaterialTheme.colorScheme.tertiary
-                                ) {
-                                    Icon(Icons.Default.Refresh, contentDescription = "refresh")
-                                }
-                                FloatingActionButton(
-                                    onClick = { showAmiiboSlotDialog.value = true },
-                                    shape = MaterialTheme.shapes.small
-                                ) {
-                                    Icon(
-                                        org.kenjinx.android.Icons.folderOpen(MaterialTheme.colorScheme.onSurface),
-                                        contentDescription = "Import Amiibo"
-                                    )
-                                }
-                            }
-                        }
-                    },
-                    floatingActionButtonPosition = FabPosition.End
+                    }
                 ) { contentPadding ->
                     Column(modifier = Modifier.padding(contentPadding)) {
                         Box {
@@ -554,7 +474,6 @@ class HomeViews {
                             viewModel.filter(query.value)
 
                             if (!isPreview) {
-                                val settings = QuickSettings(viewModel.activity!!)
                                 if (isLoading.value) {
                                     Box(modifier = Modifier.fillMaxSize()) {
                                         CircularProgressIndicator(
@@ -566,51 +485,17 @@ class HomeViews {
                                         )
                                     }
                                 } else {
-                                    if (settings.isGrid) {
-                                        val size = GridImageSize / Resources.getSystem().displayMetrics.density
-                                        LazyVerticalGrid(
-                                            columns = GridCells.Adaptive(minSize = (size + 4).dp),
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .padding(4.dp)
-                                                .nestedScroll(nestedScrollConnection),
-                                            horizontalArrangement = Arrangement.SpaceEvenly
-                                        ) {
-                                            items(list) {
-                                                it.titleName?.apply {
-                                                    if (this.isNotEmpty() && (query.value.trim()
-                                                            .isEmpty() || this.lowercase(Locale.getDefault())
-                                                            .contains(query.value))) {
-                                                        GridGameItem(
-                                                            it,
-                                                            viewModel,
-                                                            showAppActions,
-                                                            showLoading,
-                                                            selectedModel,
-                                                            showError
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        LazyColumn(Modifier.fillMaxSize()) {
-                                            items(list) {
-                                                it.titleName?.apply {
-                                                    if (this.isNotEmpty() && (query.value.trim()
-                                                            .isEmpty() || this.lowercase(Locale.getDefault())
-                                                            .contains(query.value))) {
-                                                        Box(modifier = Modifier.animateItem()) {
-                                                            ListGameItem(
-                                                                it,
-                                                                viewModel,
-                                                                showAppActions,
-                                                                showLoading,
-                                                                selectedModel,
-                                                                showError
-                                                            )
-                                                        }
-                                                    }
+                                    val size = GridImageSize / Resources.getSystem().displayMetrics.density
+                                    LazyVerticalGrid(
+                                        columns = GridCells.Adaptive(minSize = (size + 12).dp),
+                                        modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        items(list) {
+                                            it.titleName?.apply {
+                                                if (isNotEmpty() && (query.value.trim().isEmpty() || lowercase(Locale.getDefault()).contains(query.value.lowercase(Locale.getDefault())))) {
+                                                    GridGameItem(it, viewModel, showAppActions, showLoading, selectedModel, showError)
                                                 }
                                             }
                                         }
@@ -701,11 +586,7 @@ class HomeViews {
                                 val tId = gm.titleId ?: ""
                                 val act = viewModel.activity
 
-                                val success = viewModel.mainViewModel.loadGame(
-                                    gm,
-                                    true,
-                                    viewModel.mainViewModel.forceNceAndPptc.value
-                                )
+                                val success = viewModel.mainViewModel.loadGame(gm)
                                 if (success == 1) {
                                     launchOnUiThread {
                                         viewModel.mainViewModel.navigateToGame()
@@ -720,243 +601,205 @@ class HomeViews {
                         }
                     }
 
-                if (showAppActions.value)
-                    ModalBottomSheet(
-                        content = {
-                            Row(
-                                modifier = Modifier.padding(8.dp),
-                                horizontalArrangement = Arrangement.SpaceEvenly
-                            ) {
-                                if (showAppActions.value) {
-                                    IconButton(onClick = {
-                                        if (viewModel.mainViewModel?.selected != null) {
-
-                                            // Press the cheat buttons before starting (Run button).
-                                            val gmSel = viewModel.mainViewModel.selected!!
-                                            val tId = gmSel.titleId ?: ""
-                                            val act = viewModel.activity
-
-                                            thread {
-                                                showLoading.value = true
-                                                val success = viewModel.mainViewModel.loadGame(
-                                                    gmSel
-                                                )
-                                                if (success == 1) {
-                                                    launchOnUiThread {
-                                                        viewModel.mainViewModel.navigateToGame()
-                                                    }
-                                                } else {
-                                                    if (success == -2)
-                                                        showError.value =
-                                                            "Error loading update. Please re-add update file"
-                                                    viewModel.mainViewModel.selected!!.close()
-                                                }
-                                                showLoading.value = false
-                                            }
+                if (showAppActions.value) {
+                    val gm = viewModel.mainViewModel?.selected
+                    if (gm != null) {
+                        GameActionsDialog(
+                            game = gm,
+                            onDismiss = {
+                                showAppActions.value = false
+                                viewModel.mainViewModel?.apply { selected = null }
+                                selectedModel.value = null
+                            },
+                            onPlay = {
+                                showAppActions.value = false
+                                val act = viewModel.activity
+                                thread {
+                                    showLoading.value = true
+                                    val success = viewModel.mainViewModel?.loadGame(gm) ?: 0
+                                    if (success == 1) {
+                                        launchOnUiThread {
+                                            viewModel.mainViewModel?.navigateToGame()
                                         }
-                                    }) {
-                                        Icon(
-                                            org.kenjinx.android.Icons.playArrow(MaterialTheme.colorScheme.onSurface),
-                                            contentDescription = "Run"
-                                        )
+                                    } else {
+                                        if (success == -2)
+                                            showError.value = "Error loading update. Please re-add update file"
+                                        gm.close()
                                     }
-
-                                    // Create Shortcut
-                                    IconButton(onClick = {
-                                        val gm = viewModel.mainViewModel?.selected
-                                        if (gm != null) {
-                                            shortcutName.value = gm.titleName ?: ""
-                                            showShortcutDialog.value = true
-                                        }
-                                    }) {
-                                        Icon(
-                                            Icons.Filled.Add,
-                                            contentDescription = "Create Shortcut"
-                                        )
-                                    }
-
-                                    val showAppMenu = remember { mutableStateOf(false) }
-                                    Box {
-                                        IconButton(onClick = { showAppMenu.value = true }) {
-                                            Icon(Icons.Filled.Menu, contentDescription = "Menu")
-                                        }
-                                        DropdownMenu(
-                                            expanded = showAppMenu.value,
-                                            onDismissRequest = { showAppMenu.value = false }
-                                        ) {
-                                            DropdownMenuItem(
-                                                text = { Text(text = "Clear PPTC Cache") },
-                                                onClick = {
-                                                    showAppMenu.value = false
-                                                    viewModel.mainViewModel?.clearPptcCache(
-                                                        viewModel.mainViewModel.selected?.titleId ?: ""
-                                                    )
-                                                }
-                                            )
-                                            DropdownMenuItem(
-                                                text = { Text(text = "Purge Shader Cache") },
-                                                onClick = {
-                                                    showAppMenu.value = false
-                                                    viewModel.mainViewModel?.purgeShaderCache(
-                                                        viewModel.mainViewModel.selected?.titleId ?: ""
-                                                    )
-                                                }
-                                            )
-                                            DropdownMenuItem(
-                                                text = { Text(text = "Delete All Cache") },
-                                                onClick = {
-                                                    showAppMenu.value = false
-                                                    viewModel.mainViewModel?.deleteCache(
-                                                        viewModel.mainViewModel.selected?.titleId ?: ""
-                                                    )
-                                                }
-                                            )
-                                            DropdownMenuItem(
-                                                text = { Text(text = "Manage Updates") },
-                                                onClick = {
-                                                    showAppMenu.value = false
-                                                    openTitleUpdateDialog.value = true
-                                                }
-                                            )
-                                            DropdownMenuItem(
-                                                text = { Text(text = "Manage DLC") },
-                                                onClick = {
-                                                    showAppMenu.value = false
-                                                    openDlcDialog.value = true
-                                                }
-                                            )
-                                            // Manage Cheats
-                                            DropdownMenuItem(
-                                                text = { Text(text = "Manage Cheats") },
-                                                onClick = {
-                                                    showAppMenu.value = false
-                                                    val gm = viewModel.mainViewModel?.selected
-                                                    val act = viewModel.activity
-                                                    if (gm != null && !gm.titleId.isNullOrEmpty() && act != null) {
-                                                        val titleId = gm.titleId!!
-                                                        cheatsForSelected.value = loadCheatsFromDisk(act, titleId)
-                                                        enabledCheatKeys.value = CheatPrefs(act).getEnabled(titleId)
-                                                        openCheatsDialog.value = true
-                                                    } else {
-                                                        showError.value = "No title selected."
-                                                    }
-                                                }
-                                            )
-                                            // Manage Mods
-                                            DropdownMenuItem(
-                                                text = { Text(text = "Manage Mods") },
-                                                onClick = {
-                                                    showAppMenu.value = false
-                                                    val gm = viewModel.mainViewModel?.selected
-                                                    val act = viewModel.activity
-                                                    if (gm != null && !gm.titleId.isNullOrEmpty() && act != null) {
-                                                        val titleId = gm.titleId!!
-                                                        modsForSelected.value = listMods(act, titleId)
-                                                        openModsDialog.value = true
-                                                    } else {
-                                                        showError.value = "No title selected."
-                                                    }
-                                                }
-                                            )
-                                            DropdownMenuItem(
-                                                text = { Text(text = "Manage Saves") },
-                                                onClick = {
-                                                    showAppMenu.value = false
-                                                    openSavesDialog.value = true
-                                                }
-                                            )
-
-                                        }
-                                    }
+                                    showLoading.value = false
                                 }
+                            },
+                            onConfigure = {
+                                showAppActions.value = false
+                                openGameSettingsDialog.value = true
+                            },
+                            onUpdates = {
+                                showAppActions.value = false
+                                openTitleUpdateDialog.value = true
+                            },
+                            onDlc = {
+                                showAppActions.value = false
+                                openDlcDialog.value = true
+                            },
+                            onMods = {
+                                showAppActions.value = false
+                                val act = viewModel.activity
+                                if (!gm.titleId.isNullOrEmpty() && act != null) {
+                                    val titleId = gm.titleId!!
+                                    modsForSelected.value = listMods(act, titleId)
+                                    openModsDialog.value = true
+                                } else {
+                                    showError.value = "No title selected."
+                                }
+                            },
+                            onCheats = {
+                                showAppActions.value = false
+                                val act = viewModel.activity
+                                if (!gm.titleId.isNullOrEmpty() && act != null) {
+                                    val titleId = gm.titleId!!
+                                    cheatsForSelected.value = loadCheatsFromDisk(act, titleId)
+                                    enabledCheatKeys.value = CheatPrefs(act).getEnabled(titleId)
+                                    openCheatsDialog.value = true
+                                } else {
+                                    showError.value = "No title selected."
+                                }
+                            },
+                            onSaves = {
+                                showAppActions.value = false
+                                openSavesDialog.value = true
+                            },
+                            onAmiibo = {
+                                showAppActions.value = false
+                                showAmiiboSlotDialog.value = true
+                            },
+                            onCreateShortcut = {
+                                showAppActions.value = false
+                                shortcutName.value = gm.titleName ?: ""
+                                showShortcutDialog.value = true
+                            },
+                            onClearPptc = {
+                                viewModel.mainViewModel?.clearPptcCache(gm.titleId.orEmpty())
+                                Toast.makeText(viewModel.activity, "Cache PPTC limpo", Toast.LENGTH_SHORT).show()
+                            },
+                            onPurgeShader = {
+                                viewModel.mainViewModel?.purgeShaderCache(gm.titleId.orEmpty())
+                                Toast.makeText(viewModel.activity, "Cache de shaders limpo", Toast.LENGTH_SHORT).show()
+                            },
+                            onDeleteCache = {
+                                viewModel.mainViewModel?.deleteCache(gm.titleId.orEmpty())
+                                Toast.makeText(viewModel.activity, "Todos os caches excluídos", Toast.LENGTH_SHORT).show()
                             }
-                        },
-                        onDismissRequest = {
-                            showAppActions.value = false
-                            selectedModel.value = null
-                        }
-                    )
+                        )
+                    } else {
+                        showAppActions.value = false
+                    }
+                }
 
-                // --- Cheats Bottom Sheet ---
+                if (openGameSettingsDialog.value) {
+                    val selectedGame = viewModel.mainViewModel?.selected
+                    val selectedActivity = viewModel.activity
+                    if (selectedGame != null && selectedActivity != null) {
+                        GameSettingsDialog(
+                            activity = selectedActivity,
+                            titleId = selectedGame.titleId.orEmpty(),
+                            titleName = selectedGame.titleName.orEmpty(),
+                            onDismiss = { openGameSettingsDialog.value = false }
+                        )
+                    } else {
+                        openGameSettingsDialog.value = false
+                    }
+                }
+
+                // Management windows
                 if (openCheatsDialog.value) {
-                    ModalBottomSheet(
+                    BasicAlertDialog(
                         onDismissRequest = { openCheatsDialog.value = false }
                     ) {
                         val gm = viewModel.mainViewModel?.selected
                         val act = viewModel.activity
                         val titleId = gm?.titleId ?: ""
 
-                        Column(Modifier.padding(16.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                // LINKS: Import .txt
-                                TextButton(onClick = {
-                                    importCheatLauncher.launch(arrayOf("text/plain", "text/*", "*/*"))
-                                }) { Text("Import .txt") }
-
-                                // RIGHT: Cancel + Save
-                                Row {
-                                    TextButton(onClick = { openCheatsDialog.value = false }) { Text("Cancel") }
-                                    TextButton(onClick = {
-                                        val act2 = act
-                                        if (act2 != null && titleId.isNotEmpty()) {
-                                            CheatPrefs(act2).setEnabled(titleId, enabledCheatKeys.value)
-                                            applyCheatSelectionOnDisk(act2, titleId, enabledCheatKeys.value)
-                                            cheatsForSelected.value = loadCheatsFromDisk(act2, titleId)
-                                        }
-                                        openCheatsDialog.value = false
-                                    }) { Text("Save") }
-                                }
-                            }
-
-                            Text("Manage Cheats", style = MaterialTheme.typography.titleLarge)
-                            Text(
-                                text = gm?.titleName ?: "",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
-
-                            if (cheatsForSelected.value.isEmpty()) {
-                                Text("No cheats found for this title.")
-                            } else {
-                                LazyColumn(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(bottom = 12.dp)
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                            modifier = Modifier
+                                .widthIn(max = 560.dp)
+                                .fillMaxWidth(0.92f)
+                                .heightIn(max = 620.dp)
+                        ) {
+                            Column(Modifier.padding(18.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    items(cheatsForSelected.value) { cheat ->
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(vertical = 8.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Column(
-                                                Modifier
-                                                    .weight(1f)
-                                                    .padding(end = 12.dp)
+                                    TextButton(onClick = {
+                                        importCheatLauncher.launch(arrayOf("text/plain", "text/*", "*/*"))
+                                    }) { Text("Importar .txt") }
+
+                                    Row {
+                                        TextButton(onClick = { openCheatsDialog.value = false }) { Text("Cancelar") }
+                                        TextButton(onClick = {
+                                            val act2 = act
+                                            if (act2 != null && titleId.isNotEmpty()) {
+                                                CheatPrefs(act2).setEnabled(titleId, enabledCheatKeys.value)
+                                                applyCheatSelectionOnDisk(act2, titleId, enabledCheatKeys.value)
+                                                cheatsForSelected.value = loadCheatsFromDisk(act2, titleId)
+                                            }
+                                            openCheatsDialog.value = false
+                                        }) { Text("Salvar") }
+                                    }
+                                }
+
+                                Text("Gerenciar Cheats", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    text = gm?.titleName ?: "",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(bottom = 8.dp)
+                                )
+
+                                if (cheatsForSelected.value.isEmpty()) {
+                                    Text("Nenhum cheat encontrado para este jogo.", modifier = Modifier.padding(vertical = 16.dp))
+                                } else {
+                                    LazyColumn(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .weight(1f, fill = false)
+                                            .padding(bottom = 12.dp)
+                                    ) {
+                                        items(cheatsForSelected.value) { cheat ->
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(vertical = 8.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.SpaceBetween
                                             ) {
-                                                Text(cheat.name, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                                                Text(
-                                                    cheat.buildId,
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                                Column(
+                                                    Modifier
+                                                        .weight(1f)
+                                                        .padding(end = 12.dp)
+                                                ) {
+                                                    Text(cheat.name, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                                    Text(
+                                                        cheat.buildId,
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
+                                                val checked = enabledCheatKeys.value.contains(cheat.key)
+                                                Switch(
+                                                    checked = checked,
+                                                    onCheckedChange = { isOn ->
+                                                        enabledCheatKeys.value =
+                                                            enabledCheatKeys.value.toMutableSet().apply {
+                                                                if (isOn) add(cheat.key) else remove(cheat.key)
+                                                            }
+                                                    }
                                                 )
                                             }
-                                            val checked = enabledCheatKeys.value.contains(cheat.key)
-                                            androidx.compose.material3.Switch(
-                                                checked = checked,
-                                                onCheckedChange = { isOn ->
-                                                    enabledCheatKeys.value =
-                                                        enabledCheatKeys.value.toMutableSet().apply {
-                                                            if (isOn) add(cheat.key) else remove(cheat.key)
-                                                        }
-                                                }
-                                            )
                                         }
                                     }
                                 }
@@ -965,73 +808,78 @@ class HomeViews {
                     }
                 }
 
-                // --- Mods Bottom Sheet ---
+                // --- Mods Dialog ---
                 if (openModsDialog.value) {
-                    ModalBottomSheet(
+                    BasicAlertDialog(
                         onDismissRequest = { openModsDialog.value = false }
                     ) {
                         val gm = viewModel.mainViewModel?.selected
                         val act = viewModel.activity
                         val titleId = gm?.titleId ?: ""
 
-                        Column(Modifier.padding(16.dp)) {
-                            Text("Manage Mods", style = MaterialTheme.typography.titleLarge)
-                            Text(
-                                text = gm?.titleName ?: "",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                            modifier = Modifier
+                                .widthIn(max = 560.dp)
+                                .fillMaxWidth(0.92f)
+                                .heightIn(max = 620.dp)
+                        ) {
+                            Column(Modifier.padding(18.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    TextButton(
+                                        enabled = !modsImportBusy.value,
+                                        onClick = { pickModZipLauncher.launch(arrayOf("application/zip", "application/octet-stream", "*/*")) }
+                                    ) { Text("Importar .zip") }
+                                    TextButton(onClick = { openModsDialog.value = false }) { Text("Fechar") }
+                                }
 
-                            // Import line
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                TextButton(
-                                    enabled = !modsImportBusy.value,
-                                    onClick = { pickModZipLauncher.launch(arrayOf("application/zip", "application/octet-stream", "*/*")) }
-                                ) { Text("Import .zip") }
-                            }
-
-                            // Progress
-                            if (modsImportBusy.value) {
-                                androidx.compose.material3.LinearProgressIndicator(
-                                    progress = { modsImportProgress.value },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(bottom = 8.dp)
-                                )
+                                Text("Gerenciar Mods", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                                 Text(
-                                    modsImportStatusText.value,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                                    text = gm?.titleName ?: "",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(bottom = 8.dp)
                                 )
-                            }
 
-                            // List of mods
-                            if (modsForSelected.value.isEmpty()) {
-                                Text("No mods found for this title.")
-                            } else {
-                                LazyColumn(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(bottom = 12.dp)
-                                ) {
-                                    items(modsForSelected.value) { modName ->
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(vertical = 8.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.SpaceBetween
-                                        ) {
-                                            Text(modName, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                                            Row {
+                                if (modsImportBusy.value) {
+                                    LinearProgressIndicator(
+                                        progress = { modsImportProgress.value },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(bottom = 8.dp)
+                                    )
+                                    Text(
+                                        modsImportStatusText.value,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(bottom = 8.dp)
+                                    )
+                                }
+
+                                if (modsForSelected.value.isEmpty()) {
+                                    Text("Nenhum mod encontrado para este jogo.", modifier = Modifier.padding(vertical = 16.dp))
+                                } else {
+                                    LazyColumn(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .weight(1f, fill = false)
+                                            .padding(bottom = 12.dp)
+                                    ) {
+                                        items(modsForSelected.value) { modName ->
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(vertical = 8.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Text(modName, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                                                 TextButton(
                                                     onClick = {
                                                         val a = act
@@ -1044,95 +892,91 @@ class HomeViews {
                                                             }
                                                         }
                                                     }
-                                                ) { Text("Delete") }
+                                                ) { Text("Excluir", color = MaterialTheme.colorScheme.error) }
                                             }
                                         }
                                     }
                                 }
                             }
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.End
-                            ) {
-                                TextButton(onClick = { openModsDialog.value = false }) { Text("Close") }
-                            }
                         }
                     }
                 }
 
-                // --- Saves Bottom Sheet ---
+                // --- Saves Dialog ---
                 if (openSavesDialog.value) {
-                    ModalBottomSheet(
+                    BasicAlertDialog(
                         onDismissRequest = { openSavesDialog.value = false }
                     ) {
-                        val act = activity
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                            modifier = Modifier
+                                .widthIn(max = 560.dp)
+                                .fillMaxWidth(0.92f)
+                                .heightIn(max = 620.dp)
+                        ) {
+                            Column(Modifier.padding(18.dp)) {
+                                Text("Gerenciador de Saves", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    text = viewModel.mainViewModel?.selected?.titleName ?: "",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(bottom = 14.dp)
+                                )
 
-                        Column(Modifier.padding(16.dp)) {
-                            Text("Save Manager", style = MaterialTheme.typography.titleLarge)
-                            Text(
-                                text = viewModel.mainViewModel?.selected?.titleName ?: "",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                modifier = Modifier.padding(bottom = 12.dp)
-                            )
-
-                            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                // Import Button
-                                androidx.compose.material3.Button(
-                                    enabled = !saveImportBusy.value && !saveExportBusy.value &&
-                                        (viewModel.mainViewModel?.selected?.titleId?.isNotEmpty() == true),
-                                    onClick = {
-                                        saveImportProgress.value = 0f
-                                        saveImportStatus.value = ""
-                                        importZipLauncher.launch(arrayOf("application/zip", "application/octet-stream", "*/*"))
-                                    }
-                                ) { Text("Import ZIP") }
-
-                                // Export Button
-                                androidx.compose.material3.Button(
-                                    enabled = !saveImportBusy.value && !saveExportBusy.value &&
-                                        (viewModel.mainViewModel?.selected?.titleId?.isNotEmpty() == true),
-                                    onClick = {
-                                        val actLocal = activity
-                                        val tIdNow = viewModel.mainViewModel?.selected?.titleId.orEmpty()
-                                        if (actLocal != null && tIdNow.isNotEmpty()) {
-                                            val fname = suggestedCreateDocNameForExport(actLocal, tIdNow)
-                                            saveExportProgress.value = 0f
-                                            saveExportStatus.value = ""
-                                            exportZipLauncher.launch(fname)
+                                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Button(
+                                        enabled = !saveImportBusy.value && !saveExportBusy.value &&
+                                            (viewModel.mainViewModel?.selected?.titleId?.isNotEmpty() == true),
+                                        onClick = {
+                                            saveImportProgress.value = 0f
+                                            saveImportStatus.value = ""
+                                            importZipLauncher.launch(arrayOf("application/zip", "application/octet-stream", "*/*"))
                                         }
+                                    ) { Text("Importar ZIP") }
+
+                                    Button(
+                                        enabled = !saveImportBusy.value && !saveExportBusy.value &&
+                                            (viewModel.mainViewModel?.selected?.titleId?.isNotEmpty() == true),
+                                        onClick = {
+                                            val actLocal = activity
+                                            val tIdNow = viewModel.mainViewModel?.selected?.titleId.orEmpty()
+                                            if (actLocal != null && tIdNow.isNotEmpty()) {
+                                                val fname = suggestedCreateDocNameForExport(actLocal, tIdNow)
+                                                saveExportProgress.value = 0f
+                                                saveExportStatus.value = ""
+                                                exportZipLauncher.launch(fname)
+                                            }
+                                        }
+                                    ) { Text("Exportar ZIP") }
+                                }
+
+                                if (saveImportBusy.value) {
+                                    Column(Modifier.padding(top = 12.dp)) {
+                                        LinearProgressIndicator(progress = { saveImportProgress.value }, modifier = Modifier.fillMaxWidth())
+                                        Text(saveImportStatus.value, modifier = Modifier.padding(top = 6.dp), style = MaterialTheme.typography.labelSmall)
                                     }
-                                ) { Text("Export ZIP") }
-                            }
-
-                            if (saveImportBusy.value) {
-                                Column(Modifier.padding(top = 12.dp)) {
-                                    androidx.compose.material3.LinearProgressIndicator(progress = { saveImportProgress.value })
-                                    Text(saveImportStatus.value, modifier = Modifier.padding(top = 6.dp))
                                 }
-                            }
-                            if (saveExportBusy.value) {
-                                Column(Modifier.padding(top = 12.dp)) {
-                                    androidx.compose.material3.LinearProgressIndicator(progress = { saveExportProgress.value })
-                                    Text(saveExportStatus.value, modifier = Modifier.padding(top = 6.dp))
+                                if (saveExportBusy.value) {
+                                    Column(Modifier.padding(top = 12.dp)) {
+                                        LinearProgressIndicator(progress = { saveExportProgress.value }, modifier = Modifier.fillMaxWidth())
+                                        Text(saveExportStatus.value, modifier = Modifier.padding(top = 6.dp), style = MaterialTheme.typography.labelSmall)
+                                    }
                                 }
-                            }
 
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 12.dp),
-                                horizontalArrangement = Arrangement.End
-                            ) {
-                                TextButton(
-                                    onClick = { openSavesDialog.value = false }
-                                ) { Text("Close") }
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 16.dp),
+                                    horizontalArrangement = Arrangement.End
+                                ) {
+                                    TextButton(onClick = { openSavesDialog.value = false }) { Text("Fechar") }
+                                }
                             }
                         }
                     }
                 }
-
                 // --- Shortcut Dialog
                 if (showShortcutDialog.value) {
                     val gm = viewModel.mainViewModel?.selected
@@ -1199,107 +1043,7 @@ class HomeViews {
                     )
                 }
 
-                // --- Version badge bottom left above the entire content
-                VersionBadge(
-                    modifier = Modifier.align(Alignment.BottomStart)
-                )
             } // End of box
-        }
-
-        @OptIn(ExperimentalFoundationApi::class)
-        @Composable
-        fun ListGameItem(
-            gameModel: GameModel,
-            viewModel: HomeViewModel,
-            showAppActions: MutableState<Boolean>,
-            showLoading: MutableState<Boolean>,
-            selectedModel: MutableState<GameModel?>,
-            showError: MutableState<String>
-        ) {
-            remember { selectedModel }
-            val color =
-                if (selectedModel.value == gameModel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
-
-            val decoder = Base64.getDecoder()
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = color,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp)
-                    .combinedClickable(
-                        onClick = {
-                            if (viewModel.mainViewModel?.selected != null) {
-                                showAppActions.value = false
-                                viewModel.mainViewModel.apply { selected = null }
-                                selectedModel.value = null
-                            } else if (gameModel.titleId.isNullOrEmpty()
-                                || gameModel.titleId != "0000000000000000"
-                                || gameModel.type == FileType.Nro
-                            ) {
-                                thread {
-                                    showLoading.value = true
-
-                                    // Push the cheats before starting
-                                    val tId = gameModel.titleId ?: ""
-                                    val act = viewModel.activity
-
-                                    val success = viewModel.mainViewModel?.loadGame(gameModel) ?: false
-                                    if (success == 1) {
-                                        launchOnUiThread { viewModel.mainViewModel?.navigateToGame() }
-                                    } else {
-                                        if (success == -2)
-                                            showError.value =
-                                                "Error loading update. Please re-add update file"
-                                        gameModel.close()
-                                    }
-                                    showLoading.value = false
-                                }
-                            }
-                        },
-                        onLongClick = {
-                            viewModel.mainViewModel?.selected = gameModel
-                            showAppActions.value = true
-                            selectedModel.value = gameModel
-                        }
-                    )
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row {
-                        if (!gameModel.titleId.isNullOrEmpty()
-                            && (gameModel.titleId != "0000000000000000" || gameModel.type == FileType.Nro)
-                        ) {
-                            if (gameModel.icon?.isNotEmpty() == true) {
-                                val pic = decoder.decode(gameModel.icon)
-                                val size = ListImageSize / Resources.getSystem().displayMetrics.density
-                                Image(
-                                    bitmap = BitmapFactory.decodeByteArray(pic, 0, pic.size).asImageBitmap(),
-                                    contentDescription = gameModel.titleName + " icon",
-                                    modifier = Modifier
-                                        .padding(end = 8.dp)
-                                        .width(size.roundToInt().dp)
-                                        .height(size.roundToInt().dp)
-                                )
-                            } else if (gameModel.type == FileType.Nro) NROIcon()
-                            else NotAvailableIcon()
-                        } else NotAvailableIcon()
-                        Column {
-                            Text(text = gameModel.titleName ?: "")
-                            Text(text = gameModel.developer ?: "")
-                            Text(text = gameModel.titleId ?: "")
-                        }
-                    }
-                    Column {
-                        Text(text = gameModel.version ?: "")
-                        Text(text = String.format(Locale.getDefault(), "%.3f", gameModel.fileSize))
-                    }
-                }
-            }
         }
 
         @OptIn(ExperimentalFoundationApi::class)
@@ -1312,17 +1056,20 @@ class HomeViews {
             selectedModel: MutableState<GameModel?>,
             showError: MutableState<String>
         ) {
-            remember { selectedModel }
-            val color =
-                if (selectedModel.value == gameModel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
-
             val decoder = Base64.getDecoder()
+            val isSelected = selectedModel.value == gameModel
+
             Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = color,
+                shape = RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp, bottomStart = 8.dp, bottomEnd = 8.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                border = BorderStroke(
+                    if (isSelected) 2.dp else 1.dp,
+                    if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(8.dp)
+                    .aspectRatio(0.72f)
+                    .padding(3.dp)
                     .combinedClickable(
                         onClick = {
                             if (viewModel.mainViewModel?.selected != null) {
@@ -1335,18 +1082,12 @@ class HomeViews {
                             ) {
                                 thread {
                                     showLoading.value = true
-
-                                    // Push the cheats before starting
-                                    val tId = gameModel.titleId ?: ""
-                                    val act = viewModel.activity
-
-                                    val success = viewModel.mainViewModel?.loadGame(gameModel) ?: false
+                                    val success = viewModel.mainViewModel?.loadGame(gameModel) ?: 0
                                     if (success == 1) {
                                         launchOnUiThread { viewModel.mainViewModel?.navigateToGame() }
                                     } else {
                                         if (success == -2)
-                                            showError.value =
-                                                "Error loading update. Please re-add update file"
+                                            showError.value = "Error loading update. Please re-add update file"
                                         gameModel.close()
                                     }
                                     showLoading.value = false
@@ -1360,7 +1101,29 @@ class HomeViews {
                         }
                     )
             ) {
-                Column(modifier = Modifier.padding(4.dp)) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 6.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 5.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "NEO",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Box(
+                            modifier = Modifier
+                                .width(22.dp)
+                                .height(4.dp)
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(MaterialTheme.colorScheme.background)
+                        )
+                    }
                     if (!gameModel.titleId.isNullOrEmpty()
                         && (gameModel.titleId != "0000000000000000" || gameModel.type == FileType.Nro)
                     ) {
@@ -1368,23 +1131,16 @@ class HomeViews {
                             val pic = decoder.decode(gameModel.icon)
                             Image(
                                 bitmap = BitmapFactory.decodeByteArray(pic, 0, pic.size).asImageBitmap(),
-                                contentDescription = gameModel.titleName + " icon",
+                                contentDescription = gameModel.titleName ?: "Cartucho",
+                                contentScale = ContentScale.Crop,
                                 modifier = Modifier
-                                    .padding(0.dp)
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .align(Alignment.CenterHorizontally)
+                                    .fillMaxWidth()
+                                    .aspectRatio(1f)
+                                    .clip(RoundedCornerShape(6.dp))
                             )
                         } else if (gameModel.type == FileType.Nro) NROIcon()
                         else NotAvailableIcon()
                     } else NotAvailableIcon()
-                    Text(
-                        text = gameModel.titleName ?: "N/A",
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .padding(vertical = 4.dp)
-                            .basicMarquee()
-                    )
                 }
             }
         }
