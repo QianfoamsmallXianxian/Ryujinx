@@ -1,3 +1,4 @@
+using Ryujinx.Common.Diagnostics;
 using Ryujinx.Common.Logging;
 using System;
 using System.Collections.Concurrent;
@@ -72,6 +73,8 @@ namespace Ryujinx.Graphics.Vulkan
 
         public static void RecordExternalFlush(string callerFile, string callerMember)
         {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry) return;
+
             string file = string.IsNullOrEmpty(callerFile) ? "?" : Path.GetFileNameWithoutExtension(callerFile.Replace('\\', '/'));
             string key = file + "." + callerMember;
 
@@ -251,7 +254,7 @@ namespace Ryujinx.Graphics.Vulkan
 
             long nowStats = Stopwatch.GetTimestamp();
 
-            if (nowStats - _statsStart >= _statsInterval)
+            if (GezinjinxPerformanceMode.DetailedTelemetry && nowStats - _statsStart >= _statsInterval)
             {
                 int other = Math.Max(0, _flushTotal - _flushAttachment - _flushDraw - _flushQuery);
 

@@ -9,7 +9,7 @@ namespace Ryujinx.Common.Diagnostics
     {
         // Enabled in the experimental branch so ADB runs expose queue, pipeline
         // and synchronization behavior. Stable/release variants keep this off.
-        public const bool DetailedTelemetry = true;
+        public static readonly bool DetailedTelemetry = false;
 
         /// <summary>
         /// Keep strict host sync markers attached to the command buffer that is already

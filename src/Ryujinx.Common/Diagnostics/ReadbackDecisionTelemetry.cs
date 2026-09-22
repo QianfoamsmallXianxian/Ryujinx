@@ -22,6 +22,7 @@ namespace Ryujinx.Common.Diagnostics
 
             public void Record(long ticks, long context = 0)
             {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry) return;
                 ticks = Math.Max(0, ticks);
                 Interlocked.Increment(ref _count);
                 Interlocked.Add(ref _ticks, ticks);
@@ -166,6 +167,7 @@ namespace Ryujinx.Common.Diagnostics
 
         public static void RecordPublication(long ticks, ulong requestedGeneration, ulong targetGeneration, ulong createdGeneration, ulong publishedGeneration, int wakeups)
         {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry) return;
             ulong lag = createdGeneration >= publishedGeneration ? createdGeneration - publishedGeneration : 0;
             long safeLag = lag > long.MaxValue ? long.MaxValue : (long)lag;
             _publication.Record(ticks, requestedGeneration > long.MaxValue ? long.MaxValue : (long)requestedGeneration);
@@ -181,6 +183,7 @@ namespace Ryujinx.Common.Diagnostics
 
         public static void RecordRendererQueueDepth(int depth)
         {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry) return;
             depth = Math.Max(0, depth);
             Interlocked.Add(ref _rendererQueueDepthTotal, depth);
             UpdateMax(ref _rendererQueueDepthMax, depth);
@@ -188,6 +191,7 @@ namespace Ryujinx.Common.Diagnostics
 
         public static void RecordBackendWait(long ticks, ulong id, bool watermark, bool missing, bool timedOut, bool flushInterrupt, long interruptTicks)
         {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry) return;
             _backend.Record(ticks, id > long.MaxValue ? long.MaxValue : (long)id);
             if (watermark) Interlocked.Increment(ref _backendWatermark);
             if (missing) Interlocked.Increment(ref _backendMissing);
@@ -198,45 +202,53 @@ namespace Ryujinx.Common.Diagnostics
 
         public static void RecordSubmitDequeued(long queueTicks, int enqueuedDepth, ulong timelineValue)
         {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry) return;
             _submitQueue.Record(queueTicks, timelineValue > long.MaxValue ? long.MaxValue : (long)timelineValue);
             UpdateMax(ref _submitQueueDepthMax, Math.Max(0, enqueuedDepth));
         }
 
         public static void RecordQueueSubmit(long ticks, ulong timelineValue)
         {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry) return;
             _queueSubmit.Record(ticks, timelineValue > long.MaxValue ? long.MaxValue : (long)timelineValue);
         }
 
         public static void RecordSparseBindDequeued(long queueTicks, int enqueuedDepth, ulong sequence)
         {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry) return;
             _sparseQueue.Record(queueTicks, sequence > long.MaxValue ? long.MaxValue : (long)sequence);
             UpdateMax(ref _submitQueueDepthMax, Math.Max(0, enqueuedDepth));
         }
 
         public static void RecordQueueBindSparse(long ticks, ulong sequence)
         {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry) return;
             _queueBindSparse.Record(ticks, sequence > long.MaxValue ? long.MaxValue : (long)sequence);
         }
 
         public static void RecordPresentDequeued(long queueTicks, int enqueuedDepth, ulong sequence)
         {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry) return;
             _presentQueue.Record(queueTicks, sequence > long.MaxValue ? long.MaxValue : (long)sequence);
             UpdateMax(ref _submitQueueDepthMax, Math.Max(0, enqueuedDepth));
         }
 
         public static void RecordQueuePresent(long ticks, ulong sequence)
         {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry) return;
             _queuePresent.Record(ticks, sequence > long.MaxValue ? long.MaxValue : (long)sequence);
         }
 
         public static void RecordDrainDequeued(long queueTicks, int enqueuedDepth, ulong sequence, string boundary)
         {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry) return;
             _drainQueue.Record(queueTicks, sequence > long.MaxValue ? long.MaxValue : (long)sequence);
             UpdateMax(ref _submitQueueDepthMax, Math.Max(0, enqueuedDepth));
         }
 
         public static void RecordSubmissionBoundary(string boundary, bool cancelled)
         {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry) return;
             if (cancelled)
             {
                 Interlocked.Increment(ref _cancelledBoundaries);
@@ -255,6 +267,7 @@ namespace Ryujinx.Common.Diagnostics
 
         public static void RecordSubmissionStateTransition(string from, string to, ulong sequence)
         {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry) return;
             Interlocked.Increment(ref _workerStateTransitions);
             Logger.Debug?.Print(LogClass.Gpu,
                 $"[RYUJINX-NEO-SUBMISSION-STATE] from={from} to={to} sequence={sequence}");
@@ -262,6 +275,7 @@ namespace Ryujinx.Common.Diagnostics
 
         public static void RecordSubmissionFault(string operation, string exception, ulong timelineValue, ulong sequence, int queueDepth)
         {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry) return;
             Interlocked.Increment(ref _submitFaults);
             if (Interlocked.CompareExchange(ref _firstFaultRecorded, 1, 0) == 0)
             {
@@ -272,11 +286,13 @@ namespace Ryujinx.Common.Diagnostics
 
         public static void RecordTextureForcedSync()
         {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry) return;
             Interlocked.Increment(ref _textureForcedSync);
         }
 
         public static void RecordTextureSync(bool waited, bool ready, bool inBuffer)
         {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry) return;
             if (waited) Interlocked.Increment(ref _textureSyncWait);
             if (!ready) Interlocked.Increment(ref _textureSyncNotReady);
             if (inBuffer) Interlocked.Increment(ref _textureInBuffer);
@@ -285,6 +301,7 @@ namespace Ryujinx.Common.Diagnostics
 
         public static void RecordTexturePreflush(long ticks, int slices, ulong bytes, bool imported)
         {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry) return;
             _texturePreflush.Record(ticks, slices);
             Interlocked.Add(ref _textureSlices, Math.Max(0, slices));
             Interlocked.Add(ref _textureBytes, bytes > long.MaxValue ? long.MaxValue : (long)bytes);
@@ -293,6 +310,7 @@ namespace Ryujinx.Common.Diagnostics
 
         public static void RecordTextureFlushAction(long ticks, int slices, ulong bytes, bool inBuffer, bool imported)
         {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry) return;
             _textureFlushAction.Record(ticks, slices);
             Interlocked.Add(ref _textureSlices, Math.Max(0, slices));
             Interlocked.Add(ref _textureBytes, bytes > long.MaxValue ? long.MaxValue : (long)bytes);
@@ -303,6 +321,7 @@ namespace Ryujinx.Common.Diagnostics
 
         public static void RecordBackgroundBarrier(long ticks, int queueDepth, bool invoked)
         {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry) return;
             _backgroundBarrier.Record(ticks, Math.Max(0, queueDepth));
             if (invoked) Interlocked.Increment(ref _backgroundInvoked);
             else Interlocked.Increment(ref _backgroundDirect);
@@ -310,21 +329,25 @@ namespace Ryujinx.Common.Diagnostics
 
         public static void RecordBackgroundBatch(int actions)
         {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry) return;
             Interlocked.Add(ref _backgroundBatchActions, Math.Max(0, actions));
         }
 
         public static void RecordBufferPostWaitFlush(long ticks, int ranges)
         {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry) return;
             _bufferPostWaitFlush.Record(ticks, Math.Max(0, ranges));
         }
 
         public static void RecordTextureFlushRejectedByRevalidation()
         {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry) return;
             Interlocked.Increment(ref _textureFlushRejectedByRevalidation);
         }
 
         public static void RecordLayoutConverterRejectedBySize()
         {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry) return;
             Interlocked.Increment(ref _layoutConverterRejectedBySize);
         }
 
@@ -344,6 +367,7 @@ namespace Ryujinx.Common.Diagnostics
 
         public static void LogSnapshot(long sequence)
         {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry) return;
             LatencyHistogram.Snapshot publication = _publication.Take();
             LatencyHistogram.Snapshot backend = _backend.Take();
             LatencyHistogram.Snapshot interrupt = _backendInterrupt.Take();

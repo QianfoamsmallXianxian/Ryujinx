@@ -93,6 +93,11 @@ namespace Ryujinx.Common.Diagnostics
 
         public static void Enable()
         {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry)
+            {
+                return;
+            }
+
             if (Interlocked.Exchange(ref _enabled, 1) != 0)
             {
                 return;
@@ -147,6 +152,7 @@ namespace Ryujinx.Common.Diagnostics
 
         public static void RecordVkSubmit(ulong timeline, ulong sequence)
         {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry) return;
             RecordPipeline(EventKind.VkSubmit, timeline, sequence);
             lock (Sync)
             {
@@ -158,6 +164,7 @@ namespace Ryujinx.Common.Diagnostics
 
         public static void RecordPresent(ulong sequence)
         {
+            if (!GezinjinxPerformanceMode.DetailedTelemetry) return;
             RecordPipeline(EventKind.Present, sequence, 0);
             lock (Sync)
             {
@@ -183,7 +190,7 @@ namespace Ryujinx.Common.Diagnostics
 
         private static void RecordPipeline(EventKind kind, ulong arg0, ulong arg1)
         {
-            if (Volatile.Read(ref _enabled) == 0) return;
+            if (!GezinjinxPerformanceMode.DetailedTelemetry || Volatile.Read(ref _enabled) == 0) return;
             Volatile.Write(ref _lastPipelineTicks, Stopwatch.GetTimestamp());
             Interlocked.Increment(ref _pipelineSequence);
             Volatile.Write(ref _armed, 1);
@@ -192,7 +199,7 @@ namespace Ryujinx.Common.Diagnostics
 
         public static void CheckForStall(long windowTicks)
         {
-            if (Volatile.Read(ref _enabled) == 0 || Volatile.Read(ref _armed) == 0 || windowTicks <= 0)
+            if (!GezinjinxPerformanceMode.DetailedTelemetry || Volatile.Read(ref _enabled) == 0 || Volatile.Read(ref _armed) == 0 || windowTicks <= 0)
             {
                 return;
             }

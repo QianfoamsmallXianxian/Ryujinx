@@ -17,9 +17,9 @@ namespace Ryujinx.Tests.Common
         }
 
         [Test]
-        public void DetailedTelemetry_IsEnabled()
+        public void DetailedTelemetry_IsDisabledInCurrent()
         {
-            Assert.That(GezinjinxPerformanceMode.DetailedTelemetry, Is.True);
+            Assert.That(GezinjinxPerformanceMode.DetailedTelemetry, Is.False);
         }
 
         [Test]
@@ -32,7 +32,7 @@ namespace Ryujinx.Tests.Common
             {
                 GezinjinxGuestStallTelemetry.Enable();
                 bool found = target.Messages.Exists(m => m.Contains("[RYUJINX-NEO-GUEST-STALL] watchdog enabled"));
-                Assert.That(found, Is.True, "Expected watchdog enable notice in logs");
+                Assert.That(found, Is.False, "Expected watchdog to remain disabled in Current");
             }
             finally
             {
