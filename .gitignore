@@ -202,4 +202,3 @@ outputs/
 native-debug-symbols/
 
 # Deliberately excluded external / temporary files
-src/Ryujinx.Common/Diagnostics/

@@ -1,8 +1,9 @@
-﻿package org.kenjinx.android.views
+package org.kenjinx.android.views
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -17,14 +18,22 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -50,12 +59,11 @@ class VulkanDriverViews {
             var drivers by remember { mutableStateOf(driverViewModel.getAvailableDrivers().toList()) }
             var selectedPath by remember { mutableStateOf(driverViewModel.selected) }
             var showDownloaderDialog by remember { mutableStateOf(false) }
+            var showDeleteConfirm by remember { mutableStateOf(false) }
 
             fun selectDriver(path: String) {
                 selectedPath = path
                 driverViewModel.selected = path
-                // A escolha feita no card deve sobreviver ao fechamento e
-                // reabertura da tela, sem depender do botão inferior Salvar.
                 driverViewModel.saveSelected()
             }
 
@@ -70,19 +78,53 @@ class VulkanDriverViews {
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        text = "Drivers Vulkan",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "Escolha o driver usado globalmente pelo emulador.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                // Header (Switch Style)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        modifier = Modifier.size(54.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Memory,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                    }
+                    Spacer(Modifier.width(14.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Drivers Vulkan",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        val totalDrivers = drivers.size + 1
+                        val activeName = if (selectedPath.isEmpty()) "Driver do sistema" else drivers.firstOrNull { it.driverPath == selectedPath }?.let { it.name.ifBlank { it.libraryName } } ?: "Customizado"
+                        val subtitle = "Driver gráfico • $totalDrivers disponíveis • Ativo: $activeName"
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    IconButton(onClick = { openDialog.value = false }) {
+                        Icon(Icons.Default.Close, contentDescription = "Fechar")
+                    }
                 }
 
+                // Drivers Grid
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
                     modifier = Modifier.fillMaxWidth().height(248.dp),
@@ -115,12 +157,19 @@ class VulkanDriverViews {
                     }
                 }
 
+                // Bottom Action Bar (Switch Style)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     OutlinedButton(onClick = { driverViewModel.add(refresh) }) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text("Adicionar driver")
                     }
                     Button(
@@ -137,19 +186,30 @@ class VulkanDriverViews {
                     }
                     OutlinedButton(
                         enabled = selectedPath.isNotEmpty(),
-                        onClick = {
-                            driverViewModel.selected = selectedPath
-                            driverViewModel.removeSelected()
-                            selectedPath = ""
-                            drivers = driverViewModel.getAvailableDrivers().toList()
-                        }
+                        onClick = { showDeleteConfirm = true }
                     ) {
-                        Text("Excluir selecionado")
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = if (selectedPath.isNotEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            "Excluir selecionado",
+                            color = if (selectedPath.isNotEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                        )
                     }
 
                     Spacer(modifier = Modifier.weight(1f))
 
                     OutlinedButton(onClick = { openDialog.value = false }) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text("Cancelar")
                     }
                     Button(
@@ -159,9 +219,45 @@ class VulkanDriverViews {
                             openDialog.value = false
                         }
                     ) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text("Salvar")
                     }
                 }
+            }
+
+            // Standardized Delete Confirmation Dialog matching DlcViews
+            if (showDeleteConfirm) {
+                val selectedDriverName = drivers.firstOrNull { it.driverPath == selectedPath }?.let { it.name.ifBlank { it.libraryName } } ?: "driver selecionado"
+                AlertDialog(
+                    onDismissRequest = { showDeleteConfirm = false },
+                    title = { Text("Excluir driver") },
+                    text = {
+                        Text("Deseja remover \"$selectedDriverName\"? O arquivo deste driver será apagado do dispositivo.")
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                driverViewModel.selected = selectedPath
+                                driverViewModel.removeSelected()
+                                selectedPath = ""
+                                drivers = driverViewModel.getAvailableDrivers().toList()
+                                showDeleteConfirm = false
+                            }
+                        ) {
+                            Text("Excluir", color = MaterialTheme.colorScheme.error)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showDeleteConfirm = false }) {
+                            Text("Cancelar")
+                        }
+                    }
+                )
             }
 
             if (showDownloaderDialog) {
@@ -188,17 +284,17 @@ class VulkanDriverViews {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(156.dp)
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(14.dp))
                     .clickable(onClick = onClick),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(14.dp),
                 color = if (selected) {
                     MaterialTheme.colorScheme.primaryContainer
                 } else {
-                    MaterialTheme.colorScheme.surface
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
                 },
                 border = BorderStroke(
                     if (selected) 2.dp else 1.dp,
-                    if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                    if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
                 ),
                 tonalElevation = if (selected) 3.dp else 0.dp
             ) {

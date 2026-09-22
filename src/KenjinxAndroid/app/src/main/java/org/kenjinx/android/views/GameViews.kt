@@ -138,7 +138,6 @@ class GameViews {
                 val vSyncMode = remember { mutableStateOf(initialSettings.vSyncMode) }
                 val enableMotion = remember { mutableStateOf(initialSettings.enableMotion) }
                 val showMore = remember { mutableStateOf(false) }
-                val showGameSettings = remember { mutableStateOf(false) }
                 val showBackNotice = remember { mutableStateOf(false) }
                 val showLoading = remember { mutableStateOf(true) }
                 val progressValue = remember { mutableFloatStateOf(0.0f) }
@@ -299,27 +298,6 @@ class GameViews {
                                 item {
                                     Surface(
                                         shape = MaterialTheme.shapes.medium,
-                                        color = MaterialTheme.colorScheme.surfaceVariant,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clickable {
-                                                showMore.value = false
-                                                showGameSettings.value = true
-                                            }
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Text("Configurações do jogo")
-                                            Icon(Icons.Default.Settings, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
-                                        }
-                                    }
-                                }
-                                item {
-                                    Surface(
-                                        shape = MaterialTheme.shapes.medium,
                                         color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f),
                                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
                                         modifier = Modifier
@@ -350,15 +328,6 @@ class GameViews {
                     }
                 }
 
-                if (showGameSettings.value) {
-                    val gm = mainViewModel.gameModel
-                    GameSettingsDialog(
-                        activity = mainViewModel.activity,
-                        titleId = gm?.titleId.orEmpty(),
-                        titleName = gm?.titleName.orEmpty(),
-                        onDismiss = { showGameSettings.value = false }
-                    )
-                }
 
                 // Close drawer if open on back press
                 BackHandler(enabled = showMore.value) {

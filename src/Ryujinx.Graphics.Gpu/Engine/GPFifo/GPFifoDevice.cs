@@ -1,3 +1,4 @@
+using Ryujinx.Common.Diagnostics;
 using Ryujinx.Graphics.Gpu.Memory;
 using System;
 using System.Collections.Concurrent;
@@ -122,6 +123,8 @@ namespace Ryujinx.Graphics.Gpu.Engine.GPFifo
         /// <param name="commandBuffer">The command buffer containing the prefetched commands</param>
         internal void PushHostCommandBuffer(GPFifoProcessor processor, int[] commandBuffer)
         {
+            GezinjinxGuestStallTelemetry.RecordGpfifoEnqueue(ulong.MaxValue, commandBuffer.Length);
+
             _commandBufferQueue.Enqueue(new CommandBuffer
             {
                 Processor = processor,
@@ -184,6 +187,7 @@ namespace Ryujinx.Graphics.Gpu.Engine.GPFifo
                     beforeBarrier = false;
                 }
 
+                GezinjinxGuestStallTelemetry.RecordGpfifoEnqueue(commandBuffer.EntryAddress, (int)commandBuffer.EntryCount);
                 _commandBufferQueue.Enqueue(commandBuffer);
             }
         }
@@ -208,6 +212,7 @@ namespace Ryujinx.Graphics.Gpu.Engine.GPFifo
             // Process command buffers.
             while (_ibEnable && !_interrupt && _commandBufferQueue.TryDequeue(out CommandBuffer entry))
             {
+                GezinjinxGuestStallTelemetry.RecordGpfifoDequeue(entry.EntryAddress, (int)entry.EntryCount);
                 bool flushCommandBuffer = true;
 
                 if (_flushSkips != 0)

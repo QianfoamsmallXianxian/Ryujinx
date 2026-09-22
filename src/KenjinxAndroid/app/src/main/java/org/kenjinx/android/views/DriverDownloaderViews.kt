@@ -1,4 +1,4 @@
-﻿package org.kenjinx.android.views
+package org.kenjinx.android.views
 
 import android.content.Intent
 import android.net.Uri
@@ -30,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Star
@@ -62,6 +63,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -136,64 +138,70 @@ fun DriverDownloaderDialog(
             modifier = Modifier
                 .fillMaxWidth(0.96f)
                 .fillMaxHeight(0.98f),
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+            tonalElevation = 6.dp,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 28.dp, vertical = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(horizontal = 24.dp, vertical = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Header Panel
+                // Header (Switch Style)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(
-                                text = "Baixar Drivers Vulkan",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
+                    Surface(
+                        modifier = Modifier.size(54.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.CloudDownload,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(28.dp)
                             )
-                            val sourceLabel = when (catalogSource) {
-                                DriverCatalogRepository.CatalogSource.REMOTE -> "Online (GitHub)"
-                                DriverCatalogRepository.CatalogSource.CACHE -> "Cache Local"
-                                DriverCatalogRepository.CatalogSource.EMBEDDED_FALLBACK -> "Fallback Embarcado"
-                                else -> ""
-                            }
-                            if (sourceLabel.isNotEmpty()) {
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = MaterialTheme.colorScheme.secondaryContainer
-                                ) {
-                                    Text(
-                                        text = sourceLabel,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                    )
-                                }
-                            }
                         }
+                    }
+                    Spacer(Modifier.width(14.dp))
+
+                    val allDrivers = catalog?.drivers.orEmpty()
+                    val sourceLabel = when (catalogSource) {
+                        DriverCatalogRepository.CatalogSource.REMOTE -> "Online (GitHub)"
+                        DriverCatalogRepository.CatalogSource.CACHE -> "Cache Local"
+                        DriverCatalogRepository.CatalogSource.EMBEDDED_FALLBACK -> "Fallback Embarcado"
+                        else -> "Carregando"
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Catálogo oficial com drivers validados dos repositórios dos autores.",
+                            text = "Baixar Drivers Vulkan",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        val subtitle = "Catálogo oficial • ${allDrivers.size} drivers disponíveis • $sourceLabel"
+                        Text(
+                            text = subtitle,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = { refreshCatalog() }) {
-                            Icon(Icons.Default.Refresh, contentDescription = "Atualizar Catálogo", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        IconButton(onClick = handleDismiss) {
-                            Icon(Icons.Default.Close, contentDescription = "Fechar", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
+                    IconButton(onClick = { refreshCatalog() }) {
+                        Icon(Icons.Default.Refresh, contentDescription = "Atualizar Catálogo", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    IconButton(onClick = handleDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Fechar", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
 
@@ -233,12 +241,44 @@ fun DriverDownloaderDialog(
                     }
 
                     if (filteredDrivers.isEmpty()) {
-                        Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                            Text(
-                                text = "Nenhum driver encontrado para este filtro.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                        // Empty State (Switch Style)
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(20.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CloudOff,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                    modifier = Modifier.size(44.dp)
+                                )
+                                Spacer(Modifier.height(10.dp))
+                                Text(
+                                    text = "Nenhum driver encontrado",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text = "Não há drivers disponíveis para o autor selecionado.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(horizontal = 24.dp)
+                                )
+                            }
                         }
                     } else {
                         LazyVerticalStaggeredGrid(
@@ -262,13 +302,13 @@ fun DriverDownloaderDialog(
                     }
                 }
 
-                // Attribution discreta, sem uma barra inferior que reduza a área dos cards.
+                // Attribution discreta
                 Text(
                     text = "Os drivers são de autoria de seus respectivos desenvolvedores e baixados diretamente do GitHub.",
                     modifier = Modifier.fillMaxWidth(),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                    maxLines = 2,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
@@ -292,12 +332,12 @@ fun DriverCatalogCard(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 210.dp)
-            .clip(RoundedCornerShape(16.dp)),
-        shape = RoundedCornerShape(16.dp),
+            .clip(RoundedCornerShape(14.dp)),
+        shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
         border = BorderStroke(
             width = if (isRecommended) 2.dp else 1.dp,
-            color = if (isRecommended) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+            color = if (isRecommended) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
         )
     ) {
         Column(
@@ -559,7 +599,7 @@ fun DriverCatalogCard(
                                     downloader.downloadAndInstall(
                                         entry = entry,
                                         onSuccess = {
-                                            showDriverToast(activity, "Driver '${entry.name}' instalado!", Toast.LENGTH_SHORT)
+                                            showDriverToast(activity, "Driver '${entry.name}' instalado com sucesso!", Toast.LENGTH_SHORT)
                                             onInstalled()
                                         },
                                         onError = { err ->
@@ -567,7 +607,6 @@ fun DriverCatalogCard(
                                         }
                                     )
                                 },
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                             ) {
                                 Text("Tentar novamente", fontSize = 12.sp)

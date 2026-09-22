@@ -797,6 +797,7 @@ namespace Ryujinx.Graphics.Vulkan
 
                     BaselineTelemetry.TryFlush();
                     TextureFormatTelemetry.TryFlush();
+                    ReadbackDecisionTelemetry.TryLogSnapshot();
                     PipelineCachePersistence.TryPeriodicSave();
                 }
             }

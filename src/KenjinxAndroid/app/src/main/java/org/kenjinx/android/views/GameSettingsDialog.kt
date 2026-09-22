@@ -1,4 +1,4 @@
-package org.kenjinx.android.views
+﻿package org.kenjinx.android.views
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.BorderStroke
@@ -33,6 +33,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
@@ -182,7 +183,7 @@ fun GameSettingsDialog(
                         }
                         Text("Escala de resolução", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            listOf(0.5f to "0.5x", 1.0f to "1x", 2.0f to "2x", 3.0f to "3x").forEach { (scale, label) ->
+                            listOf(0.5f to "0.5x", 0.75f to "0.75x", 1.0f to "1x", 2.0f to "2x", 3.0f to "3x").forEach { (scale, label) ->
                                 ChoiceCard(label, resScale == scale, Modifier.weight(1f), enabled = custom) { resScale = scale }
                             }
                         }
@@ -242,17 +243,17 @@ fun GameSettingsDialog(
                         anisotropy = def.maxAnisotropy
                         driverOverride = ""
                     }) {
-                        Text("Restaurar global")
+                        Text("Restaurar global", maxLines = 1, softWrap = false)
                     }
                     Spacer(modifier = Modifier.weight(1f))
                     TextButton(onClick = onDismiss) {
-                        Text("Cancelar")
+                        Text("Cancelar", maxLines = 1, softWrap = false)
                     }
                     TextButton(onClick = {
                         save()
                         onDismiss()
                     }) {
-                        Text("Salvar")
+                        Text("Salvar", maxLines = 1, softWrap = false)
                     }
                 }
             }

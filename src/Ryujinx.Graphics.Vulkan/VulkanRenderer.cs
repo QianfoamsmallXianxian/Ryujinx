@@ -1,4 +1,5 @@
-﻿using Ryujinx.Common.Configuration;
+﻿using Ryujinx.Common.Diagnostics;
+using Ryujinx.Common.Configuration;
 using Ryujinx.Common.Logging;
 using Ryujinx.Graphics.GAL;
 using Ryujinx.Graphics.Shader;
@@ -505,6 +506,7 @@ namespace Ryujinx.Graphics.Vulkan
             Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-ETAPA2] Vulkan timeline semaphore completion: {(SupportsTimelineSemaphore ? "Enabled" : "Fence fallback")}");
             Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-ETAPA4B] Turnip image view format lists: {(IsTurnip ? "Enabled" : "Disabled")}");
             Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-FLUSH-R3] Turnip adaptive fast-flush guard: {(IsTurnip ? "Enabled" : "Not applicable")} maxDrawFlushesPerFrame=4 exitThresholdMs=0.75");
+            GezinjinxGuestStallTelemetry.Enable();
 
             CommandBufferPool = new CommandBufferPool(Api, _device, QueueSubmissionWorker, queueFamilyIndex, IsQualcommProprietary, IsTurnip);
 
