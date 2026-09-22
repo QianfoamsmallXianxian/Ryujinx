@@ -79,6 +79,12 @@ namespace Ryujinx.Graphics.Gpu
         /// Enables or disables color space passthrough, if available.
         /// </summary>
         public static bool EnableColorSpacePassthrough = false;
+
+        /// <summary>
+        /// Executes vertex and geometry pipelines via Compute shaders when shaders require
+        /// semantics not properly preserved by native geometry stages.
+        /// </summary>
+        public static bool EnableVtgViaCompute = true;
     }
 #pragma warning restore CA2211
 }

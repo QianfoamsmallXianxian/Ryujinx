@@ -518,6 +518,7 @@ namespace LibKenjinx
                 bool enableShaderCache,
                 bool enableShaderLoopSafety,
                 bool enableTextureRecompression,
+                bool enableVtgViaCompute,
                 int backendThreading)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
@@ -533,6 +534,7 @@ namespace LibKenjinx
                 EnableShaderCache = enableShaderCache,
                 EnableShaderLoopSafety = enableShaderLoopSafety,
                 EnableTextureRecompression = enableTextureRecompression,
+                EnableVtgViaCompute = enableVtgViaCompute,
                 BackendThreading = (BackendThreading)backendThreading
             });
         }

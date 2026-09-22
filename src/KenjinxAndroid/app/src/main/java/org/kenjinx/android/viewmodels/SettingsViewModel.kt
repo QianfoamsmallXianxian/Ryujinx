@@ -56,6 +56,7 @@ class SettingsViewModel(val activity: MainActivity) {
         enableShaderCache: MutableState<Boolean>,
         enableShaderLoopSafety: MutableState<Boolean>,
         enableTextureRecompression: MutableState<Boolean>,
+        enableVtgViaCompute: MutableState<Boolean>,
         enableMacroHLE: MutableState<Boolean>,
         stretchToFullscreen: MutableState<Boolean>,
         resScale: MutableState<Float>,
@@ -99,6 +100,7 @@ class SettingsViewModel(val activity: MainActivity) {
         enableShaderCache.value = sharedPref.getBoolean("enableShaderCache", true)
         enableShaderLoopSafety.value = sharedPref.getBoolean("enableShaderLoopSafety", false)
         enableTextureRecompression.value = sharedPref.getBoolean("enableTextureRecompression", false)
+        enableVtgViaCompute.value = sharedPref.getBoolean("enableVtgViaCompute", true)
         enableMacroHLE.value = sharedPref.getBoolean("enableMacroHLE", false)
         stretchToFullscreen.value = sharedPref.getBoolean("stretchToFullscreen", false)
         resScale.value = sharedPref.getFloat("resScale", 1f)
@@ -118,6 +120,11 @@ class SettingsViewModel(val activity: MainActivity) {
         enableTraceLogs.value = sharedPref.getBoolean("enableTraceLogs", false)
         enableDebugLogs.value = sharedPref.getBoolean("enableDebugLogs", false)
         enableGraphicsLogs.value = sharedPref.getBoolean("enableGraphicsLogs", false)
+
+        showPerformanceOverlay.value = sharedPref.getBoolean("showPerformanceOverlay", false)
+        virtualControllerPreset.value = QuickSettings.VirtualControllerPreset.entries.getOrElse(
+            sharedPref.getInt("virtualControllerPreset", QuickSettings.VirtualControllerPreset.Default.ordinal)
+        ) { QuickSettings.VirtualControllerPreset.Default }
 
         // Load language/region (strings, fallback to defaults, then .valueOf)
         val langName = sharedPref.getString("system_language", "AmericanEnglish") ?: "AmericanEnglish"
@@ -142,6 +149,7 @@ class SettingsViewModel(val activity: MainActivity) {
         enableShaderCache: MutableState<Boolean>,
         enableShaderLoopSafety: MutableState<Boolean>,
         enableTextureRecompression: MutableState<Boolean>,
+        enableVtgViaCompute: MutableState<Boolean>,
         enableMacroHLE: MutableState<Boolean>,
         stretchToFullscreen: MutableState<Boolean>,
         resScale: MutableState<Float>,
@@ -184,6 +192,7 @@ class SettingsViewModel(val activity: MainActivity) {
             putBoolean("enableShaderCache", enableShaderCache.value)
             putBoolean("enableShaderLoopSafety", enableShaderLoopSafety.value)
             putBoolean("enableTextureRecompression", enableTextureRecompression.value)
+            putBoolean("enableVtgViaCompute", enableVtgViaCompute.value)
             putBoolean("enableMacroHLE", enableMacroHLE.value)
             putBoolean("stretchToFullscreen", stretchToFullscreen.value)
             putFloat("resScale", resScale.value)
@@ -203,6 +212,9 @@ class SettingsViewModel(val activity: MainActivity) {
             putBoolean("enableTraceLogs", enableTraceLogs.value)
             putBoolean("enableDebugLogs", enableDebugLogs.value)
             putBoolean("enableGraphicsLogs", enableGraphicsLogs.value)
+
+            putBoolean("showPerformanceOverlay", showPerformanceOverlay.value)
+            putInt("virtualControllerPreset", virtualControllerPreset.value.ordinal)
 
             // Save language/region as string (enum name)
             putString("system_language", systemLanguage.value.name)

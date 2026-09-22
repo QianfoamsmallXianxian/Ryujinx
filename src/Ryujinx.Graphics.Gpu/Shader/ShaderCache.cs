@@ -317,11 +317,13 @@ namespace Ryujinx.Graphics.Gpu.Shader
             ref GpuChannelGraphicsState graphicsState,
             ShaderAddresses addresses)
         {
-            bool forceV29GeometryAsCompute = addresses.Geometry == 0x100719F30UL;
+            bool requireVtgAsCompute = addresses.Geometry != 0 &&
+                                       GraphicsConfig.EnableVtgViaCompute &&
+                                       !_context.Capabilities.SupportsGeometryShaderPassthrough;
 
             if (_gpPrograms.TryGetValue(addresses, out CachedShaderProgram gpShaders) &&
                 IsShaderEqual(channel, ref poolState, ref graphicsState, gpShaders, addresses) &&
-                (!forceV29GeometryAsCompute || (gpShaders.VertexAsCompute != null && gpShaders.GeometryAsCompute != null)))
+                (!requireVtgAsCompute || (gpShaders.VertexAsCompute != null && gpShaders.GeometryAsCompute != null)))
             {
                 return gpShaders;
             }
@@ -333,7 +335,7 @@ namespace Ryujinx.Graphics.Gpu.Shader
                 addresses,
                 out gpShaders,
                 out CachedGraphicsGuestCode cachedGuestCode,
-                forceV29GeometryAsCompute);
+                requireVtgAsCompute);
 
             if (foundCachedProgram)
             {
@@ -387,14 +389,11 @@ namespace Ryujinx.Graphics.Gpu.Shader
             bool vertexToCompute = ShouldConvertVertexToCompute(_context, vertexHasStore, geometryHasStore, hasGeometryShader);
             bool geometryToCompute = ShouldConvertGeometryToCompute(_context, geometryHasStore);
 
-            if (forceV29GeometryAsCompute)
+            if (geometryToCompute && GraphicsConfig.EnableVtgViaCompute && !_context.Capabilities.SupportsGeometryShaderPassthrough)
             {
                 Logger.Info?.Print(
                     LogClass.Gpu,
-                    "[NEOV2-V29] Forcing geometry=0x100719F30 to Vertex+Geometry as Compute");
-
-                geometryToCompute = true;
-                vertexToCompute = true;
+                    $"[NEOV2-VTG] Converting Vertex+Geometry to Compute (geometry=0x{addresses.Geometry:X})");
             }
 
             CachedShaderStage[] shaders = new CachedShaderStage[Constants.ShaderStages + 1];
@@ -539,7 +538,8 @@ namespace Ryujinx.Graphics.Gpu.Shader
         public static bool ShouldConvertGeometryToCompute(GpuContext context, bool geometryHasStore)
         {
             return (!context.Capabilities.SupportsVertexStoreAndAtomics && geometryHasStore) ||
-                   !context.Capabilities.SupportsGeometryShader;
+                   !context.Capabilities.SupportsGeometryShader ||
+                   (GraphicsConfig.EnableVtgViaCompute && !context.Capabilities.SupportsGeometryShaderPassthrough);
         }
 
         /// <summary>
@@ -550,7 +550,9 @@ namespace Ryujinx.Graphics.Gpu.Shader
         /// <returns>True if the possibility of a shader being converted to compute exists, false otherwise</returns>
         public static bool MayConvertVtgToCompute(ref Capabilities capabilities)
         {
-            return !capabilities.SupportsVertexStoreAndAtomics || !capabilities.SupportsGeometryShader;
+            return !capabilities.SupportsVertexStoreAndAtomics ||
+                   !capabilities.SupportsGeometryShader ||
+                   (GraphicsConfig.EnableVtgViaCompute && !capabilities.SupportsGeometryShaderPassthrough);
         }
 
         /// <summary>

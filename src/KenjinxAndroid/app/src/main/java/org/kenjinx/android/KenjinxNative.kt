@@ -40,6 +40,7 @@ interface KenjinxNativeJna : Library {
         enableShaderCache: Boolean = true,
         enableShaderLoopSafety: Boolean = false,
         enableTextureRecompression: Boolean = false,
+        enableVtgViaCompute: Boolean = true,
         backendThreading: Int = BackendThreading.Auto.ordinal
     ): Boolean
 
@@ -175,6 +176,7 @@ object KenjinxNative : KenjinxNativeJna by jnaInstance {
         enableShaderCache: Boolean,
         enableShaderLoopSafety: Boolean,
         enableTextureRecompression: Boolean,
+        enableVtgViaCompute: Boolean,
         backendThreading: Int
     ): Boolean {
         val requested = backendThreading
@@ -201,6 +203,7 @@ object KenjinxNative : KenjinxNativeJna by jnaInstance {
                 enableShaderCache,
                 enableShaderLoopSafety,
                 enableTextureRecompression,
+                enableVtgViaCompute,
                 firstChoice
             )
         } catch (t: Throwable) {
@@ -220,6 +223,7 @@ object KenjinxNative : KenjinxNativeJna by jnaInstance {
                     enableShaderCache,
                     enableShaderLoopSafety,
                     enableTextureRecompression,
+                    enableVtgViaCompute,
                     THREADING_SINGLE
                 )
             } catch (t2: Throwable) {

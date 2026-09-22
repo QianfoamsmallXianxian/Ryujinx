@@ -65,6 +65,7 @@ class QuickSettings(val activity: Activity) {
     var enableShaderCache: Boolean
     var enableShaderLoopSafety: Boolean
     var enableTextureRecompression: Boolean
+    var enableVtgViaCompute: Boolean
     var enableMacroHLE: Boolean
     var stretchToFullscreen: Boolean
     var resScale: Float
@@ -146,6 +147,7 @@ class QuickSettings(val activity: Activity) {
         enableShaderCache = sharedPref.getBoolean("enableShaderCache", true)
         enableShaderLoopSafety = sharedPref.getBoolean("enableShaderLoopSafety", false)
         enableTextureRecompression = sharedPref.getBoolean("enableTextureRecompression", false)
+        enableVtgViaCompute = sharedPref.getBoolean("enableVtgViaCompute", true)
         enableMacroHLE = sharedPref.getBoolean("enableMacroHLE", true)
         stretchToFullscreen = sharedPref.getBoolean("stretchToFullscreen", false)
         resScale = sharedPref.getFloat("resScale", 1f)
@@ -215,6 +217,7 @@ class QuickSettings(val activity: Activity) {
             putBoolean("enableShaderCache", enableShaderCache)
             putBoolean("enableShaderLoopSafety", enableShaderLoopSafety)
             putBoolean("enableTextureRecompression", enableTextureRecompression)
+            putBoolean("enableVtgViaCompute", enableVtgViaCompute)
             putBoolean("enableMacroHLE", enableMacroHLE)
             putBoolean("stretchToFullscreen", stretchToFullscreen)
             putFloat("resScale", resScale)

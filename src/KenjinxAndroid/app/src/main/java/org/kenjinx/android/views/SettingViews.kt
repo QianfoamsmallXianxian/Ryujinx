@@ -368,6 +368,7 @@ class SettingViews {
             val enableShaderLoopSafety = remember { mutableStateOf(false) }
 
             val enableTextureRecompression = remember { mutableStateOf(false) }
+            val enableVtgViaCompute = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableVtgViaCompute) }
 
             val enableMacroHLE = remember { mutableStateOf(false) }
 
@@ -514,6 +515,7 @@ class SettingViews {
                     enableShaderLoopSafety,
 
                     enableTextureRecompression,
+                    enableVtgViaCompute,
 
                     enableMacroHLE,
 
@@ -602,6 +604,7 @@ class SettingViews {
                     enableShaderLoopSafety,
 
                     enableTextureRecompression,
+                    enableVtgViaCompute,
 
                     enableMacroHLE,
 
@@ -660,6 +663,11 @@ class SettingViews {
                 qs.showPerformanceOverlay = showPerformanceOverlay.value
 
                 qs.virtualControllerPreset = vcPreset.value
+
+                qs.orientationPreference = orientationPref.value
+                qs.enableVtgViaCompute = enableVtgViaCompute.value
+
+                qs.save()
 
             }
 
@@ -1035,7 +1043,7 @@ class SettingViews {
 
                                                     orientationPref.value = pref
 
-                                                    QuickSettings(mainViewModel.activity).orientationPreference = pref
+                                                    val qsOri = QuickSettings(mainViewModel.activity); qsOri.orientationPreference = pref; qsOri.save()
 
                                                 }
 
@@ -1053,7 +1061,10 @@ class SettingViews {
 
                                             checked = showPerformanceOverlay.value,
 
-                                            onCheckedChange = { showPerformanceOverlay.value = it }
+                                            onCheckedChange = {
+                                                showPerformanceOverlay.value = it
+                                                val qsSpo = QuickSettings(mainViewModel.activity); qsSpo.showPerformanceOverlay = it; qsSpo.save()
+                                            }
 
                                         )
 
@@ -1323,6 +1334,18 @@ class SettingViews {
 
                                         )
 
+                                        HighContrastToggle(
+                                            title = "VTG via Compute",
+                                            description = "Executa determinados caminhos de Vertex/Geometry através de Compute para melhorar compatibilidade com shaders que dependem de semânticas não preservadas corretamente pelo caminho gráfico nativo. (Requer reiniciar o jogo)",
+                                            checked = enableVtgViaCompute.value,
+                                            onCheckedChange = {
+                                                enableVtgViaCompute.value = it
+                                                val qs = QuickSettings(mainViewModel.activity)
+                                                qs.enableVtgViaCompute = it
+                                                qs.save()
+                                            }
+                                        )
+
 
 
                                         HighContrastToggle(
@@ -1365,7 +1388,7 @@ class SettingViews {
 
                                                 disableThreadedRendering.value = !it
 
-                                                QuickSettings(mainViewModel.activity).disableThreadedRendering = !it
+                                                val qsDtr = QuickSettings(mainViewModel.activity); qsDtr.disableThreadedRendering = !it; qsDtr.save()
 
                                             }
 
@@ -1419,7 +1442,7 @@ class SettingViews {
 
                                                 vcPreset.value = it
 
-                                                QuickSettings(mainViewModel.activity).virtualControllerPreset = it
+                                                val qsVc = QuickSettings(mainViewModel.activity); qsVc.virtualControllerPreset = it; qsVc.save()
 
                                             }
 
@@ -1483,7 +1506,7 @@ class SettingViews {
 
                                                 controllerScale.floatValue = it
 
-                                                QuickSettings(mainViewModel.activity).controllerScale = it
+                                                val qsCs = QuickSettings(mainViewModel.activity); qsCs.controllerScale = it; qsCs.save()
 
                                             },
 

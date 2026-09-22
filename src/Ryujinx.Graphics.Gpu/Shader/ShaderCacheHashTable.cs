@@ -156,37 +156,34 @@ namespace Ryujinx.Graphics.Gpu.Shader
         {
             IdTable idTable = new();
 
-            foreach (CachedShaderStage shader in program.Shaders)
+            for (int i = 0; i < program.Shaders.Length; i++)
             {
+                CachedShaderStage shader = program.Shaders[i];
                 if (shader == null)
                 {
                     continue;
                 }
 
-                if (shader.Info != null)
+                switch (i)
                 {
-                    switch (shader.Info.Stage)
-                    {
-                        case ShaderStage.Vertex:
-                            idTable.VertexBId = _vertexBCache.Add(shader.Code);
-                            break;
-                        case ShaderStage.TessellationControl:
-                            idTable.TessControlId = _tessControlCache.Add(shader.Code);
-                            break;
-                        case ShaderStage.TessellationEvaluation:
-                            idTable.TessEvaluationId = _tessEvaluationCache.Add(shader.Code);
-                            break;
-                        case ShaderStage.Geometry:
-                            idTable.GeometryId = _geometryCache.Add(shader.Code);
-                            break;
-                        case ShaderStage.Fragment:
-                            idTable.FragmentId = _fragmentCache.Add(shader.Code);
-                            break;
-                    }
-                }
-                else
-                {
-                    idTable.VertexAId = _vertexACache.Add(shader.Code);
+                    case 0:
+                        idTable.VertexAId = _vertexACache.Add(shader.Code);
+                        break;
+                    case 1:
+                        idTable.VertexBId = _vertexBCache.Add(shader.Code);
+                        break;
+                    case 2:
+                        idTable.TessControlId = _tessControlCache.Add(shader.Code);
+                        break;
+                    case 3:
+                        idTable.TessEvaluationId = _tessEvaluationCache.Add(shader.Code);
+                        break;
+                    case 4:
+                        idTable.GeometryId = _geometryCache.Add(shader.Code);
+                        break;
+                    case 5:
+                        idTable.FragmentId = _fragmentCache.Add(shader.Code);
+                        break;
                 }
             }
 

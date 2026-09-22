@@ -965,6 +965,11 @@ namespace Ryujinx.Graphics.Vulkan
         public void SetProgram(IProgram program)
         {
             ShaderCollection internalProgram = (ShaderCollection)program;
+
+            if (_program == internalProgram)
+            {
+                return;
+            }
             PipelineShaderStageCreateInfo[] stages = internalProgram.GetInfos();
 
             _program = internalProgram;

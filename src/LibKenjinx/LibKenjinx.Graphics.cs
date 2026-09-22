@@ -45,6 +45,7 @@ namespace LibKenjinx
             GraphicsConfig.EnableShaderCache = graphicsConfiguration.EnableShaderCache;
             GraphicsConfig.EnableShaderLoopSafety = graphicsConfiguration.EnableShaderLoopSafety;
             GraphicsConfig.EnableTextureRecompression = graphicsConfiguration.EnableTextureRecompression;
+            GraphicsConfig.EnableVtgViaCompute = graphicsConfiguration.EnableVtgViaCompute;
 
             Logger.Info?.Print(
                 Ryujinx.Common.Logging.LogClass.Gpu,
@@ -268,6 +269,7 @@ namespace LibKenjinx
         public bool EnableShaderCache;
         public bool EnableShaderLoopSafety;
         public bool EnableTextureRecompression;
+        public bool EnableVtgViaCompute;
         public BackendThreading BackendThreading;
         public AspectRatio AspectRatio; // <- important
 
@@ -282,6 +284,7 @@ namespace LibKenjinx
             EnableShaderCache = true;
             EnableShaderLoopSafety = false;
             EnableTextureRecompression = false;
+            EnableVtgViaCompute = true;
             BackendThreading = BackendThreading.Auto;
             AspectRatio = AspectRatio.Fixed16x9;
         }

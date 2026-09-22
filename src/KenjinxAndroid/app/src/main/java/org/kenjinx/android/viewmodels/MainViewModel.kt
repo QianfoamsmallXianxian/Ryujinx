@@ -209,6 +209,7 @@ class MainViewModel(val activity: MainActivity) {
             enableShaderCache = settings.enableShaderCache,
             enableShaderLoopSafety = settings.enableShaderLoopSafety,
             enableTextureRecompression = settings.enableTextureRecompression,
+            enableVtgViaCompute = settings.enableVtgViaCompute,
             rescale = settings.resScale,
             maxAnisotropy = settings.maxAnisotropy,
             backendThreading = backendMode
@@ -310,6 +311,7 @@ class MainViewModel(val activity: MainActivity) {
             enableShaderCache = settings.enableShaderCache,
             enableShaderLoopSafety = settings.enableShaderLoopSafety,
             enableTextureRecompression = settings.enableTextureRecompression,
+            enableVtgViaCompute = settings.enableVtgViaCompute,
             rescale = settings.resScale,
             maxAnisotropy = settings.maxAnisotropy,
             backendThreading = backendMode

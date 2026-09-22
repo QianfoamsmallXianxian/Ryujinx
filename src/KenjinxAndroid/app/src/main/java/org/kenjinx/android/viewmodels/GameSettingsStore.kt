@@ -32,6 +32,13 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             if (isValid) preferences.edit { putString(key("driverOverride"), value) }
         }
 
+    /** 0: Use Global, 1: Enabled, 2: Disabled */
+    var vtgViaComputeMode: Int
+        get() = if (!isValid) 0 else preferences.getInt(key("vtgViaComputeMode"), 0)
+        set(value) {
+            if (isValid) preferences.edit { putInt(key("vtgViaComputeMode"), value) }
+        }
+
     fun applyTo(settings: QuickSettings): QuickSettings {
         if (!isValid || !isEnabled) return settings
 
@@ -46,6 +53,10 @@ class GameSettingsStore(activity: Activity, titleId: String) {
         settings.enableShaderCache = safeBoolean(key("enableShaderCache"), settings.enableShaderCache)
         settings.enableShaderLoopSafety = safeBoolean(key("enableShaderLoopSafety"), settings.enableShaderLoopSafety)
         settings.enableTextureRecompression = safeBoolean(key("enableTextureRecompression"), settings.enableTextureRecompression)
+        when (safeInt(key("vtgViaComputeMode"), 0)) {
+            1 -> settings.enableVtgViaCompute = true
+            2 -> settings.enableVtgViaCompute = false
+        }
         settings.enableMacroHLE = safeBoolean(key("enableMacroHLE"), settings.enableMacroHLE)
         settings.stretchToFullscreen = safeBoolean(key("stretchToFullscreen"), settings.stretchToFullscreen)
         settings.resScale = safeFloat(key("resScale"), settings.resScale)
@@ -72,6 +83,7 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             putBoolean(key("enableShaderCache"), settings.enableShaderCache)
             putBoolean(key("enableShaderLoopSafety"), settings.enableShaderLoopSafety)
             putBoolean(key("enableTextureRecompression"), settings.enableTextureRecompression)
+            putInt(key("vtgViaComputeMode"), vtgViaComputeMode)
             putBoolean(key("enableMacroHLE"), settings.enableMacroHLE)
             putBoolean(key("stretchToFullscreen"), settings.stretchToFullscreen)
             putFloat(key("resScale"), settings.resScale)

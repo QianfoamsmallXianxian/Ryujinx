@@ -72,6 +72,7 @@ fun GameSettingsDialog(
     var vsync by remember(titleId) { mutableStateOf(initial.vSyncMode) }
     var resScale by remember(titleId) { mutableStateOf(initial.resScale) }
     var anisotropy by remember(titleId) { mutableStateOf(initial.maxAnisotropy) }
+    var vtgViaComputeMode by remember(titleId) { mutableStateOf(store.vtgViaComputeMode) }
     val driverViewModel = remember(titleId) { VulkanDriverViewModel(activity) }
     val availableDrivers = remember(titleId) { driverViewModel.getAvailableDrivers().toList() }
     var driverOverride by remember(titleId) { mutableStateOf(store.driverOverride) }
@@ -79,6 +80,7 @@ fun GameSettingsDialog(
     val save = {
         if (custom) {
             store.isEnabled = true
+            store.vtgViaComputeMode = vtgViaComputeMode
             store.save(
                 initial.apply {
                     this.useNce = useNce
@@ -196,6 +198,18 @@ fun GameSettingsDialog(
                         ToggleRow("Cache de shaders", shaderCache, custom) { shaderCache = it }
                         ToggleRow("Shader Loop Safety", loopSafety, custom) { loopSafety = it }
                         ToggleRow("Recompressão de texturas", textureRecompression, custom) { textureRecompression = it }
+                        Text("VTG via Compute", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        val vtgOptions = listOf(
+                            0 to "Usar global",
+                            1 to "Ativado",
+                            2 to "Desativado"
+                        )
+                        GameSettingSelect(
+                            selectedLabel = vtgOptions.firstOrNull { it.first == vtgViaComputeMode }?.second ?: "Usar global",
+                            options = vtgOptions,
+                            enabled = custom,
+                            onSelected = { vtgViaComputeMode = it }
+                        )
                         ToggleRow("Macro HLE", macroHle, custom) { macroHle = it }
                         ToggleRow("Esticar para tela inteira", stretch, custom) { stretch = it }
                         Text("Layout do controle", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -241,6 +255,7 @@ fun GameSettingsDialog(
                         vsync = def.vSyncMode
                         resScale = def.resScale
                         anisotropy = def.maxAnisotropy
+                        vtgViaComputeMode = 0
                         driverOverride = ""
                     }) {
                         Text("Restaurar global", maxLines = 1, softWrap = false)
