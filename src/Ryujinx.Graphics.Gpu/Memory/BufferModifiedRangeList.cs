@@ -1,3 +1,4 @@
+﻿using Ryujinx.Common.Diagnostics;
 using Ryujinx.Memory.Range;
 using System;
 using System.Buffers;
@@ -447,7 +448,12 @@ namespace Ryujinx.Graphics.Gpu.Memory
             }
 
             // Wait for the syncpoint.
-            _context.Renderer.WaitSync(currentSync + (ulong)highestDiff);
+            bool relaxedReadback = NeoGraphicsSettings.BufferReadbackMode == BufferReadbackMode.Relaxed;
+
+            if (!relaxedReadback)
+            {
+                _context.Renderer.WaitSync(currentSync + (ulong)highestDiff);
+            }
 
             RemoveRangesAndFlush(overlaps, rangeCount, highestDiff, currentSync, address, endAddress);
             

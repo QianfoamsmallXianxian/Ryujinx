@@ -39,6 +39,27 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             if (isValid) preferences.edit { putInt(key("vtgViaComputeMode"), value) }
         }
 
+    /** 0: Use Global, 1: Padrao, 2: Reduzido, 3: Desativado */
+    var drawFlushMode: Int
+        get() = if (!isValid) 0 else preferences.getInt(key("drawFlushMode"), 0)
+        set(value) {
+            if (isValid) preferences.edit { putInt(key("drawFlushMode"), value) }
+        }
+
+    /** 0: Use Global, 1: Padrao, 2: Relaxada */
+    var bufferReadbackMode: Int
+        get() = if (!isValid) 0 else preferences.getInt(key("bufferReadbackMode"), 0)
+        set(value) {
+            if (isValid) preferences.edit { putInt(key("bufferReadbackMode"), value) }
+        }
+
+    /** 0: Use Global, 1: Padrao, 2: Imediata */
+    var strictSyncMode: Int
+        get() = if (!isValid) 0 else preferences.getInt(key("strictSyncMode"), 0)
+        set(value) {
+            if (isValid) preferences.edit { putInt(key("strictSyncMode"), value) }
+        }
+
     fun applyTo(settings: QuickSettings): QuickSettings {
         if (!isValid || !isEnabled) return settings
 
@@ -56,6 +77,19 @@ class GameSettingsStore(activity: Activity, titleId: String) {
         when (safeInt(key("vtgViaComputeMode"), 0)) {
             1 -> settings.enableVtgViaCompute = true
             2 -> settings.enableVtgViaCompute = false
+        }
+        when (safeInt(key("drawFlushMode"), 0)) {
+            1 -> settings.drawFlushMode = 0
+            2 -> settings.drawFlushMode = 1
+            3 -> settings.drawFlushMode = 2
+        }
+        when (safeInt(key("bufferReadbackMode"), 0)) {
+            1 -> settings.bufferReadbackMode = 0
+            2 -> settings.bufferReadbackMode = 1
+        }
+        when (safeInt(key("strictSyncMode"), 0)) {
+            1 -> settings.strictSyncMode = 0
+            2 -> settings.strictSyncMode = 1
         }
         settings.enableMacroHLE = safeBoolean(key("enableMacroHLE"), settings.enableMacroHLE)
         settings.stretchToFullscreen = safeBoolean(key("stretchToFullscreen"), settings.stretchToFullscreen)
@@ -84,6 +118,9 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             putBoolean(key("enableShaderLoopSafety"), settings.enableShaderLoopSafety)
             putBoolean(key("enableTextureRecompression"), settings.enableTextureRecompression)
             putInt(key("vtgViaComputeMode"), vtgViaComputeMode)
+            putInt(key("drawFlushMode"), drawFlushMode)
+            putInt(key("bufferReadbackMode"), bufferReadbackMode)
+            putInt(key("strictSyncMode"), strictSyncMode)
             putBoolean(key("enableMacroHLE"), settings.enableMacroHLE)
             putBoolean(key("stretchToFullscreen"), settings.stretchToFullscreen)
             putFloat(key("resScale"), settings.resScale)

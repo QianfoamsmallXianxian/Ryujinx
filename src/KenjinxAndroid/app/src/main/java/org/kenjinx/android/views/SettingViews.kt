@@ -370,6 +370,12 @@ class SettingViews {
             val enableTextureRecompression = remember { mutableStateOf(false) }
             val enableVtgViaCompute = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableVtgViaCompute) }
 
+            val drawFlushMode = remember { mutableStateOf(QuickSettings(mainViewModel.activity).drawFlushMode) }
+
+            val bufferReadbackMode = remember { mutableStateOf(QuickSettings(mainViewModel.activity).bufferReadbackMode) }
+
+            val strictSyncMode = remember { mutableStateOf(QuickSettings(mainViewModel.activity).strictSyncMode) }
+
             val enableMacroHLE = remember { mutableStateOf(false) }
 
             val stretchToFullscreen = remember { mutableStateOf(false) }
@@ -516,6 +522,9 @@ class SettingViews {
 
                     enableTextureRecompression,
                     enableVtgViaCompute,
+                    drawFlushMode,
+                    bufferReadbackMode,
+                    strictSyncMode,
 
                     enableMacroHLE,
 
@@ -605,6 +614,9 @@ class SettingViews {
 
                     enableTextureRecompression,
                     enableVtgViaCompute,
+                    drawFlushMode,
+                    bufferReadbackMode,
+                    strictSyncMode,
 
                     enableMacroHLE,
 
@@ -666,6 +678,9 @@ class SettingViews {
 
                 qs.orientationPreference = orientationPref.value
                 qs.enableVtgViaCompute = enableVtgViaCompute.value
+                qs.drawFlushMode = drawFlushMode.value
+                qs.bufferReadbackMode = bufferReadbackMode.value
+                qs.strictSyncMode = strictSyncMode.value
 
                 qs.save()
 
@@ -1343,6 +1358,61 @@ class SettingViews {
                                                 val qs = QuickSettings(mainViewModel.activity)
                                                 qs.enableVtgViaCompute = it
                                                 qs.save()
+                                            }
+                                        )
+
+                                        SectionTitle("Sincronização rápida de Draw")
+
+                                        val drawFlushOptions = listOf<Pair<Int, String>>(
+                                            0 to "Padrão",
+                                            1 to "Reduzido",
+                                            2 to "Desativado"
+                                        )
+
+                                        CompactSelect(
+                                            selectedLabel = drawFlushOptions.first { it.first == drawFlushMode.value }.second,
+                                            options = drawFlushOptions,
+                                            onSelected = {
+                                                drawFlushMode.value = it
+                                                val qsDrawFlush = QuickSettings(mainViewModel.activity)
+                                                qsDrawFlush.drawFlushMode = it
+                                                qsDrawFlush.save()
+                                            }
+                                        )
+
+                                        SectionTitle("Leitura de Buffer da GPU")
+
+                                        val bufferReadbackOptions = listOf<Pair<Int, String>>(
+                                            0 to "Padrão",
+                                            1 to "Relaxada"
+                                        )
+
+                                        CompactSelect(
+                                            selectedLabel = bufferReadbackOptions.first { it.first == bufferReadbackMode.value }.second,
+                                            options = bufferReadbackOptions,
+                                            onSelected = {
+                                                bufferReadbackMode.value = it
+                                                val qsBufferReadback = QuickSettings(mainViewModel.activity)
+                                                qsBufferReadback.bufferReadbackMode = it
+                                                qsBufferReadback.save()
+                                            }
+                                        )
+
+                                        SectionTitle("Sincronização estrita da GPU")
+
+                                        val strictSyncOptions = listOf<Pair<Int, String>>(
+                                            0 to "Padrão",
+                                            1 to "Imediata"
+                                        )
+
+                                        CompactSelect(
+                                            selectedLabel = strictSyncOptions.first { it.first == strictSyncMode.value }.second,
+                                            options = strictSyncOptions,
+                                            onSelected = {
+                                                strictSyncMode.value = it
+                                                val qsStrictSync = QuickSettings(mainViewModel.activity)
+                                                qsStrictSync.strictSyncMode = it
+                                                qsStrictSync.save()
                                             }
                                         )
 

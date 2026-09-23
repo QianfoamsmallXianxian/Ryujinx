@@ -66,6 +66,15 @@ class QuickSettings(val activity: Activity) {
     var enableShaderLoopSafety: Boolean
     var enableTextureRecompression: Boolean
     var enableVtgViaCompute: Boolean
+
+    // NEOV2 AUTOFLUSH1: 0 = Padrao, 1 = Reduzido, 2 = Desativado.
+    var drawFlushMode: Int
+
+    // NEOV2 BUFFER-READBACK1: 0 = Padrao, 1 = Relaxada.
+    var bufferReadbackMode: Int
+
+    // NEOV2 STRICT-SYNC1: 0 = Padrao, 1 = Imediata.
+    var strictSyncMode: Int
     var enableMacroHLE: Boolean
     var stretchToFullscreen: Boolean
     var resScale: Float
@@ -148,6 +157,9 @@ class QuickSettings(val activity: Activity) {
         enableShaderLoopSafety = sharedPref.getBoolean("enableShaderLoopSafety", false)
         enableTextureRecompression = sharedPref.getBoolean("enableTextureRecompression", false)
         enableVtgViaCompute = sharedPref.getBoolean("enableVtgViaCompute", true)
+        drawFlushMode = sharedPref.getInt("drawFlushMode", 0)
+        bufferReadbackMode = sharedPref.getInt("bufferReadbackMode", 0)
+        strictSyncMode = sharedPref.getInt("strictSyncMode", 0)
         enableMacroHLE = sharedPref.getBoolean("enableMacroHLE", true)
         stretchToFullscreen = sharedPref.getBoolean("stretchToFullscreen", false)
         resScale = sharedPref.getFloat("resScale", 1f)
@@ -218,6 +230,9 @@ class QuickSettings(val activity: Activity) {
             putBoolean("enableShaderLoopSafety", enableShaderLoopSafety)
             putBoolean("enableTextureRecompression", enableTextureRecompression)
             putBoolean("enableVtgViaCompute", enableVtgViaCompute)
+            putInt("drawFlushMode", drawFlushMode)
+            putInt("bufferReadbackMode", bufferReadbackMode)
+            putInt("strictSyncMode", strictSyncMode)
             putBoolean("enableMacroHLE", enableMacroHLE)
             putBoolean("stretchToFullscreen", stretchToFullscreen)
             putFloat("resScale", resScale)

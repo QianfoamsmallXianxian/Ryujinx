@@ -73,6 +73,9 @@ fun GameSettingsDialog(
     var resScale by remember(titleId) { mutableStateOf(initial.resScale) }
     var anisotropy by remember(titleId) { mutableStateOf(initial.maxAnisotropy) }
     var vtgViaComputeMode by remember(titleId) { mutableStateOf(store.vtgViaComputeMode) }
+    var drawFlushMode by remember(titleId) { mutableStateOf(store.drawFlushMode) }
+    var bufferReadbackMode by remember(titleId) { mutableStateOf(store.bufferReadbackMode) }
+    var strictSyncMode by remember(titleId) { mutableStateOf(store.strictSyncMode) }
     val driverViewModel = remember(titleId) { VulkanDriverViewModel(activity) }
     val availableDrivers = remember(titleId) { driverViewModel.getAvailableDrivers().toList() }
     var driverOverride by remember(titleId) { mutableStateOf(store.driverOverride) }
@@ -81,6 +84,9 @@ fun GameSettingsDialog(
         if (custom) {
             store.isEnabled = true
             store.vtgViaComputeMode = vtgViaComputeMode
+            store.drawFlushMode = drawFlushMode
+            store.bufferReadbackMode = bufferReadbackMode
+            store.strictSyncMode = strictSyncMode
             store.save(
                 initial.apply {
                     this.useNce = useNce
@@ -210,6 +216,43 @@ fun GameSettingsDialog(
                             enabled = custom,
                             onSelected = { vtgViaComputeMode = it }
                         )
+                        Text("Sincronização rápida de Draw", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        val drawFlushOptions = listOf(
+                            0 to "Usar global",
+                            1 to "Padrão",
+                            2 to "Reduzido",
+                            3 to "Desativado"
+                        )
+                        GameSettingSelect(
+                            selectedLabel = drawFlushOptions.firstOrNull { it.first == drawFlushMode }?.second ?: "Usar global",
+                            options = drawFlushOptions,
+                            enabled = custom,
+                            onSelected = { drawFlushMode = it }
+                        )
+                        Text("Leitura de Buffer da GPU", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        val bufferReadbackOptions = listOf(
+                            0 to "Usar global",
+                            1 to "Padrão",
+                            2 to "Relaxada"
+                        )
+                        GameSettingSelect(
+                            selectedLabel = bufferReadbackOptions.firstOrNull { it.first == bufferReadbackMode }?.second ?: "Usar global",
+                            options = bufferReadbackOptions,
+                            enabled = custom,
+                            onSelected = { bufferReadbackMode = it }
+                        )
+                        Text("Sincronização estrita da GPU", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        val strictSyncOptions = listOf(
+                            0 to "Usar global",
+                            1 to "Padrão",
+                            2 to "Imediata"
+                        )
+                        GameSettingSelect(
+                            selectedLabel = strictSyncOptions.firstOrNull { it.first == strictSyncMode }?.second ?: "Usar global",
+                            options = strictSyncOptions,
+                            enabled = custom,
+                            onSelected = { strictSyncMode = it }
+                        )
                         ToggleRow("Macro HLE", macroHle, custom) { macroHle = it }
                         ToggleRow("Esticar para tela inteira", stretch, custom) { stretch = it }
                         Text("Layout do controle", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -256,6 +299,9 @@ fun GameSettingsDialog(
                         resScale = def.resScale
                         anisotropy = def.maxAnisotropy
                         vtgViaComputeMode = 0
+                        drawFlushMode = 0
+                        bufferReadbackMode = 0
+                        strictSyncMode = 0
                         driverOverride = ""
                     }) {
                         Text("Restaurar global", maxLines = 1, softWrap = false)

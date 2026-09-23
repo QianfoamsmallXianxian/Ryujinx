@@ -1,4 +1,4 @@
-using Ryujinx.Common.Diagnostics;
+﻿using Ryujinx.Common.Diagnostics;
 using Ryujinx.Common.Logging;
 using System;
 using System.Collections.Concurrent;
@@ -52,6 +52,7 @@ namespace Ryujinx.Graphics.Vulkan
         private bool _fastFlushMode;
         private int _drawFlushesThisFrame;
         private int _drawFlushesSuppressed;
+        private readonly DrawFlushMode _drawFlushMode = NeoGraphicsSettings.DrawFlushMode;
 
         // NEOV2 Etapa 16: intervalos originais restaurados (a Etapa 15 piorou o TOTK).
         // Contadores de flush por motivo, registrados a cada 5 s. Flushes forcados por
@@ -142,7 +143,21 @@ namespace Ryujinx.Graphics.Vulkan
                 // NEOV2 NCE R3: a fast guest thread can otherwise turn a GPU wait into a
                 // feedback loop that flushes dozens of times per frame. Keep enough flushes
                 // to make progress without fragmenting every large draw sequence.
-                if (_gd.IsTurnip && _drawFlushesThisFrame >= MaxDrawFlushesPerFrame)
+                if (_drawFlushMode == DrawFlushMode.Disabled)
+                {
+                    _drawFlushesSuppressed++;
+                    return false;
+                }
+
+                if (_drawFlushMode == DrawFlushMode.Reduced)
+                {
+                    if (_drawFlushesThisFrame >= 1)
+                    {
+                        _drawFlushesSuppressed++;
+                        return false;
+                    }
+                }
+                else if (_gd.IsTurnip && _drawFlushesThisFrame >= MaxDrawFlushesPerFrame)
                 {
                     _drawFlushesSuppressed++;
                     return false;

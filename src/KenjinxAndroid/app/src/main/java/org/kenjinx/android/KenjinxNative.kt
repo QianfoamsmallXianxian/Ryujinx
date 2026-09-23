@@ -41,6 +41,15 @@ interface KenjinxNativeJna : Library {
         enableShaderLoopSafety: Boolean = false,
         enableTextureRecompression: Boolean = false,
         enableVtgViaCompute: Boolean = true,
+        drawFlushMode: Int = 0,
+        drawFlushGlobalMode: Int = 0,
+        drawFlushGameOverride: Int = -1,
+        bufferReadbackMode: Int = 0,
+        bufferReadbackGlobalMode: Int = 0,
+        bufferReadbackGameOverride: Int = -1,
+        strictSyncMode: Int = 0,
+        strictSyncGlobalMode: Int = 0,
+        strictSyncGameOverride: Int = -1,
         backendThreading: Int = BackendThreading.Auto.ordinal
     ): Boolean
 
@@ -177,6 +186,15 @@ object KenjinxNative : KenjinxNativeJna by jnaInstance {
         enableShaderLoopSafety: Boolean,
         enableTextureRecompression: Boolean,
         enableVtgViaCompute: Boolean,
+        drawFlushMode: Int,
+        drawFlushGlobalMode: Int,
+        drawFlushGameOverride: Int,
+        bufferReadbackMode: Int,
+        bufferReadbackGlobalMode: Int,
+        bufferReadbackGameOverride: Int,
+        strictSyncMode: Int,
+        strictSyncGlobalMode: Int,
+        strictSyncGameOverride: Int,
         backendThreading: Int
     ): Boolean {
         val requested = backendThreading
@@ -204,6 +222,15 @@ object KenjinxNative : KenjinxNativeJna by jnaInstance {
                 enableShaderLoopSafety,
                 enableTextureRecompression,
                 enableVtgViaCompute,
+                drawFlushMode,
+                drawFlushGlobalMode,
+                drawFlushGameOverride,
+                bufferReadbackMode,
+                bufferReadbackGlobalMode,
+                bufferReadbackGameOverride,
+                strictSyncMode,
+                strictSyncGlobalMode,
+                strictSyncGameOverride,
                 firstChoice
             )
         } catch (t: Throwable) {
@@ -224,6 +251,15 @@ object KenjinxNative : KenjinxNativeJna by jnaInstance {
                     enableShaderLoopSafety,
                     enableTextureRecompression,
                     enableVtgViaCompute,
+                    drawFlushMode,
+                    drawFlushGlobalMode,
+                    drawFlushGameOverride,
+                    bufferReadbackMode,
+                    bufferReadbackGlobalMode,
+                    bufferReadbackGameOverride,
+                    strictSyncMode,
+                    strictSyncGlobalMode,
+                    strictSyncGameOverride,
                     THREADING_SINGLE
                 )
             } catch (t2: Throwable) {

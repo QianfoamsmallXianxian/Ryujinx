@@ -57,6 +57,9 @@ class SettingsViewModel(val activity: MainActivity) {
         enableShaderLoopSafety: MutableState<Boolean>,
         enableTextureRecompression: MutableState<Boolean>,
         enableVtgViaCompute: MutableState<Boolean>,
+        drawFlushMode: MutableState<Int>,
+        bufferReadbackMode: MutableState<Int>,
+        strictSyncMode: MutableState<Int>,
         enableMacroHLE: MutableState<Boolean>,
         stretchToFullscreen: MutableState<Boolean>,
         resScale: MutableState<Float>,
@@ -101,6 +104,9 @@ class SettingsViewModel(val activity: MainActivity) {
         enableShaderLoopSafety.value = sharedPref.getBoolean("enableShaderLoopSafety", false)
         enableTextureRecompression.value = sharedPref.getBoolean("enableTextureRecompression", false)
         enableVtgViaCompute.value = sharedPref.getBoolean("enableVtgViaCompute", true)
+        drawFlushMode.value = sharedPref.getInt("drawFlushMode", 0)
+        bufferReadbackMode.value = sharedPref.getInt("bufferReadbackMode", 0)
+        strictSyncMode.value = sharedPref.getInt("strictSyncMode", 0)
         enableMacroHLE.value = sharedPref.getBoolean("enableMacroHLE", false)
         stretchToFullscreen.value = sharedPref.getBoolean("stretchToFullscreen", false)
         resScale.value = sharedPref.getFloat("resScale", 1f)
@@ -150,6 +156,9 @@ class SettingsViewModel(val activity: MainActivity) {
         enableShaderLoopSafety: MutableState<Boolean>,
         enableTextureRecompression: MutableState<Boolean>,
         enableVtgViaCompute: MutableState<Boolean>,
+        drawFlushMode: MutableState<Int>,
+        bufferReadbackMode: MutableState<Int>,
+        strictSyncMode: MutableState<Int>,
         enableMacroHLE: MutableState<Boolean>,
         stretchToFullscreen: MutableState<Boolean>,
         resScale: MutableState<Float>,
@@ -193,6 +202,9 @@ class SettingsViewModel(val activity: MainActivity) {
             putBoolean("enableShaderLoopSafety", enableShaderLoopSafety.value)
             putBoolean("enableTextureRecompression", enableTextureRecompression.value)
             putBoolean("enableVtgViaCompute", enableVtgViaCompute.value)
+            putInt("drawFlushMode", drawFlushMode.value)
+            putInt("bufferReadbackMode", bufferReadbackMode.value)
+            putInt("strictSyncMode", strictSyncMode.value)
             putBoolean("enableMacroHLE", enableMacroHLE.value)
             putBoolean("stretchToFullscreen", stretchToFullscreen.value)
             putFloat("resScale", resScale.value)

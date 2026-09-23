@@ -519,6 +519,15 @@ namespace LibKenjinx
                 bool enableShaderLoopSafety,
                 bool enableTextureRecompression,
                 bool enableVtgViaCompute,
+                int drawFlushMode,
+                int drawFlushGlobalMode,
+                int drawFlushGameOverride,
+                int bufferReadbackMode,
+                int bufferReadbackGlobalMode,
+                int bufferReadbackGameOverride,
+                int strictSyncMode,
+                int strictSyncGlobalMode,
+                int strictSyncGameOverride,
                 int backendThreading)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
@@ -535,6 +544,15 @@ namespace LibKenjinx
                 EnableShaderLoopSafety = enableShaderLoopSafety,
                 EnableTextureRecompression = enableTextureRecompression,
                 EnableVtgViaCompute = enableVtgViaCompute,
+                DrawFlushMode = drawFlushMode,
+                DrawFlushGlobalMode = drawFlushGlobalMode,
+                DrawFlushGameOverride = drawFlushGameOverride,
+                BufferReadbackMode = bufferReadbackMode,
+                BufferReadbackGlobalMode = bufferReadbackGlobalMode,
+                BufferReadbackGameOverride = bufferReadbackGameOverride,
+                StrictSyncMode = strictSyncMode,
+                StrictSyncGlobalMode = strictSyncGlobalMode,
+                StrictSyncGameOverride = strictSyncGameOverride,
                 BackendThreading = (BackendThreading)backendThreading
             });
         }

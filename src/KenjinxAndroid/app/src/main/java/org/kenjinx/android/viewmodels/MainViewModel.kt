@@ -204,12 +204,49 @@ class MainViewModel(val activity: MainActivity) {
         // 0=Auto, 1=SingleThread, 2=Threaded
         val backendMode = if (settings.disableThreadedRendering) 1 else 2
 
+        // NEOV2 AUTOFLUSH1: valor efetivo ja resolvido por getSettingsForGame (global + override).
+        // Global e override crus vao junto apenas para a linha de log [NEOV2-DRAW-FLUSH].
+        val drawFlushGlobal = QuickSettings(activity).drawFlushMode
+        val drawFlushStore = GameSettingsStore(activity, game.titleId.orEmpty())
+        val drawFlushOverride =
+            if (drawFlushStore.isEnabled && drawFlushStore.drawFlushMode > 0) {
+                drawFlushStore.drawFlushMode - 1
+            } else {
+                -1
+            }
+
+        // NEOV2 BUFFER-READBACK1: mesma resolucao, global cru e override cru apenas para o log.
+        val strictSyncGlobal = QuickSettings(activity).strictSyncMode
+        val strictSyncOverride =
+            if (drawFlushStore.isEnabled && drawFlushStore.strictSyncMode > 0) {
+                drawFlushStore.strictSyncMode - 1
+            } else {
+                -1
+            }
+
+        val bufferReadbackGlobal = QuickSettings(activity).bufferReadbackMode
+        val bufferReadbackOverride =
+            if (drawFlushStore.isEnabled && drawFlushStore.bufferReadbackMode > 0) {
+                drawFlushStore.bufferReadbackMode - 1
+            } else {
+                -1
+            }
+
         var success = KenjinxNative.graphicsInitialize(
             enableMacroHLE = settings.enableMacroHLE,
             enableShaderCache = settings.enableShaderCache,
             enableShaderLoopSafety = settings.enableShaderLoopSafety,
             enableTextureRecompression = settings.enableTextureRecompression,
             enableVtgViaCompute = settings.enableVtgViaCompute,
+            drawFlushMode = settings.drawFlushMode,
+            drawFlushGlobalMode = drawFlushGlobal,
+            drawFlushGameOverride = drawFlushOverride,
+            bufferReadbackMode = settings.bufferReadbackMode,
+            bufferReadbackGlobalMode = bufferReadbackGlobal,
+            bufferReadbackGameOverride = bufferReadbackOverride,
+            strictSyncMode = settings.strictSyncMode,
+            strictSyncGlobalMode = strictSyncGlobal,
+            strictSyncGameOverride = strictSyncOverride,
             rescale = settings.resScale,
             maxAnisotropy = settings.maxAnisotropy,
             backendThreading = backendMode
@@ -312,6 +349,15 @@ class MainViewModel(val activity: MainActivity) {
             enableShaderLoopSafety = settings.enableShaderLoopSafety,
             enableTextureRecompression = settings.enableTextureRecompression,
             enableVtgViaCompute = settings.enableVtgViaCompute,
+            drawFlushMode = settings.drawFlushMode,
+            drawFlushGlobalMode = settings.drawFlushMode,
+            drawFlushGameOverride = -1,
+            bufferReadbackMode = settings.bufferReadbackMode,
+            bufferReadbackGlobalMode = settings.bufferReadbackMode,
+            bufferReadbackGameOverride = -1,
+            strictSyncMode = settings.strictSyncMode,
+            strictSyncGlobalMode = settings.strictSyncMode,
+            strictSyncGameOverride = -1,
             rescale = settings.resScale,
             maxAnisotropy = settings.maxAnisotropy,
             backendThreading = backendMode
