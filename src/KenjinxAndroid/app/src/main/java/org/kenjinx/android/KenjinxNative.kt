@@ -69,6 +69,7 @@ interface KenjinxNativeJna : Library {
     fun graphicsRendererSetVsync(vSyncMode: Int)
     fun graphicsRendererRunLoop()
     fun graphicsSetFullscreenStretch(enable: Boolean)
+    fun deviceSetNceTrackingProtection(enable: Boolean)
     fun deviceReloadFilesystem()
     fun inputInitialize(width: Int, height: Int)
     fun inputSetClientSize(width: Int, height: Int)

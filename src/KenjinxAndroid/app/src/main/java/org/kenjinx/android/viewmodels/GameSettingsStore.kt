@@ -25,11 +25,21 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             }
         }
 
-    /** Empty means follow the globally selected Vulkan driver. */
+    /**
+     * Empty means follow the globally selected Vulkan driver.
+     * [SYSTEM_DRIVER] forces the system Vulkan driver for this game, even when a custom driver is selected globally.
+     */
     var driverOverride: String
         get() = if (!isValid) "" else preferences.getString(key("driverOverride"), "").orEmpty()
         set(value) {
             if (isValid) preferences.edit { putString(key("driverOverride"), value) }
+        }
+
+    /** NEOV2 NCE-PROT1: 0: Use Global, 1: Enabled, 2: Disabled */
+    var nceTrackingProtectionMode: Int
+        get() = if (!isValid) 0 else preferences.getInt(key("nceTrackingProtectionMode"), 0)
+        set(value) {
+            if (isValid) preferences.edit { putInt(key("nceTrackingProtectionMode"), value) }
         }
 
     /** 0: Use Global, 1: Enabled, 2: Disabled */
@@ -78,6 +88,10 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             1 -> settings.enableVtgViaCompute = true
             2 -> settings.enableVtgViaCompute = false
         }
+        when (safeInt(key("nceTrackingProtectionMode"), 0)) {
+            1 -> settings.enableNceTrackingProtection = true
+            2 -> settings.enableNceTrackingProtection = false
+        }
         when (safeInt(key("drawFlushMode"), 0)) {
             1 -> settings.drawFlushMode = 0
             2 -> settings.drawFlushMode = 1
@@ -118,6 +132,7 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             putBoolean(key("enableShaderLoopSafety"), settings.enableShaderLoopSafety)
             putBoolean(key("enableTextureRecompression"), settings.enableTextureRecompression)
             putInt(key("vtgViaComputeMode"), vtgViaComputeMode)
+            putInt(key("nceTrackingProtectionMode"), nceTrackingProtectionMode)
             putInt(key("drawFlushMode"), drawFlushMode)
             putInt(key("bufferReadbackMode"), bufferReadbackMode)
             putInt(key("strictSyncMode"), strictSyncMode)
@@ -160,6 +175,9 @@ class GameSettingsStore(activity: Activity, titleId: String) {
 
     companion object {
         private const val PREFERENCES_NAME = "neo_per_game_settings"
+
+        /** Per game driver override value that selects the system Vulkan driver. */
+        const val SYSTEM_DRIVER = "system"
 
         fun cleanupOrphanedDriver(context: Context, deletedDriverPath: String) {
             if (deletedDriverPath.isBlank()) return

@@ -29,6 +29,9 @@ namespace Ryujinx.Cpu.Nce
 
         private readonly List<PatchTarget> _patchTargets;
 
+        // NEOV2 NCE-EXCL1: instructions rewritten in place in the text section, without a trampoline.
+        private readonly List<(int TextIndex, uint Instruction)> _inPlaceInstructions;
+
         /// <inheritdoc/>
         public ulong Size => BitUtils.AlignUp((ulong)_code.Count * sizeof(uint), 0x1000UL);
 
@@ -36,6 +39,17 @@ namespace Ryujinx.Cpu.Nce
         {
             _code = new();
             _patchTargets = new();
+            _inPlaceInstructions = new();
+        }
+
+        /// <summary>
+        /// NEOV2 NCE-EXCL1: replaces one instruction of the text section with another of the same size.
+        /// </summary>
+        /// <param name="textIndex">Index of the instruction in the text section, in 32-bit words</param>
+        /// <param name="instruction">Replacement instruction</param>
+        internal void ReplaceInstruction(int textIndex, uint instruction)
+        {
+            _inPlaceInstructions.Add((textIndex, instruction));
         }
 
         internal void AddCode(int textIndex, IEnumerable<uint> code)
@@ -49,6 +63,11 @@ namespace Ryujinx.Cpu.Nce
         public void Write(IVirtualMemoryManager memoryManager, ulong patchAddress, ulong textAddress)
         {
             uint[] code = _code.ToArray();
+
+            foreach ((int textIndex, uint instruction) in _inPlaceInstructions)
+            {
+                memoryManager.Write(textAddress + (ulong)textIndex * sizeof(uint), instruction);
+            }
 
             foreach (PatchTarget patchTarget in _patchTargets)
             {

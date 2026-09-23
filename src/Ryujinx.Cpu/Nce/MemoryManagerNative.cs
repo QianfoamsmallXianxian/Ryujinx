@@ -1,4 +1,5 @@
 ﻿using ARMeilleure.Memory;
+using Ryujinx.Common.Logging;
 using Ryujinx.Memory;
 using Ryujinx.Memory.Range;
 using Ryujinx.Memory.Tracking;
@@ -127,7 +128,23 @@ namespace Ryujinx.Cpu.Nce
         public void Reprotect(ulong va, ulong size, MemoryPermission protection)
         {
             _addressSpace.Reprotect(AddressToOffset(va), size, protection);
+
+            // NEOV2 NCE-PROT1: on NCE the guest permission is applied to the same host pages the memory tracking
+            // protects. Put the tracking protection back, so GPU tracked pages keep faulting on CPU access.
+            if (TrackingProtectionRestoreEnabled && Tracking.RestoreGuestProtection(va, size) && !_protectionRestoreLogged)
+            {
+                _protectionRestoreLogged = true;
+                Logger.Info?.Print(LogClass.Cpu, $"[NEOV2-NCE-PROT1] Tracking protection restored after a guest permission change at 0x{va:X} (0x{size:X} bytes)");
+            }
         }
+
+        private static bool _protectionRestoreLogged;
+
+        /// <summary>
+        /// NEOV2 NCE-PROT1: per game switch for restoring tracking protection after guest permission changes.
+        /// Off by default. Set by the frontend before the game is loaded.
+        /// </summary>
+        public static bool TrackingProtectionRestoreEnabled { get; set; }
 
         public ref T GetRef<T>(ulong va) where T : unmanaged
         {

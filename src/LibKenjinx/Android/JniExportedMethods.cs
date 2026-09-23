@@ -1052,6 +1052,14 @@ namespace LibKenjinx
             Logger.Trace?.Print(LogClass.Application, $"[JNI] graphicsSetFullscreenStretch({enable})");
             ApplyFullscreenStretch(enable);
         }
+
+        // NEOV2 NCE-PROT1: per game switch, set before the game is loaded.
+        [UnmanagedCallersOnly(EntryPoint = "deviceSetNceTrackingProtection")]
+        public static void JniDeviceSetNceTrackingProtection(bool enable)
+        {
+            Ryujinx.Cpu.Nce.MemoryManagerNative.TrackingProtectionRestoreEnabled = enable;
+            Logger.Info?.Print(LogClass.Cpu, $"[NEOV2-NCE-PROT1] Tracking protection restore: {(enable ? "enabled" : "disabled")}");
+        }
 #endif
 
         // Used by MainActivity/GameHost

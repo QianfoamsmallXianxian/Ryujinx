@@ -29,6 +29,8 @@ namespace Ryujinx.Cpu.Nce
 
             ReadOnlySpan<uint> textUint = MemoryMarshal.Cast<byte, uint>(textSection);
 
+            int orderedExclusives = 0;
+
             for (int i = 0; i < textUint.Length; i++)
             {
                 uint inst = textUint[i];
@@ -70,7 +72,24 @@ namespace Ryujinx.Cpu.Nce
                     codePatch.AddCode(i, WriteMsrTpidrEl0Patch(rd));
                     Logger.Debug?.Print(LogClass.Cpu, $"Patched MSR tpidr_el0, x{rd} at 0x{address:X}.");
                 }
+                else if (((inst >> 23) & 0x7fu) == 0x10u) // LDXR/STXR/LDXP/STXP family (o2 = 0)
+                {
+                    // NEOV2 NCE-EXCL1: the Switch Cortex-A57 behaves as if every exclusive access were ordered,
+                    // and some games depend on it. Newer cores do not, so an unordered exclusive can let a
+                    // lock-free producer and consumer see each other's data out of order. Set the ordered
+                    // bit (o0, bit 15) in place, turning LDXR/STXR into LDAXR/STLXR, as the LightningJit
+                    // (InstEmitMemory, BaseRegister form) and the Eden NCE patcher (patcher.cpp) already do.
+                    uint ordered = inst | (1u << 15);
+
+                    if (ordered != inst)
+                    {
+                        codePatch.ReplaceInstruction(i, ordered);
+                        orderedExclusives++;
+                    }
+                }
             }
+
+            Logger.Info?.Print(LogClass.Cpu, $"[NEOV2-NCE-EXCL1] {orderedExclusives} exclusive accesses converted to ordered");
 
             return codePatch;
         }

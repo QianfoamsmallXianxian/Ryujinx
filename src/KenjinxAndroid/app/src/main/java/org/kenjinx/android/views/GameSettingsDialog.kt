@@ -73,6 +73,7 @@ fun GameSettingsDialog(
     var resScale by remember(titleId) { mutableStateOf(initial.resScale) }
     var anisotropy by remember(titleId) { mutableStateOf(initial.maxAnisotropy) }
     var vtgViaComputeMode by remember(titleId) { mutableStateOf(store.vtgViaComputeMode) }
+    var nceTrackingProtectionMode by remember(titleId) { mutableStateOf(store.nceTrackingProtectionMode) }
     var drawFlushMode by remember(titleId) { mutableStateOf(store.drawFlushMode) }
     var bufferReadbackMode by remember(titleId) { mutableStateOf(store.bufferReadbackMode) }
     var strictSyncMode by remember(titleId) { mutableStateOf(store.strictSyncMode) }
@@ -84,6 +85,7 @@ fun GameSettingsDialog(
         if (custom) {
             store.isEnabled = true
             store.vtgViaComputeMode = vtgViaComputeMode
+            store.nceTrackingProtectionMode = nceTrackingProtectionMode
             store.drawFlushMode = drawFlushMode
             store.bufferReadbackMode = bufferReadbackMode
             store.strictSyncMode = strictSyncMode
@@ -160,6 +162,18 @@ fun GameSettingsDialog(
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text("Emulação e CPU", style = MaterialTheme.typography.titleSmall)
                             ToggleRow("Execução nativa NCE (desativado usa JIT)", useNce, custom) { useNce = it }
+                            Text("Proteção de memória NCE (corrige tela preta, ex.: MUA3)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            val nceProtectionOptions = listOf(
+                                0 to "Usar global",
+                                1 to "Ativado",
+                                2 to "Desativado"
+                            )
+                            GameSettingSelect(
+                                selectedLabel = nceProtectionOptions.firstOrNull { it.first == nceTrackingProtectionMode }?.second ?: "Usar global",
+                                options = nceProtectionOptions,
+                                enabled = custom,
+                                onSelected = { nceTrackingProtectionMode = it }
+                            )
                             ToggleRow("PPTC", enablePptc, custom) { enablePptc = it }
                             ToggleRow("Memory Slack (12 GiB)", memorySlack, custom) { memorySlack = it }
                         }
@@ -177,8 +191,10 @@ fun GameSettingsDialog(
                     ) {
                         Text("Gráficos", style = MaterialTheme.typography.titleSmall)
                         Text("Driver Vulkan", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        val driverOptions = listOf("" to "Usar driver global") +
-                            availableDrivers.map { it.driverPath to "${it.name} · ${it.driverVersion}" }
+                        val driverOptions = listOf(
+                            "" to "Usar driver global",
+                            GameSettingsStore.SYSTEM_DRIVER to "Driver do sistema"
+                        ) + availableDrivers.map { it.driverPath to "${it.name} · ${it.driverVersion}" }
                         GameSettingSelect(
                             selectedLabel = driverOptions.firstOrNull { it.first == driverOverride }?.second
                                 ?: "Usar driver global",
@@ -299,6 +315,7 @@ fun GameSettingsDialog(
                         resScale = def.resScale
                         anisotropy = def.maxAnisotropy
                         vtgViaComputeMode = 0
+                        nceTrackingProtectionMode = 0
                         drawFlushMode = 0
                         bufferReadbackMode = 0
                         strictSyncMode = 0

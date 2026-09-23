@@ -232,6 +232,12 @@ class MainViewModel(val activity: MainActivity) {
                 -1
             }
 
+        // NEOV2 NCE-PROT1: valor efetivo ja resolvido por getSettingsForGame (global + override por jogo).
+        try {
+            KenjinxNative.deviceSetNceTrackingProtection(settings.enableNceTrackingProtection)
+        } catch (_: Throwable) {
+        }
+
         var success = KenjinxNative.graphicsInitialize(
             enableMacroHLE = settings.enableMacroHLE,
             enableShaderCache = settings.enableShaderCache,
@@ -265,14 +271,16 @@ class MainViewModel(val activity: MainActivity) {
         val driverViewModel = VulkanDriverViewModel(activity)
         val drivers = driverViewModel.getAvailableDrivers()
         val gameDriver = GameSettingsStore(activity, game.titleId.orEmpty())
-        val selectedDriverPath = if (
+        val selectedDriverPath = when {
+            // Per game "Driver do sistema": an empty path loads the system Vulkan driver.
             gameDriver.isEnabled &&
-            gameDriver.driverOverride.isNotEmpty() &&
-            drivers.any { it.driverPath == gameDriver.driverOverride }
-        ) {
-            gameDriver.driverOverride
-        } else {
-            driverViewModel.selected
+                gameDriver.driverOverride == GameSettingsStore.SYSTEM_DRIVER -> ""
+
+            gameDriver.isEnabled &&
+                gameDriver.driverOverride.isNotEmpty() &&
+                drivers.any { it.driverPath == gameDriver.driverOverride } -> gameDriver.driverOverride
+
+            else -> driverViewModel.selected
         }
 
         val driverLoadResult = DriverPreparationManager.prepareAndLoadDriver(
@@ -339,6 +347,12 @@ class MainViewModel(val activity: MainActivity) {
         isMiiEditorLaunched = true
 
         val settings = QuickSettings(activity)
+
+        // NEOV2 NCE-PROT1: sem perfil de jogo, vale a configuracao global.
+        try {
+            KenjinxNative.deviceSetNceTrackingProtection(settings.enableNceTrackingProtection)
+        } catch (_: Throwable) {
+        }
 
         // 0=Auto, 1=SingleThread, 2=Threaded
         val backendMode = if (settings.disableThreadedRendering) 1 else 2

@@ -1,4 +1,5 @@
 using Ryujinx.Common.Diagnostics;
+using Ryujinx.Common.Logging;
 using Ryujinx.Graphics.Gpu.Memory;
 using System;
 using System.Collections.Concurrent;
@@ -60,7 +61,11 @@ namespace Ryujinx.Graphics.Gpu.Engine.GPFifo
             /// <returns>The fetched data</returns>
             private readonly ReadOnlySpan<int> GetWords(MemoryManager memoryManager, bool flush)
             {
-                return MemoryMarshal.Cast<byte, int>(memoryManager.GetSpan(EntryAddress, (int)EntryCount * 4, flush));
+                // NEOV2 CMDFETCH1: command lists are written by the guest CPU, so they are read without a tracked
+                // read. A tracked read here flushes any GPU written buffer that shares a 4 KiB page with the command
+                // list, and waits for the GPU to finish before the GPU thread can continue. Eden reads command lists
+                // the same way by default (UnsafeRead in dma_pusher.cpp unless GPU accuracy is High).
+                return MemoryMarshal.Cast<byte, int>(memoryManager.GetSpan(EntryAddress, (int)EntryCount * 4, flush && !CommandFetchWithoutFlush));
             }
 
             /// <summary>
@@ -84,6 +89,11 @@ namespace Ryujinx.Graphics.Gpu.Engine.GPFifo
             }
         }
 
+        /// <summary>
+        /// NEOV2 CMDFETCH1: GPFIFO command lists are fetched without flushing GPU written data.
+        /// </summary>
+        private const bool CommandFetchWithoutFlush = true;
+
         private readonly ConcurrentQueue<CommandBuffer> _commandBufferQueue;
 
         private GPFifoProcessor _prevChannelProcessor;
@@ -105,6 +115,8 @@ namespace Ryujinx.Graphics.Gpu.Engine.GPFifo
             _ibEnable = true;
             _context = context;
             _event = new AutoResetEvent(false);
+
+            Logger.Info?.Print(LogClass.Gpu, "[NEOV2-CMDFETCH1] GPFIFO command lists are fetched without flushing GPU written data");
         }
 
         /// <summary>

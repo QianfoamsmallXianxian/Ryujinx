@@ -369,6 +369,7 @@ class SettingViews {
 
             val enableTextureRecompression = remember { mutableStateOf(false) }
             val enableVtgViaCompute = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableVtgViaCompute) }
+            val enableNceTrackingProtection = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableNceTrackingProtection) }
 
             val drawFlushMode = remember { mutableStateOf(QuickSettings(mainViewModel.activity).drawFlushMode) }
 
@@ -678,6 +679,7 @@ class SettingViews {
 
                 qs.orientationPreference = orientationPref.value
                 qs.enableVtgViaCompute = enableVtgViaCompute.value
+                qs.enableNceTrackingProtection = enableNceTrackingProtection.value
                 qs.drawFlushMode = drawFlushMode.value
                 qs.bufferReadbackMode = bufferReadbackMode.value
                 qs.strictSyncMode = strictSyncMode.value
@@ -1114,6 +1116,28 @@ class SettingViews {
                                             checked = useNce.value,
 
                                             onCheckedChange = { useNce.value = it }
+
+                                        )
+
+                                        HighContrastToggle(
+
+                                            title = "Proteção de memória NCE",
+
+                                            description = "Mantém o rastreamento de memória da GPU quando o jogo muda permissões de memória em NCE. Corrige tela preta em alguns jogos (ex.: MUA3), mas pode causar travamentos em outros (ex.: MP4). Pode ser ajustado por jogo. (Requer reiniciar o jogo)",
+
+                                            checked = enableNceTrackingProtection.value,
+
+                                            onCheckedChange = {
+
+                                                enableNceTrackingProtection.value = it
+
+                                                val qsNceProtection = QuickSettings(mainViewModel.activity)
+
+                                                qsNceProtection.enableNceTrackingProtection = it
+
+                                                qsNceProtection.save()
+
+                                            }
 
                                         )
 
@@ -1881,6 +1905,18 @@ class SettingViews {
                                             checked = enableErrorLogs.value,
 
                                             onCheckedChange = { enableErrorLogs.value = it }
+
+                                        )
+
+                                        HighContrastToggle(
+
+                                            title = "Logs de Trace",
+
+                                            description = "Registra cada chamada de sistema e de serviço. Muito pesado: use só para diagnóstico",
+
+                                            checked = enableTraceLogs.value,
+
+                                            onCheckedChange = { enableTraceLogs.value = it }
 
                                         )
 
