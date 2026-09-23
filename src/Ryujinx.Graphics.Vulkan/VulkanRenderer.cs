@@ -252,6 +252,22 @@ namespace Ryujinx.Graphics.Vulkan
                 properties2.PNext = &propertiesPushDescriptor;
             }
 
+            // NEOV2 TEXBUF-ALIGN1: drivers que expõem VK_EXT_texel_buffer_alignment com alinhamento
+            // de um único texel (ex.: Turnip) aceitam o offset exato da view de texture buffer.
+            // Nesses drivers a view não pode ser deslocada para frente, senão o shader lê o dado errado.
+            bool supportsTexelBufferAlignment = _physicalDevice.IsDeviceExtensionPresent("VK_EXT_texel_buffer_alignment");
+
+            PhysicalDeviceTexelBufferAlignmentPropertiesEXT propertiesTexelBufferAlignment = new()
+            {
+                SType = StructureType.PhysicalDeviceTexelBufferAlignmentPropertiesExt,
+            };
+
+            if (supportsTexelBufferAlignment)
+            {
+                propertiesTexelBufferAlignment.PNext = properties2.PNext;
+                properties2.PNext = &propertiesTexelBufferAlignment;
+            }
+
             PhysicalDeviceFeatures2 features2 = new()
             {
                 SType = StructureType.PhysicalDeviceFeatures2,
@@ -445,6 +461,14 @@ namespace Ryujinx.Graphics.Vulkan
                 properties.Limits.MinTexelBufferOffsetAlignment
             );
 
+            bool texelBufferSingleTexelAlignment = supportsTexelBufferAlignment &&
+                propertiesTexelBufferAlignment.UniformTexelBufferOffsetSingleTexelAlignment &&
+                propertiesTexelBufferAlignment.StorageTexelBufferOffsetSingleTexelAlignment;
+
+            ulong minTexelBufferViewOffsetAlignment = texelBufferSingleTexelAlignment
+                ? 1UL
+                : properties.Limits.MinTexelBufferOffsetAlignment;
+
             SampleCountFlags supportedSampleCounts =
                 properties.Limits.FramebufferColorSampleCounts &
                 properties.Limits.FramebufferDepthSampleCounts &
@@ -489,7 +513,7 @@ namespace Ryujinx.Graphics.Vulkan
                 vertexBufferAlignment,
                 properties.Limits.SubTexelPrecisionBits,
                 minResourceAlignment,
-                _physicalDevice.PhysicalDeviceProperties.Limits.MinTexelBufferOffsetAlignment);
+                minTexelBufferViewOffsetAlignment);
 
             IsSharedMemory = MemoryAllocator.IsDeviceMemoryShared(_physicalDevice);
 
@@ -505,6 +529,7 @@ namespace Ryujinx.Graphics.Vulkan
 
             Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-ETAPA2] Vulkan timeline semaphore completion: {(SupportsTimelineSemaphore ? "Enabled" : "Fence fallback")}");
             Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-ETAPA4B] Turnip image view format lists: {(IsTurnip ? "Enabled" : "Disabled")}");
+            Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-TEXBUF-ALIGN1] Texel buffer view offset: {(texelBufferSingleTexelAlignment ? "exact (single texel alignment)" : $"aligned up to {minTexelBufferViewOffsetAlignment} bytes")}");
             Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-FLUSH-R3] Turnip adaptive fast-flush guard: {(IsTurnip ? "Enabled" : "Not applicable")} maxDrawFlushesPerFrame=4 exitThresholdMs=0.75");
             GezinjinxGuestStallTelemetry.Enable();
 
