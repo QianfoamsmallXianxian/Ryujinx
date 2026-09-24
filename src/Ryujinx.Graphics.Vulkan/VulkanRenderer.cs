@@ -113,6 +113,9 @@ namespace Ryujinx.Graphics.Vulkan
         internal bool IsIntelArc { get; private set; }
         internal bool IsQualcommProprietary { get; private set; }
         internal bool IsTurnip { get; private set; }
+
+        // NEOV2 CONDRENDER1: Eden skips waiting for conditional rendering values on these drivers.
+        public bool PreferUnconditionalRenderingOverReadback => IsTurnip || IsQualcommProprietary;
         internal bool IsMoltenVk { get; private set; }
         internal bool IsTBDR { get; private set; }
         internal bool IsSharedMemory { get; private set; }
@@ -522,12 +525,17 @@ namespace Ryujinx.Graphics.Vulkan
             Api.TryGetDeviceExtension(_instance.Instance, _device, out ExtExternalMemoryHost hostMemoryApi);
             HostMemoryAllocator = new HostMemoryAllocator(MemoryAllocator, Api, hostMemoryApi, _device);
 
-            QueueSubmissionWorker = new VulkanSubmissionWorker(Api, _device, Queue, QueueLock, _submissionGraphGate, SupportsTimelineSemaphore, "Kenji Vulkan Main Submit");
+            // NEOV2 TURNIP-FENCE1: no Turnip (kgsl) a timeline e emulada pelo Mesa. Cada consulta ou espera
+            // faz uma chamada ao kernel segurando uma trava unica da timeline, que serializa backend, submit
+            // e GPU thread. O Eden desliga timeline no Turnip (Device::HasTimelineSemaphore) e usa VkFence.
+            bool useTimelineSemaphore = SupportsTimelineSemaphore && !IsTurnip;
+
+            QueueSubmissionWorker = new VulkanSubmissionWorker(Api, _device, Queue, QueueLock, _submissionGraphGate, useTimelineSemaphore, "Kenji Vulkan Main Submit");
             BackgroundQueueSubmissionWorker = BackgroundQueue.Handle != 0
-                ? new VulkanSubmissionWorker(Api, _device, BackgroundQueue, BackgroundQueueLock, _submissionGraphGate, SupportsTimelineSemaphore, "Kenji Vulkan Background Submit")
+                ? new VulkanSubmissionWorker(Api, _device, BackgroundQueue, BackgroundQueueLock, _submissionGraphGate, useTimelineSemaphore, "Kenji Vulkan Background Submit")
                 : QueueSubmissionWorker;
 
-            Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-ETAPA2] Vulkan timeline semaphore completion: {(SupportsTimelineSemaphore ? "Enabled" : "Fence fallback")}");
+            Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-ETAPA2] Vulkan timeline semaphore completion: {(useTimelineSemaphore ? "Enabled" : (SupportsTimelineSemaphore ? "Fence fallback (Turnip, TURNIP-FENCE1)" : "Fence fallback"))}");
             Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-ETAPA4B] Turnip image view format lists: {(IsTurnip ? "Enabled" : "Disabled")}");
             Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-TEXBUF-ALIGN1] Texel buffer view offset: {(texelBufferSingleTexelAlignment ? "exact (single texel alignment)" : $"aligned up to {minTexelBufferViewOffsetAlignment} bytes")}");
             Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-FLUSH-R3] Turnip adaptive fast-flush guard: {(IsTurnip ? "Enabled" : "Not applicable")} maxDrawFlushesPerFrame=4 exitThresholdMs=0.75");

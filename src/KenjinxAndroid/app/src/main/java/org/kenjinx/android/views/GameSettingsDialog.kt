@@ -65,6 +65,7 @@ fun GameSettingsDialog(
     var textureRecompression by remember(titleId) { mutableStateOf(initial.enableTextureRecompression) }
     var macroHle by remember(titleId) { mutableStateOf(initial.enableMacroHLE) }
     var stretch by remember(titleId) { mutableStateOf(initial.stretchToFullscreen) }
+    var docked by remember(titleId) { mutableStateOf(initial.enableDocked) }
     var virtualController by remember(titleId) { mutableStateOf(initial.useVirtualController) }
     var virtualPreset by remember(titleId) { mutableStateOf(initial.virtualControllerPreset) }
     var showStats by remember(titleId) { mutableStateOf(initial.showPerformanceOverlay) }
@@ -99,6 +100,7 @@ fun GameSettingsDialog(
                     this.enableTextureRecompression = textureRecompression
                     this.enableMacroHLE = macroHle
                     this.stretchToFullscreen = stretch
+                    this.enableDocked = docked
                     this.useVirtualController = virtualController
                     this.virtualControllerPreset = virtualPreset
                     this.showPerformanceOverlay = showStats
@@ -176,6 +178,11 @@ fun GameSettingsDialog(
                             )
                             ToggleRow("PPTC", enablePptc, custom) { enablePptc = it }
                             ToggleRow("Memory Slack (12 GiB)", memorySlack, custom) { memorySlack = it }
+                            Text("Modo do console", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                ChoiceCard("Dock", docked, Modifier.weight(1f), enabled = custom) { docked = true }
+                                ChoiceCard("Portátil", !docked, Modifier.weight(1f), enabled = custom) { docked = false }
+                            }
                         }
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text("Controles e interface", style = MaterialTheme.typography.titleSmall)
@@ -307,6 +314,7 @@ fun GameSettingsDialog(
                         textureRecompression = def.enableTextureRecompression
                         macroHle = def.enableMacroHLE
                         stretch = def.stretchToFullscreen
+                        docked = def.enableDocked
                         virtualController = def.useVirtualController
                         virtualPreset = def.virtualControllerPreset
                         showStats = def.showPerformanceOverlay

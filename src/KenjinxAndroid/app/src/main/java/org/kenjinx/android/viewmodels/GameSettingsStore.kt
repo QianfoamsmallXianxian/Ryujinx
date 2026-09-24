@@ -107,6 +107,7 @@ class GameSettingsStore(activity: Activity, titleId: String) {
         }
         settings.enableMacroHLE = safeBoolean(key("enableMacroHLE"), settings.enableMacroHLE)
         settings.stretchToFullscreen = safeBoolean(key("stretchToFullscreen"), settings.stretchToFullscreen)
+        settings.enableDocked = safeBoolean(key("enableDocked"), settings.enableDocked)
         settings.resScale = safeFloat(key("resScale"), settings.resScale)
         settings.maxAnisotropy = safeFloat(key("maxAnisotropy"), settings.maxAnisotropy)
         settings.useVirtualController = safeBoolean(key("useVirtualController"), settings.useVirtualController)
@@ -138,6 +139,7 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             putInt(key("strictSyncMode"), strictSyncMode)
             putBoolean(key("enableMacroHLE"), settings.enableMacroHLE)
             putBoolean(key("stretchToFullscreen"), settings.stretchToFullscreen)
+            putBoolean(key("enableDocked"), settings.enableDocked)
             putFloat(key("resScale"), settings.resScale)
             putFloat(key("maxAnisotropy"), settings.maxAnisotropy)
             putBoolean(key("useVirtualController"), settings.useVirtualController)

@@ -44,6 +44,12 @@ namespace Ryujinx.Graphics.GAL.Multithreading
         private readonly AutoResetEvent _queueSpaceAvailable;
         private int _producerWaiting;
 
+        // NEOV2 QUEUE-HYST1: com a fila cheia, o produtor so volta quando houver este numero de
+        // posicoes livres, e o consumidor sinaliza uma unica vez por espera. Antes, o consumidor
+        // chamava Set() a cada comando e as duas threads se alternavam comando a comando.
+        // Mesmo principio do Eden (Scheduler::DispatchWork), que acorda o worker uma vez por bloco.
+        private const int QueueResumeFreeSlots = QueueCount / 4;
+
         private bool _lastSampleCounterClear = true;
 
         private readonly byte[] _commandQueue;
@@ -75,6 +81,9 @@ namespace Ryujinx.Graphics.GAL.Multithreading
         public IWindow Window { get; }
 
         public IRenderer BaseRenderer => _baseRenderer;
+
+        // NEOV2 CONDRENDER1: constant device property, safe to read from the GPU thread.
+        public bool PreferUnconditionalRenderingOverReadback => _baseRenderer.PreferUnconditionalRenderingOverReadback;
 
         public bool PreferThreading => _baseRenderer.PreferThreading;
 
@@ -161,7 +170,10 @@ namespace Ryujinx.Graphics.GAL.Multithreading
                     // fica visivel antes da leitura de _producerWaiting.
                     Interlocked.Decrement(ref _commandCount);
 
-                    if (Volatile.Read(ref _producerWaiting) != 0)
+                    // NEOV2 QUEUE-HYST1: sinaliza so quando ha espaco suficiente, e uma vez por espera.
+                    if (Volatile.Read(ref _producerWaiting) != 0 &&
+                        QueueCount - 1 - Volatile.Read(ref _commandCount) >= QueueResumeFreeSlots &&
+                        Interlocked.Exchange(ref _producerWaiting, 0) != 0)
                     {
                         _queueSpaceAvailable.Set();
                     }
@@ -181,25 +193,30 @@ namespace Ryujinx.Graphics.GAL.Multithreading
 
         internal unsafe T* New<T>() where T : unmanaged, IGALCommand
         {
-            while (_producerPtr == (Volatile.Read(ref _consumerPtr) + QueueCount - 1) % QueueCount)
+            if (_producerPtr == (Volatile.Read(ref _consumerPtr) + QueueCount - 1) % QueueCount)
             {
                 // If incrementing the producer pointer would overflow, we need to wait.
                 // _consumerPtr can only move forward, so there's no race to worry about here.
 
-                // Anuncia a espera com barreira completa e testa a capacidade de novo,
-                // fechando a janela de wakeup perdido antes de entrar no evento.
-                Interlocked.Exchange(ref _producerWaiting, 1);
-
-                if (_producerPtr != (Volatile.Read(ref _consumerPtr) + QueueCount - 1) % QueueCount)
+                // NEOV2 QUEUE-HYST1: espera ate haver QueueResumeFreeSlots posicoes livres,
+                // em vez de voltar a cada posicao liberada.
+                while (FreeQueueSlots() < QueueResumeFreeSlots)
                 {
-                    break;
+                    // Anuncia a espera com barreira completa e testa o espaco de novo,
+                    // fechando a janela de wakeup perdido antes de entrar no evento.
+                    Interlocked.Exchange(ref _producerWaiting, 1);
+
+                    if (FreeQueueSlots() >= QueueResumeFreeSlots)
+                    {
+                        break;
+                    }
+
+                    // O timeout de 1 ms e apenas uma rede de seguranca; o caminho normal e o Set do consumidor.
+                    _queueSpaceAvailable.WaitOne(1);
                 }
 
-                // O timeout de 1 ms e apenas uma rede de seguranca; o caminho normal e o Set do consumidor.
-                _queueSpaceAvailable.WaitOne(1);
+                Volatile.Write(ref _producerWaiting, 0);
             }
-
-            Volatile.Write(ref _producerWaiting, 0);
 
             int taken = _producerPtr;
             _lastProducedPtr = taken;
@@ -213,6 +230,14 @@ namespace Ryujinx.Graphics.GAL.Multithreading
             memory[^1] = (byte)(result)->CommandType;
 
             return result;
+        }
+
+        // NEOV2 QUEUE-HYST1: posicoes livres na fila, vistas pelo produtor.
+        private int FreeQueueSlots()
+        {
+            int used = (_producerPtr - Volatile.Read(ref _consumerPtr) + QueueCount) % QueueCount;
+
+            return QueueCount - 1 - used;
         }
 
         internal int AddTableRef(object obj)
