@@ -126,6 +126,9 @@ namespace Ryujinx.Graphics.GAL.Multithreading
 
             _gpuThread.Start();
 
+            // NEOV2 BACKEND-PRIME1: o backend Vulkan roda nesta thread; fixa no(s) nucleo(s) mais rapido(s).
+            BackendThreadAffinity.PinCurrentThreadToFastestCores();
+
             RenderLoop();
         }
 
