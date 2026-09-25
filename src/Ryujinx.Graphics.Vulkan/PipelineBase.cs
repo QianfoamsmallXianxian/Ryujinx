@@ -350,6 +350,11 @@ namespace Ryujinx.Graphics.Vulkan
             Gd.Api.CmdDispatchIndirect(CommandBuffer, indirectBuffer.Get(Cbs, indirectBufferOffset, 12).Value, (ulong)indirectBufferOffset);
         }
 
+        // PipelineFull overrides these hooks to scope VK_EXT_conditional_rendering to the guest draw only.
+        // Keeping preparation and helper commands outside the scope prevents internal work from being skipped.
+        protected virtual void BeginHostConditionalRenderingForDraw() { }
+        protected virtual void EndHostConditionalRenderingForDraw() { }
+
         public void Draw(int vertexCount, int instanceCount, int firstVertex, int firstInstance)
         {
             if (vertexCount == 0)
@@ -386,13 +391,17 @@ namespace Ryujinx.Graphics.Vulkan
                 BeginRenderPass(); // May have been interrupted to set buffer data.
                 ResumeTransformFeedbackInternal();
 
+                BeginHostConditionalRenderingForDraw();
                 Gd.Api.CmdDrawIndexed(CommandBuffer, (uint)indexCount, (uint)instanceCount, 0, firstVertex, (uint)firstInstance);
+                EndHostConditionalRenderingForDraw();
             }
             else
             {
                 ResumeTransformFeedbackInternal();
 
+                BeginHostConditionalRenderingForDraw();
                 Gd.Api.CmdDraw(CommandBuffer, (uint)vertexCount, (uint)instanceCount, (uint)firstVertex, (uint)firstInstance);
+                EndHostConditionalRenderingForDraw();
             }
         }
 
@@ -452,13 +461,17 @@ namespace Ryujinx.Graphics.Vulkan
                 BeginRenderPass(); // May have been interrupted to set buffer data.
                 ResumeTransformFeedbackInternal();
 
+                BeginHostConditionalRenderingForDraw();
                 Gd.Api.CmdDrawIndexed(CommandBuffer, (uint)convertedCount, (uint)instanceCount, 0, firstVertex, (uint)firstInstance);
+                EndHostConditionalRenderingForDraw();
             }
             else
             {
                 ResumeTransformFeedbackInternal();
 
+                BeginHostConditionalRenderingForDraw();
                 Gd.Api.CmdDrawIndexed(CommandBuffer, (uint)indexCount, (uint)instanceCount, (uint)firstIndex, firstVertex, (uint)firstInstance);
+                EndHostConditionalRenderingForDraw();
             }
         }
 
@@ -498,13 +511,17 @@ namespace Ryujinx.Graphics.Vulkan
                 BeginRenderPass(); // May have been interrupted to set buffer data.
                 ResumeTransformFeedbackInternal();
 
+                BeginHostConditionalRenderingForDraw();
                 Gd.Api.CmdDrawIndexedIndirect(CommandBuffer, indirectBufferAuto.Get(Cbs, 0, indirectBuffer.Size).Value, 0, 1, (uint)indirectBuffer.Size);
+                EndHostConditionalRenderingForDraw();
             }
             else
             {
                 ResumeTransformFeedbackInternal();
 
+                BeginHostConditionalRenderingForDraw();
                 Gd.Api.CmdDrawIndexedIndirect(CommandBuffer, buffer, (ulong)indirectBuffer.Offset, 1, (uint)indirectBuffer.Size);
+                EndHostConditionalRenderingForDraw();
             }
         }
 
@@ -548,6 +565,8 @@ namespace Ryujinx.Graphics.Vulkan
                 BeginRenderPass(); // May have been interrupted to set buffer data.
                 ResumeTransformFeedbackInternal();
 
+                BeginHostConditionalRenderingForDraw();
+
                 if (Gd.Capabilities.SupportsIndirectParameters)
                 {
                     Gd.DrawIndirectCountApi.CmdDrawIndexedIndirectCount(
@@ -571,10 +590,14 @@ namespace Ryujinx.Graphics.Vulkan
                         (uint)maxDrawCount,
                         (uint)stride);
                 }
+
+                EndHostConditionalRenderingForDraw();
             }
             else
             {
                 ResumeTransformFeedbackInternal();
+
+                BeginHostConditionalRenderingForDraw();
 
                 if (Gd.Capabilities.SupportsIndirectParameters)
                 {
@@ -597,6 +620,8 @@ namespace Ryujinx.Graphics.Vulkan
                         (uint)maxDrawCount,
                         (uint)stride);
                 }
+
+                EndHostConditionalRenderingForDraw();
             }
         }
 
@@ -617,7 +642,9 @@ namespace Ryujinx.Graphics.Vulkan
             ResumeTransformFeedbackInternal();
             DrawCount++;
 
+            BeginHostConditionalRenderingForDraw();
             Gd.Api.CmdDrawIndirect(CommandBuffer, buffer, (ulong)indirectBuffer.Offset, 1, (uint)indirectBuffer.Size);
+            EndHostConditionalRenderingForDraw();
         }
 
         public void DrawIndirectCount(BufferRange indirectBuffer, BufferRange parameterBuffer, int maxDrawCount, int stride)
@@ -647,6 +674,7 @@ namespace Ryujinx.Graphics.Vulkan
             ResumeTransformFeedbackInternal();
             DrawCount++;
 
+            BeginHostConditionalRenderingForDraw();
             Gd.DrawIndirectCountApi.CmdDrawIndirectCount(
                 CommandBuffer,
                 buffer,
@@ -655,6 +683,7 @@ namespace Ryujinx.Graphics.Vulkan
                 (ulong)parameterBuffer.Offset,
                 (uint)maxDrawCount,
                 (uint)stride);
+            EndHostConditionalRenderingForDraw();
         }
 
         public void DrawTexture(ITexture texture, ISampler sampler, Extents2DF srcRegion, Extents2DF dstRegion)

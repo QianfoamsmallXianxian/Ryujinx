@@ -238,6 +238,12 @@ class MainViewModel(val activity: MainActivity) {
         } catch (_: Throwable) {
         }
 
+        // NEOV2 DMA-RELAX1: valor efetivo (global + override por jogo).
+        try {
+            KenjinxNative.deviceSetRelaxedDmaCopy(settings.enableRelaxedDmaCopy)
+        } catch (_: Throwable) {
+        }
+
         var success = KenjinxNative.graphicsInitialize(
             enableMacroHLE = settings.enableMacroHLE,
             enableShaderCache = settings.enableShaderCache,
@@ -351,6 +357,12 @@ class MainViewModel(val activity: MainActivity) {
         // NEOV2 NCE-PROT1: sem perfil de jogo, vale a configuracao global.
         try {
             KenjinxNative.deviceSetNceTrackingProtection(settings.enableNceTrackingProtection)
+        } catch (_: Throwable) {
+        }
+
+        // NEOV2 DMA-RELAX1: sem perfil de jogo, vale a configuracao global.
+        try {
+            KenjinxNative.deviceSetRelaxedDmaCopy(settings.enableRelaxedDmaCopy)
         } catch (_: Throwable) {
         }
 

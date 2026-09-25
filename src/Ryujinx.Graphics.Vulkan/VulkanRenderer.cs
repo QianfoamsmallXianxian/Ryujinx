@@ -1,4 +1,4 @@
-Ôªøusing Ryujinx.Common.Diagnostics;
+using Ryujinx.Common.Diagnostics;
 using Ryujinx.Common.Configuration;
 using Ryujinx.Common.Logging;
 using Ryujinx.Graphics.GAL;
@@ -255,9 +255,9 @@ namespace Ryujinx.Graphics.Vulkan
                 properties2.PNext = &propertiesPushDescriptor;
             }
 
-            // NEOV2 TEXBUF-ALIGN1: drivers que exp√µem VK_EXT_texel_buffer_alignment com alinhamento
-            // de um √∫nico texel (ex.: Turnip) aceitam o offset exato da view de texture buffer.
-            // Nesses drivers a view n√£o pode ser deslocada para frente, sen√£o o shader l√™ o dado errado.
+            // NEOV2 TEXBUF-ALIGN1: drivers que expıem VK_EXT_texel_buffer_alignment com alinhamento
+            // de um ˙nico texel (ex.: Turnip) aceitam o offset exato da view de texture buffer.
+            // Nesses drivers a view n„o pode ser deslocada para frente, sen„o o shader lÍ o dado errado.
             bool supportsTexelBufferAlignment = _physicalDevice.IsDeviceExtensionPresent("VK_EXT_texel_buffer_alignment");
 
             PhysicalDeviceTexelBufferAlignmentPropertiesEXT propertiesTexelBufferAlignment = new()
@@ -538,7 +538,16 @@ namespace Ryujinx.Graphics.Vulkan
             Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-ETAPA2] Vulkan timeline semaphore completion: {(useTimelineSemaphore ? "Enabled" : (SupportsTimelineSemaphore ? "Fence fallback (Turnip, TURNIP-FENCE1)" : "Fence fallback"))}");
             Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-ETAPA4B] Turnip image view format lists: {(IsTurnip ? "Enabled" : "Disabled")}");
             Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-TEXBUF-ALIGN1] Texel buffer view offset: {(texelBufferSingleTexelAlignment ? "exact (single texel alignment)" : $"aligned up to {minTexelBufferViewOffsetAlignment} bytes")}");
-            Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-FLUSH-R3] Turnip adaptive fast-flush guard: {(IsTurnip ? "Enabled" : "Not applicable")} maxDrawFlushesPerFrame=4 exitThresholdMs=0.75");
+                        // NEOV2 AUTOFLUSH1-FIX1: o teto por frame depende do modo efetivo do seletor, entao a linha
+            // nao pode mais imprimir 4 fixo.
+            string drawFlushCap = NeoGraphicsSettings.DrawFlushMode switch
+            {
+                DrawFlushMode.Reduced => "1",
+                DrawFlushMode.Disabled => "0",
+                _ => IsTurnip ? "4" : "unbounded",
+            };
+
+            Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-FLUSH-R3] Turnip adaptive fast-flush guard: {(IsTurnip ? "Enabled" : "Not applicable")} drawFlushMode={NeoGraphicsSettings.DrawFlushMode} maxDrawFlushesPerFrame={drawFlushCap} exitThresholdMs=0.75");
             GezinjinxGuestStallTelemetry.Enable();
 
             CommandBufferPool = new CommandBufferPool(Api, _device, QueueSubmissionWorker, queueFamilyIndex, IsQualcommProprietary, IsTurnip);
@@ -1187,7 +1196,7 @@ namespace Ryujinx.Graphics.Vulkan
                 }
                 catch
                 {
-                    // retry sp√§ter
+                    // retry sp‰ter
                     return false;
                 }
             }

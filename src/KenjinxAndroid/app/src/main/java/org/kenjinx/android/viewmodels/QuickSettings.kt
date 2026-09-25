@@ -70,6 +70,9 @@ class QuickSettings(val activity: Activity) {
     // NEOV2 NCE-PROT1: protecao de memoria NCE (corrige tela preta, ex.: MUA3). Desligada por padrao.
     var enableNceTrackingProtection: Boolean
 
+    // NEOV2 DMA-RELAX1: copia DMA relaxada (como o Eden). Desligada por padrao.
+    var enableRelaxedDmaCopy: Boolean
+
     // NEOV2 AUTOFLUSH1: 0 = Padrao, 1 = Reduzido, 2 = Desativado.
     var drawFlushMode: Int
 
@@ -161,6 +164,7 @@ class QuickSettings(val activity: Activity) {
         enableTextureRecompression = sharedPref.getBoolean("enableTextureRecompression", false)
         enableVtgViaCompute = sharedPref.getBoolean("enableVtgViaCompute", true)
         enableNceTrackingProtection = sharedPref.getBoolean("enableNceTrackingProtection", false)
+        enableRelaxedDmaCopy = sharedPref.getBoolean("enableRelaxedDmaCopy", false)
         drawFlushMode = sharedPref.getInt("drawFlushMode", 0)
         bufferReadbackMode = sharedPref.getInt("bufferReadbackMode", 0)
         strictSyncMode = sharedPref.getInt("strictSyncMode", 0)
@@ -235,6 +239,7 @@ class QuickSettings(val activity: Activity) {
             putBoolean("enableTextureRecompression", enableTextureRecompression)
             putBoolean("enableVtgViaCompute", enableVtgViaCompute)
             putBoolean("enableNceTrackingProtection", enableNceTrackingProtection)
+            putBoolean("enableRelaxedDmaCopy", enableRelaxedDmaCopy)
             putInt("drawFlushMode", drawFlushMode)
             putInt("bufferReadbackMode", bufferReadbackMode)
             putInt("strictSyncMode", strictSyncMode)

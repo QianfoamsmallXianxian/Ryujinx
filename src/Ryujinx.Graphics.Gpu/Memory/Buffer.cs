@@ -30,6 +30,7 @@ namespace Ryujinx.Graphics.Gpu.Memory
         /// <summary>
         /// Start address of the buffer in guest memory.
         /// </summary>
+        public PhysicalMemory PhysicalMemory => _physicalMemory;
         public ulong Address { get; }
 
         /// <summary>

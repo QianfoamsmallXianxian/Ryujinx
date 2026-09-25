@@ -27,6 +27,34 @@ namespace Ryujinx.Memory
             return AllocateInternal(size, MmapProts.PROT_NONE, forJit);
         }
 
+        /// <summary>
+        /// NEOV2 NCE-LOWBASE1: reserves a range at exactly the given address, if that range is free.
+        /// The address is only a hint to the kernel (no MAP_FIXED), so existing mappings are never replaced.
+        /// </summary>
+        /// <param name="address">Desired start address</param>
+        /// <param name="size">Size of the range</param>
+        /// <returns>The address, or zero if the range could not be reserved there</returns>
+        public static nint ReserveAt(nint address, ulong size)
+        {
+            MmapFlags flags = MmapFlags.MAP_ANONYMOUS | MmapFlags.MAP_PRIVATE | MmapFlags.MAP_NORESERVE;
+
+            nint ptr = Mmap(address, size, MmapProts.PROT_NONE, flags, -1, 0);
+
+            if (ptr == MAP_FAILED)
+            {
+                return nint.Zero;
+            }
+
+            if (ptr != address || !_allocations.TryAdd(ptr, size))
+            {
+                munmap(ptr, size);
+
+                return nint.Zero;
+            }
+
+            return ptr;
+        }
+
         private static nint AllocateInternal(ulong size, MmapProts prot, bool forJit, bool shared = false)
         {
             MmapFlags flags = MmapFlags.MAP_ANONYMOUS;

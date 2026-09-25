@@ -301,6 +301,17 @@ namespace Ryujinx.Graphics.Gpu.Engine.Twod
                 IsCopyRegionComplete(srcCopyTexture, srcCopyTextureFormat, srcX1, srcY1, srcX2, srcY2) &&
                 IsCopyRegionComplete(dstCopyTexture, dstCopyTextureFormat, dstX1, dstY1, dstX2, dstY2);
 
+            // NEOV2 TWOD-GPUDST2: a copia direta na CPU escreve na memoria do destino. Se ja existe uma textura
+            // do cache nesse endereco (normalmente escrita pela GPU), essa escrita obriga a baixar a textura inteira
+            // da GPU e esperar antes de sobrescreve-la (Diablo II: ~40% da GPU thread por quadro). Nesse caso a
+            // copia e feita na GPU, como o Eden faz (Fermi2D::Blit -> AccelerateSurfaceCopy).
+            // A GPUDST1 procurava so uma textura com os mesmos parametros e nao encontrava a do Diablo; aqui basta
+            // qualquer textura sobreposta ao endereco do destino.
+            if (canDirectCopy && memoryManager.Physical.TextureCache.HasTextureAt(memoryManager, dstCopyTexture.Address.Pack()))
+            {
+                canDirectCopy = false;
+            }
+
             // We can only allow aliasing of color formats as depth if the source and destination textures
             // are the same, as we can't blit between different depth formats.
             bool srcDepthAlias = srcCopyTexture.Format == dstCopyTexture.Format;

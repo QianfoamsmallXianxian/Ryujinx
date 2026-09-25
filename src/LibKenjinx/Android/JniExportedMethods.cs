@@ -1060,6 +1060,14 @@ namespace LibKenjinx
             Ryujinx.Cpu.Nce.MemoryManagerNative.TrackingProtectionRestoreEnabled = enable;
             Logger.Info?.Print(LogClass.Cpu, $"[NEOV2-NCE-PROT1] Tracking protection restore: {(enable ? "enabled" : "disabled")}");
         }
+
+        // NEOV2 DMA-RELAX1: chave geral e por jogo "Copia DMA relaxada", definida antes de carregar o jogo.
+        [UnmanagedCallersOnly(EntryPoint = "deviceSetRelaxedDmaCopy")]
+        public static void JniDeviceSetRelaxedDmaCopy(bool enable)
+        {
+            Ryujinx.Graphics.Gpu.GraphicsConfig.RelaxedDmaCopy = enable;
+            Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-DMA-RELAX1] Relaxed DMA copy: {(enable ? "enabled" : "disabled")}");
+        }
 #endif
 
         // Used by MainActivity/GameHost

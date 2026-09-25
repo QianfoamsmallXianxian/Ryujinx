@@ -370,6 +370,7 @@ class SettingViews {
             val enableTextureRecompression = remember { mutableStateOf(false) }
             val enableVtgViaCompute = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableVtgViaCompute) }
             val enableNceTrackingProtection = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableNceTrackingProtection) }
+            val enableRelaxedDmaCopy = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableRelaxedDmaCopy) }
 
             val drawFlushMode = remember { mutableStateOf(QuickSettings(mainViewModel.activity).drawFlushMode) }
 
@@ -680,6 +681,7 @@ class SettingViews {
                 qs.orientationPreference = orientationPref.value
                 qs.enableVtgViaCompute = enableVtgViaCompute.value
                 qs.enableNceTrackingProtection = enableNceTrackingProtection.value
+                qs.enableRelaxedDmaCopy = enableRelaxedDmaCopy.value
                 qs.drawFlushMode = drawFlushMode.value
                 qs.bufferReadbackMode = bufferReadbackMode.value
                 qs.strictSyncMode = strictSyncMode.value
@@ -1419,6 +1421,17 @@ class SettingViews {
                                                 val qsBufferReadback = QuickSettings(mainViewModel.activity)
                                                 qsBufferReadback.bufferReadbackMode = it
                                                 qsBufferReadback.save()
+                                            }
+                                        )
+                                        HighContrastToggle(
+                                            title = "Cópia DMA relaxada",
+                                            description = "Cópias DMA deixam de baixar da GPU as texturas que serão sobrescritas, como no Eden. Aumenta o desempenho em alguns jogos (ex.: Diablo II), mas pode causar erros gráficos em outros. Pode ser ajustado por jogo. (Requer reiniciar o jogo)",
+                                            checked = enableRelaxedDmaCopy.value,
+                                            onCheckedChange = {
+                                                enableRelaxedDmaCopy.value = it
+                                                val qsRelaxedDma = QuickSettings(mainViewModel.activity)
+                                                qsRelaxedDma.enableRelaxedDmaCopy = it
+                                                qsRelaxedDma.save()
                                             }
                                         )
 

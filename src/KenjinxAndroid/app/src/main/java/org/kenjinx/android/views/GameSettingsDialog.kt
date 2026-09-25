@@ -77,6 +77,7 @@ fun GameSettingsDialog(
     var nceTrackingProtectionMode by remember(titleId) { mutableStateOf(store.nceTrackingProtectionMode) }
     var drawFlushMode by remember(titleId) { mutableStateOf(store.drawFlushMode) }
     var bufferReadbackMode by remember(titleId) { mutableStateOf(store.bufferReadbackMode) }
+    var relaxedDmaCopyMode by remember(titleId) { mutableStateOf(store.relaxedDmaCopyMode) }
     var strictSyncMode by remember(titleId) { mutableStateOf(store.strictSyncMode) }
     val driverViewModel = remember(titleId) { VulkanDriverViewModel(activity) }
     val availableDrivers = remember(titleId) { driverViewModel.getAvailableDrivers().toList() }
@@ -89,6 +90,7 @@ fun GameSettingsDialog(
             store.nceTrackingProtectionMode = nceTrackingProtectionMode
             store.drawFlushMode = drawFlushMode
             store.bufferReadbackMode = bufferReadbackMode
+            store.relaxedDmaCopyMode = relaxedDmaCopyMode
             store.strictSyncMode = strictSyncMode
             store.save(
                 initial.apply {
@@ -264,6 +266,18 @@ fun GameSettingsDialog(
                             enabled = custom,
                             onSelected = { bufferReadbackMode = it }
                         )
+                        Text("Cópia DMA relaxada (ex.: Diablo II)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        val relaxedDmaOptions = listOf(
+                            0 to "Usar global",
+                            1 to "Ativado",
+                            2 to "Desativado"
+                        )
+                        GameSettingSelect(
+                            selectedLabel = relaxedDmaOptions.firstOrNull { it.first == relaxedDmaCopyMode }?.second ?: "Usar global",
+                            options = relaxedDmaOptions,
+                            enabled = custom,
+                            onSelected = { relaxedDmaCopyMode = it }
+                        )
                         Text("Sincronização estrita da GPU", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         val strictSyncOptions = listOf(
                             0 to "Usar global",
@@ -326,6 +340,7 @@ fun GameSettingsDialog(
                         nceTrackingProtectionMode = 0
                         drawFlushMode = 0
                         bufferReadbackMode = 0
+                        relaxedDmaCopyMode = 0
                         strictSyncMode = 0
                         driverOverride = ""
                     }) {

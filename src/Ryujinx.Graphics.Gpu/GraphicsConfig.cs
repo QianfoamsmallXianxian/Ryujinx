@@ -85,6 +85,15 @@ namespace Ryujinx.Graphics.Gpu
         /// semantics not properly preserved by native geometry stages.
         /// </summary>
         public static bool EnableVtgViaCompute = true;
+
+        /// <summary>
+        /// NEOV2 DMA-RELAX1: "Copia DMA relaxada". When enabled, DMA buffer copies whose source data is
+        /// already in guest memory stay on the GPU (the destination buffer is marked as GPU modified) instead of
+        /// also writing the destination on the CPU, which forces textures overlapping it to be downloaded from the
+        /// GPU first. Same trade-off Eden makes in BufferCache::DMACopy. Off by default; can cause stale data in
+        /// textures overlapping the copy destination.
+        /// </summary>
+        public static bool RelaxedDmaCopy;
     }
 #pragma warning restore CA2211
 }
