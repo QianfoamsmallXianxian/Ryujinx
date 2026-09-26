@@ -50,6 +50,20 @@ class GameSettingsStore(activity: Activity, titleId: String) {
         }
 
     /** 0: Use Global, 1: Enabled, 2: Disabled */
+    var rejectUnmappedDescriptorsMode: Int
+        get() = if (!isValid) 0 else preferences.getInt(key("rejectUnmappedDescriptorsMode"), 0)
+        set(value) {
+            if (isValid) preferences.edit { putInt(key("rejectUnmappedDescriptorsMode"), value) }
+        }
+
+    /** 0: Use Global, 1: Enabled, 2: Disabled */
+    var asyncLarge3DUploadMode: Int
+        get() = if (!isValid) 0 else preferences.getInt(key("asyncLarge3DUploadMode"), 0)
+        set(value) {
+            if (isValid) preferences.edit { putInt(key("asyncLarge3DUploadMode"), value) }
+        }
+
+    /** 0: Use Global, 1: Enabled, 2: Disabled */
     var vtgViaComputeMode: Int
         get() = if (!isValid) 0 else preferences.getInt(key("vtgViaComputeMode"), 0)
         set(value) {
@@ -103,6 +117,14 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             1 -> settings.enableRelaxedDmaCopy = true
             2 -> settings.enableRelaxedDmaCopy = false
         }
+        when (safeInt(key("rejectUnmappedDescriptorsMode"), 0)) {
+            1 -> settings.enableRejectUnmappedDescriptors = true
+            2 -> settings.enableRejectUnmappedDescriptors = false
+        }
+        when (safeInt(key("asyncLarge3DUploadMode"), 0)) {
+            1 -> settings.enableAsyncLarge3DUpload = true
+            2 -> settings.enableAsyncLarge3DUpload = false
+        }
         when (safeInt(key("drawFlushMode"), 0)) {
             1 -> settings.drawFlushMode = 0
             2 -> settings.drawFlushMode = 1
@@ -146,6 +168,8 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             putInt(key("vtgViaComputeMode"), vtgViaComputeMode)
             putInt(key("nceTrackingProtectionMode"), nceTrackingProtectionMode)
             putInt(key("relaxedDmaCopyMode"), relaxedDmaCopyMode)
+            putInt(key("rejectUnmappedDescriptorsMode"), rejectUnmappedDescriptorsMode)
+            putInt(key("asyncLarge3DUploadMode"), asyncLarge3DUploadMode)
             putInt(key("drawFlushMode"), drawFlushMode)
             putInt(key("bufferReadbackMode"), bufferReadbackMode)
             putInt(key("strictSyncMode"), strictSyncMode)

@@ -189,7 +189,9 @@ namespace Ryujinx.Graphics.Gpu.Image
                 // descriptor address before decoding format, dimensions, or layout fields.
                 ulong address = descriptor.UnpackAddress();
 
-                if (address == 0 || !_channel.MemoryManager.IsMapped(address))
+                bool zeroAddress = address == 0;
+
+                if (zeroAddress || (GraphicsConfig.RejectUnmappedTextureDescriptors && !_channel.MemoryManager.IsMapped(address)))
                 {
                     _invalidMap.Set(id);
                     return ref descriptor;
@@ -530,6 +532,15 @@ namespace Ryujinx.Graphics.Gpu.Image
                     {
                         texture.DecrementReferenceCount(this, id);
                         RemoveAliasList(texture);
+                    }
+                }
+                else if (_invalidMap.IsSet(id))
+                {
+                    ref readonly TextureDescriptor newDescriptor = ref GetDescriptorRefAddress(address);
+
+                    if (newDescriptor.UnpackAddress() == 0)
+                    {
+                        continue;
                     }
                 }
 

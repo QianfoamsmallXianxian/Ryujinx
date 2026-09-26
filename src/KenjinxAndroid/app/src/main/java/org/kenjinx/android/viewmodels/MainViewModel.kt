@@ -243,6 +243,14 @@ class MainViewModel(val activity: MainActivity) {
             KenjinxNative.deviceSetRelaxedDmaCopy(settings.enableRelaxedDmaCopy)
         } catch (_: Throwable) {
         }
+        try {
+            KenjinxNative.deviceSetRejectUnmappedDescriptors(settings.enableRejectUnmappedDescriptors)
+        } catch (_: Throwable) {
+        }
+        try {
+            KenjinxNative.deviceSetAsyncLarge3DTextureUpload(settings.enableAsyncLarge3DUpload)
+        } catch (_: Throwable) {
+        }
 
         var success = KenjinxNative.graphicsInitialize(
             enableMacroHLE = settings.enableMacroHLE,
@@ -363,6 +371,14 @@ class MainViewModel(val activity: MainActivity) {
         // NEOV2 DMA-RELAX1: sem perfil de jogo, vale a configuracao global.
         try {
             KenjinxNative.deviceSetRelaxedDmaCopy(settings.enableRelaxedDmaCopy)
+        } catch (_: Throwable) {
+        }
+        try {
+            KenjinxNative.deviceSetRejectUnmappedDescriptors(settings.enableRejectUnmappedDescriptors)
+        } catch (_: Throwable) {
+        }
+        try {
+            KenjinxNative.deviceSetAsyncLarge3DTextureUpload(settings.enableAsyncLarge3DUpload)
         } catch (_: Throwable) {
         }
 

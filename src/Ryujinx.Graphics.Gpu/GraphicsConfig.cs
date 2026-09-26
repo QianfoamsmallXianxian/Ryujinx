@@ -94,6 +94,18 @@ namespace Ryujinx.Graphics.Gpu
         /// textures overlapping the copy destination.
         /// </summary>
         public static bool RelaxedDmaCopy;
+
+        /// <summary>
+        /// Rejects texture descriptors pointing to unmapped guest memory.
+        /// OFF by default globally in Current. Descriptor address 0 is always rejected regardless of this setting.
+        /// </summary>
+        public static bool RejectUnmappedTextureDescriptors;
+
+        /// <summary>
+        /// Enables asynchronous conversion and upload of large 3D textures (>= 4 MiB), like Eden's QueueAsyncUnswizzle.
+        /// ON by default.
+        /// </summary>
+        public static bool AsyncLarge3DTextureUpload = true;
     }
 #pragma warning restore CA2211
 }

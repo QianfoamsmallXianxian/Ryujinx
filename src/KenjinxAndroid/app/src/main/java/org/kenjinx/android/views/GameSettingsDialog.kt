@@ -1,4 +1,4 @@
-﻿package org.kenjinx.android.views
+package org.kenjinx.android.views
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.BorderStroke
@@ -77,7 +77,9 @@ fun GameSettingsDialog(
     var nceTrackingProtectionMode by remember(titleId) { mutableStateOf(store.nceTrackingProtectionMode) }
     var drawFlushMode by remember(titleId) { mutableStateOf(store.drawFlushMode) }
     var bufferReadbackMode by remember(titleId) { mutableStateOf(store.bufferReadbackMode) }
-    var relaxedDmaCopyMode by remember(titleId) { mutableStateOf(store.relaxedDmaCopyMode) }
+          var relaxedDmaCopyMode by remember(titleId) { mutableStateOf(store.relaxedDmaCopyMode) }
+      var rejectUnmappedDescriptorsMode by remember(titleId) { mutableStateOf(store.rejectUnmappedDescriptorsMode) }
+      var asyncLarge3DUploadMode by remember(titleId) { mutableStateOf(store.asyncLarge3DUploadMode) }
     var strictSyncMode by remember(titleId) { mutableStateOf(store.strictSyncMode) }
     val driverViewModel = remember(titleId) { VulkanDriverViewModel(activity) }
     val availableDrivers = remember(titleId) { driverViewModel.getAvailableDrivers().toList() }
@@ -90,7 +92,9 @@ fun GameSettingsDialog(
             store.nceTrackingProtectionMode = nceTrackingProtectionMode
             store.drawFlushMode = drawFlushMode
             store.bufferReadbackMode = bufferReadbackMode
-            store.relaxedDmaCopyMode = relaxedDmaCopyMode
+                          store.relaxedDmaCopyMode = relaxedDmaCopyMode
+              store.rejectUnmappedDescriptorsMode = rejectUnmappedDescriptorsMode
+              store.asyncLarge3DUploadMode = asyncLarge3DUploadMode
             store.strictSyncMode = strictSyncMode
             store.save(
                 initial.apply {
@@ -340,7 +344,9 @@ fun GameSettingsDialog(
                         nceTrackingProtectionMode = 0
                         drawFlushMode = 0
                         bufferReadbackMode = 0
-                        relaxedDmaCopyMode = 0
+                                                  relaxedDmaCopyMode = 0
+                          rejectUnmappedDescriptorsMode = 0
+                          asyncLarge3DUploadMode = 0
                         strictSyncMode = 0
                         driverOverride = ""
                     }) {

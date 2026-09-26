@@ -1068,6 +1068,18 @@ namespace LibKenjinx
             Ryujinx.Graphics.Gpu.GraphicsConfig.RelaxedDmaCopy = enable;
             Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-DMA-RELAX1] Relaxed DMA copy: {(enable ? "enabled" : "disabled")}");
         }
+
+        [UnmanagedCallersOnly(EntryPoint = "deviceSetRejectUnmappedDescriptors")]
+        public static void JniDeviceSetRejectUnmappedDescriptors(bool enable)
+        {
+            Ryujinx.Graphics.Gpu.GraphicsConfig.RejectUnmappedTextureDescriptors = enable;
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "deviceSetAsyncLarge3DTextureUpload")]
+        public static void JniDeviceSetAsyncLarge3DTextureUpload(bool enable)
+        {
+            Ryujinx.Graphics.Gpu.GraphicsConfig.AsyncLarge3DTextureUpload = enable;
+        }
 #endif
 
         // Used by MainActivity/GameHost

@@ -147,7 +147,27 @@ namespace Ryujinx.Graphics.Gpu.Image
             _allOffsets = size.AllOffsets;
             _sliceSizes = size.SliceSizes;
 
-            if (Storage.Target.HasDepthOrLayers() && Storage.Info.GetSlices() > GranularLayerThreshold)
+            bool eden3DSparse = false;
+
+            if (_is3D && GraphicsConfig.AsyncLarge3DTextureUpload)
+            {
+                MultiRange sparseRange = Storage.Range;
+
+                for (int i = 0; i < sparseRange.Count; i++)
+                {
+                    if (sparseRange.GetSubRange(i).Address == MemoryManager.PteUnmapped)
+                    {
+                        eden3DSparse = true;
+                        break;
+                    }
+                }
+            }
+
+            if (eden3DSparse)
+            {
+                (_hasLayerViews, _hasMipViews) = PropagateGranularity(hasLayerViews, hasMipViews);
+            }
+            else if (Storage.Target.HasDepthOrLayers() && Storage.Info.GetSlices() > GranularLayerThreshold)
             {
                 _hasLayerViews = true;
                 _hasMipViews = true;
@@ -1431,8 +1451,10 @@ namespace Ryujinx.Graphics.Gpu.Image
         /// </summary>
         public void RangeChanged()
         {
-            _hasLayerViews = true;
-            _hasMipViews = true;
+            bool eden3D = _is3D && GraphicsConfig.AsyncLarge3DTextureUpload;
+
+            _hasLayerViews = !eden3D;
+            _hasMipViews = !eden3D;
 
             RecalculateHandleRegions(true);
 

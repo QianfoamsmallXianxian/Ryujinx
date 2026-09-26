@@ -71,6 +71,8 @@ interface KenjinxNativeJna : Library {
     fun graphicsSetFullscreenStretch(enable: Boolean)
     fun deviceSetNceTrackingProtection(enable: Boolean)
     fun deviceSetRelaxedDmaCopy(enable: Boolean)
+    fun deviceSetRejectUnmappedDescriptors(enable: Boolean)
+    fun deviceSetAsyncLarge3DTextureUpload(enable: Boolean)
     fun deviceReloadFilesystem()
     fun inputInitialize(width: Int, height: Int)
     fun inputSetClientSize(width: Int, height: Int)
