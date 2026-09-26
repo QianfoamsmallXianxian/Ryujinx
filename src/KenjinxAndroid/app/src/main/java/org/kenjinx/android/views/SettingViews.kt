@@ -370,7 +370,9 @@ class SettingViews {
             val enableTextureRecompression = remember { mutableStateOf(false) }
             val enableVtgViaCompute = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableVtgViaCompute) }
             val enableNceTrackingProtection = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableNceTrackingProtection) }
-            val enableRelaxedDmaCopy = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableRelaxedDmaCopy) }
+                        val enableRelaxedDmaCopy = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableRelaxedDmaCopy) }
+            val enableRejectUnmappedDescriptors = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableRejectUnmappedDescriptors) }
+            val enableAsyncLarge3DUpload = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableAsyncLarge3DUpload) }
 
             val drawFlushMode = remember { mutableStateOf(QuickSettings(mainViewModel.activity).drawFlushMode) }
 
@@ -681,7 +683,9 @@ class SettingViews {
                 qs.orientationPreference = orientationPref.value
                 qs.enableVtgViaCompute = enableVtgViaCompute.value
                 qs.enableNceTrackingProtection = enableNceTrackingProtection.value
-                qs.enableRelaxedDmaCopy = enableRelaxedDmaCopy.value
+                                qs.enableRelaxedDmaCopy = enableRelaxedDmaCopy.value
+                qs.enableRejectUnmappedDescriptors = enableRejectUnmappedDescriptors.value
+                qs.enableAsyncLarge3DUpload = enableAsyncLarge3DUpload.value
                 qs.drawFlushMode = drawFlushMode.value
                 qs.bufferReadbackMode = bufferReadbackMode.value
                 qs.strictSyncMode = strictSyncMode.value

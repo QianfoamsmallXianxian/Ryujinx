@@ -71,7 +71,9 @@ class QuickSettings(val activity: Activity) {
     var enableNceTrackingProtection: Boolean
 
     // NEOV2 DMA-RELAX1: copia DMA relaxada (como o Eden). Desligada por padrao.
-    var enableRelaxedDmaCopy: Boolean
+        var enableRelaxedDmaCopy: Boolean
+    var enableRejectUnmappedDescriptors: Boolean
+    var enableAsyncLarge3DUpload: Boolean
 
     // NEOV2 AUTOFLUSH1: 0 = Padrao, 1 = Reduzido, 2 = Desativado.
     var drawFlushMode: Int
@@ -186,13 +188,31 @@ class QuickSettings(val activity: Activity) {
         // --- Reload: Controller Scale
         controllerScale = sharedPref.getFloat("controllerScale", 1.0f).coerceIn(0.5f, 1.5f)
 
+        enableRejectUnmappedDescriptors = sharedPref.getBoolean("enableRejectUnmappedDescriptors", false)
+        enableAsyncLarge3DUpload = sharedPref.getBoolean("enableAsyncLarge3DUpload", true)
+
+        if (!sharedPref.getBoolean("neoLogsDefaultOffV1", false)) {
+            sharedPref.edit {
+                putBoolean("enableStubLogs", false)
+                putBoolean("enableInfoLogs", false)
+                putBoolean("enableWarningLogs", false)
+                putBoolean("enableErrorLogs", false)
+                putBoolean("enableGuestLogs", false)
+                putBoolean("enableFsAccessLogs", false)
+                putBoolean("enableTraceLogs", false)
+                putBoolean("enableDebugLogs", false)
+                putBoolean("enableGraphicsLogs", false)
+                putBoolean("neoLogsDefaultOffV1", true)
+            }
+        }
+
         enableStubLogs = sharedPref.getBoolean("enableStubLogs", false)
-        enableInfoLogs = sharedPref.getBoolean("enableInfoLogs", true)
-        enableWarningLogs = sharedPref.getBoolean("enableWarningLogs", true)
-        enableErrorLogs = sharedPref.getBoolean("enableErrorLogs", true)
-        enableGuestLogs = sharedPref.getBoolean("enableGuestLogs", true)
+        enableInfoLogs = sharedPref.getBoolean("enableInfoLogs", false)
+        enableWarningLogs = sharedPref.getBoolean("enableWarningLogs", false)
+        enableErrorLogs = sharedPref.getBoolean("enableErrorLogs", false)
+        enableGuestLogs = sharedPref.getBoolean("enableGuestLogs", false)
         enableFsAccessLogs = sharedPref.getBoolean("enableFsAccessLogs", false)
-        enableTraceLogs = sharedPref.getBoolean("enableStubLogs", false)
+        enableTraceLogs = sharedPref.getBoolean("enableTraceLogs", false)
         enableDebugLogs = sharedPref.getBoolean("enableDebugLogs", false)
         enableGraphicsLogs = sharedPref.getBoolean("enableGraphicsLogs", false)
 
@@ -240,6 +260,8 @@ class QuickSettings(val activity: Activity) {
             putBoolean("enableVtgViaCompute", enableVtgViaCompute)
             putBoolean("enableNceTrackingProtection", enableNceTrackingProtection)
             putBoolean("enableRelaxedDmaCopy", enableRelaxedDmaCopy)
+            putBoolean("enableRejectUnmappedDescriptors", enableRejectUnmappedDescriptors)
+            putBoolean("enableAsyncLarge3DUpload", enableAsyncLarge3DUpload)
             putInt("drawFlushMode", drawFlushMode)
             putInt("bufferReadbackMode", bufferReadbackMode)
             putInt("strictSyncMode", strictSyncMode)
