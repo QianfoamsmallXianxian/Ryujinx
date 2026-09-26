@@ -242,6 +242,8 @@ namespace Ryujinx.Graphics.Gpu
 
                 pt.ReleaseCallback(pt.UserObj);
             }
+
+            _context.ProcessReady3DUploads();
         }
 
         /// <summary>

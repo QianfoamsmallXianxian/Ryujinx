@@ -26,7 +26,8 @@ namespace Ryujinx.Graphics.Vulkan
         private const int BufferSize = 32 * 1024 * 1024;
 
         private int _freeOffset;
-        private int _freeSize;
+                private int _freeSize;
+        private readonly object _sync = new();
 
         private readonly VulkanRenderer _gd;
         private readonly BufferHolder _buffer;
@@ -59,6 +60,14 @@ namespace Ryujinx.Graphics.Vulkan
         }
 
         public void PushData(CommandBufferPool cbp, CommandBufferScoped? cbs, Action endRenderPass, BufferHolder dst, int dstOffset, ReadOnlySpan<byte> data)
+        {
+            lock (_sync)
+            {
+                PushDataCore(cbp, cbs, endRenderPass, dst, dstOffset, data);
+            }
+        }
+
+        private void PushDataCore(CommandBufferPool cbp, CommandBufferScoped? cbs, Action endRenderPass, BufferHolder dst, int dstOffset, ReadOnlySpan<byte> data)
         {
             bool isRender = cbs != null;
             CommandBufferScoped scoped = cbs ?? cbp.Rent();
@@ -136,6 +145,14 @@ namespace Ryujinx.Graphics.Vulkan
 
         public bool TryPushData(CommandBufferScoped cbs, Action endRenderPass, BufferHolder dst, int dstOffset, ReadOnlySpan<byte> data)
         {
+            lock (_sync)
+            {
+                return TryPushDataCore(cbs, endRenderPass, dst, dstOffset, data);
+            }
+        }
+
+        private bool TryPushDataCore(CommandBufferScoped cbs, Action endRenderPass, BufferHolder dst, int dstOffset, ReadOnlySpan<byte> data)
+        {
             if (data.Length > BufferSize)
             {
                 return false;
@@ -207,7 +224,15 @@ namespace Ryujinx.Graphics.Vulkan
         /// <returns>The reserved range of the staging buffer</returns>
         public unsafe StagingBufferReserved? TryReserveData(CommandBufferScoped cbs, int size, int alignment)
         {
-            if (size > BufferSize)
+            lock (_sync)
+            {
+                return TryReserveDataCore(cbs, size, alignment);
+            }
+        }
+
+        private unsafe StagingBufferReserved? TryReserveDataCore(CommandBufferScoped cbs, int size, int alignment)
+        {
+            if (size <= 0 || alignment <= 0 || size > BufferSize)
             {
                 return null;
             }
@@ -265,6 +290,14 @@ namespace Ryujinx.Graphics.Vulkan
 
         public void FreeCompleted()
         {
+            lock (_sync)
+            {
+                FreeCompletedCore();
+            }
+        }
+
+        private void FreeCompletedCore()
+        {
             FenceHolder signalledFence = null;
             while (_pendingCopies.TryPeek(out PendingCopy pc) && pc.Fence != null && (pc.Fence == signalledFence || pc.Fence.IsSignaledLazy()))
             {
@@ -280,11 +313,14 @@ namespace Ryujinx.Graphics.Vulkan
         {
             if (disposing)
             {
-                _gd.BufferManager.Delete(Handle);
-
-                while (_pendingCopies.TryDequeue(out PendingCopy pc))
+                lock (_sync)
                 {
-                    pc.Fence.Put();
+                    _gd.BufferManager.Delete(Handle);
+
+                    while (_pendingCopies.TryDequeue(out PendingCopy pc))
+                    {
+                        pc.Fence.Put();
+                    }
                 }
             }
         }
