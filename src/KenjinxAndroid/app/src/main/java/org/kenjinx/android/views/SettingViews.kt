@@ -1438,6 +1438,28 @@ class SettingViews {
                                                 qsRelaxedDma.save()
                                             }
                                         )
+                                        HighContrastToggle(
+                                            title = "Rejeitar descritores nÃ£o mapeados",
+                                            description = "Descritores de textura com endereÃ§o nÃ£o mapeado sÃ£o descartados antes de ler o formato. Desligado por padrÃ£o global. Pode ser ajustado por jogo. (Requer reiniciar o jogo)",
+                                            checked = enableRejectUnmappedDescriptors.value,
+                                            onCheckedChange = {
+                                                enableRejectUnmappedDescriptors.value = it
+                                                val qsUp = QuickSettings(mainViewModel.activity)
+                                                qsUp.enableRejectUnmappedDescriptors = it
+                                                qsUp.save()
+                                            }
+                                        )
+                                        HighContrastToggle(
+                                            title = "Upload assÃ­ncrono de texturas 3D (estilo Eden)",
+                                            description = "Texturas 3D grandes (4 MB ou mais) sÃ£o convertidas em segundo plano e enviadas Ã  GPU num frame seguinte. Ativado por padrÃ£o global. Pode ser ajustado por jogo. (Requer reiniciar o jogo)",
+                                            checked = enableAsyncLarge3DUpload.value,
+                                            onCheckedChange = {
+                                                enableAsyncLarge3DUpload.value = it
+                                                val qsUp = QuickSettings(mainViewModel.activity)
+                                                qsUp.enableAsyncLarge3DUpload = it
+                                                qsUp.save()
+                                            }
+                                        )
 
                                         SectionTitle("Sincronização estrita da GPU")
 

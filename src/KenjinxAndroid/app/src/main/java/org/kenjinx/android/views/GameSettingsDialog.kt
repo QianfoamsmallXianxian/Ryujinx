@@ -282,6 +282,30 @@ fun GameSettingsDialog(
                             enabled = custom,
                             onSelected = { relaxedDmaCopyMode = it }
                         )
+                        Text("Rejeitar descritores nÃ£o mapeados", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        val rejectUnmappedOptions = listOf(
+                            0 to "Usar global",
+                            1 to "Ativado",
+                            2 to "Desativado"
+                        )
+                        GameSettingSelect(
+                            selectedLabel = rejectUnmappedOptions.firstOrNull { it.first == rejectUnmappedDescriptorsMode }?.second ?: "Usar global",
+                            options = rejectUnmappedOptions,
+                            enabled = custom,
+                            onSelected = { rejectUnmappedDescriptorsMode = it }
+                        )
+                        Text("Upload assÃ­ncrono de texturas 3D (Eden)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        val async3DOptions = listOf(
+                            0 to "Usar global",
+                            1 to "Ativado",
+                            2 to "Desativado"
+                        )
+                        GameSettingSelect(
+                            selectedLabel = async3DOptions.firstOrNull { it.first == asyncLarge3DUploadMode }?.second ?: "Usar global",
+                            options = async3DOptions,
+                            enabled = custom,
+                            onSelected = { asyncLarge3DUploadMode = it }
+                        )
                         Text("Sincronização estrita da GPU", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         val strictSyncOptions = listOf(
                             0 to "Usar global",

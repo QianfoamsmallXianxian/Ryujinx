@@ -121,16 +121,59 @@ namespace Ryujinx.Graphics.Gpu.Image
             public readonly ITexture Target;
             public readonly string Detail;
             public readonly long StartTicks;
-            public MemoryOwner<byte> Result;
-            public long ConvertTicks;
+            private MemoryOwner<byte> _result;
+            private bool _resultTaken;
+            private bool _disposed;
             public int Done;
 
             public Eden3DPendingUpload(int generation, ITexture target, string detail = null)
             {
                 Generation = generation;
                 Target = target;
-                Detail = detail;
+                Detail = detail ?? string.Empty;
                 StartTicks = System.Diagnostics.Stopwatch.GetTimestamp();
+            }
+
+            public void SetResult(MemoryOwner<byte> result)
+            {
+                lock (this)
+                {
+                    _result = result;
+                }
+            }
+
+            public MemoryOwner<byte> TryTakeResult()
+            {
+                lock (this)
+                {
+                    if (_resultTaken || _disposed)
+                    {
+                        return null;
+                    }
+
+                    _resultTaken = true;
+                    MemoryOwner<byte> res = _result;
+                    _result = null;
+                    return res;
+                }
+            }
+
+            public void DisposeResult()
+            {
+                MemoryOwner<byte> toDispose = null;
+                lock (this)
+                {
+                    if (!_disposed)
+                    {
+                        _disposed = true;
+                        if (!_resultTaken)
+                        {
+                            toDispose = _result;
+                            _result = null;
+                        }
+                    }
+                }
+                toDispose?.Dispose();
             }
         }
         public int FirstLayer { get; private set; }
@@ -733,6 +776,8 @@ namespace Ryujinx.Graphics.Gpu.Image
         {
             BlacklistScale();
 
+            InvalidateEden3DUpload();
+
             Group.CheckDirty(this, true);
 
             AlwaysFlushOnOverlap = true;
@@ -752,6 +797,8 @@ namespace Ryujinx.Graphics.Gpu.Image
         {
             BlacklistScale();
 
+            InvalidateEden3DUpload();
+
             HostTexture.SetData(data, layer, level);
 
             _currentData = null;
@@ -769,6 +816,8 @@ namespace Ryujinx.Graphics.Gpu.Image
         public void SetData(MemoryOwner<byte> data, int layer, int level, Rectangle<int> region)
         {
             BlacklistScale();
+
+            InvalidateEden3DUpload();
 
             HostTexture.SetData(data, layer, level, region);
 
@@ -1496,6 +1545,8 @@ namespace Ryujinx.Graphics.Gpu.Image
         {
             _scaledSetScore = Math.Max(0, _scaledSetScore - 1);
 
+            InvalidateEden3DUpload();
+
             if (_modifiedStale || Group.HasCopyDependencies)
             {
                 _modifiedStale = false;
@@ -1516,6 +1567,8 @@ namespace Ryujinx.Graphics.Gpu.Image
             {
                 _scaledSetScore = Math.Max(0, _scaledSetScore - 1);
             }
+
+            InvalidateEden3DUpload();
 
             if (_modifiedStale || Group.HasCopyDependencies || Group.HasFlushBuffer)
             {
@@ -1766,6 +1819,8 @@ namespace Ryujinx.Graphics.Gpu.Image
         {
             InvalidatedSequence++;
 
+            InvalidateEden3DUpload();
+
             _currentData = null;
             HostTexture.Release();
 
@@ -1844,12 +1899,12 @@ namespace Ryujinx.Graphics.Gpu.Image
                     copy.Dispose();
                 }
 
-                pending.Result = result;
+                pending.SetResult(result);
                 System.Threading.Volatile.Write(ref pending.Done, 1);
 
                 if (!ReferenceEquals(System.Threading.Volatile.Read(ref _eden3dPending), pending))
                 {
-                    result?.Dispose();
+                    pending.DisposeResult();
                 }
                 else
                 {
@@ -1874,14 +1929,14 @@ namespace Ryujinx.Graphics.Gpu.Image
                 return;
             }
 
-            MemoryOwner<byte> result = pending.Result;
-            pending.Result = null;
+            MemoryOwner<byte> result = pending.TryTakeResult();
 
             if (result == null ||
                 pending.Generation != System.Threading.Volatile.Read(ref _eden3dGeneration) ||
                 !ReferenceEquals(pending.Target, HostTexture))
             {
                 result?.Dispose();
+                pending.DisposeResult();
                 ResyncAfterEden3DUpload();
                 return;
             }
@@ -1892,6 +1947,7 @@ namespace Ryujinx.Graphics.Gpu.Image
             }
             finally
             {
+                result.Dispose();
             }
 
             ResyncAfterEden3DUpload();
@@ -1922,9 +1978,11 @@ namespace Ryujinx.Graphics.Gpu.Image
 
         private void InvalidateEden3DUpload()
         {
-            if (System.Threading.Volatile.Read(ref _eden3dPending) != null)
+            Eden3DPendingUpload pending = System.Threading.Interlocked.Exchange(ref _eden3dPending, null);
+            if (pending != null)
             {
                 System.Threading.Interlocked.Increment(ref _eden3dGeneration);
+                pending.DisposeResult();
             }
         }
     }
