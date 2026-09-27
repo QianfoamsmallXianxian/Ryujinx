@@ -77,9 +77,9 @@ fun GameSettingsDialog(
     var nceTrackingProtectionMode by remember(titleId) { mutableStateOf(store.nceTrackingProtectionMode) }
     var drawFlushMode by remember(titleId) { mutableStateOf(store.drawFlushMode) }
     var bufferReadbackMode by remember(titleId) { mutableStateOf(store.bufferReadbackMode) }
-          var relaxedDmaCopyMode by remember(titleId) { mutableStateOf(store.relaxedDmaCopyMode) }
-      var rejectUnmappedDescriptorsMode by remember(titleId) { mutableStateOf(store.rejectUnmappedDescriptorsMode) }
-      var asyncLarge3DUploadMode by remember(titleId) { mutableStateOf(store.asyncLarge3DUploadMode) }
+    var relaxedDmaCopyMode by remember(titleId) { mutableStateOf(store.relaxedDmaCopyMode) }
+    var rejectUnmappedDescriptorsMode by remember(titleId) { mutableStateOf(store.rejectUnmappedDescriptorsMode) }
+    var asyncLarge3DUploadMode by remember(titleId) { mutableStateOf(store.asyncLarge3DUploadMode) }
     var strictSyncMode by remember(titleId) { mutableStateOf(store.strictSyncMode) }
     val driverViewModel = remember(titleId) { VulkanDriverViewModel(activity) }
     val availableDrivers = remember(titleId) { driverViewModel.getAvailableDrivers().toList() }
@@ -92,9 +92,9 @@ fun GameSettingsDialog(
             store.nceTrackingProtectionMode = nceTrackingProtectionMode
             store.drawFlushMode = drawFlushMode
             store.bufferReadbackMode = bufferReadbackMode
-                          store.relaxedDmaCopyMode = relaxedDmaCopyMode
-              store.rejectUnmappedDescriptorsMode = rejectUnmappedDescriptorsMode
-              store.asyncLarge3DUploadMode = asyncLarge3DUploadMode
+            store.relaxedDmaCopyMode = relaxedDmaCopyMode
+            store.rejectUnmappedDescriptorsMode = rejectUnmappedDescriptorsMode
+            store.asyncLarge3DUploadMode = asyncLarge3DUploadMode
             store.strictSyncMode = strictSyncMode
             store.save(
                 initial.apply {
@@ -282,7 +282,7 @@ fun GameSettingsDialog(
                             enabled = custom,
                             onSelected = { relaxedDmaCopyMode = it }
                         )
-                        Text("Rejeitar descritores nÃ£o mapeados", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Rejeitar descritores não mapeados", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         val rejectUnmappedOptions = listOf(
                             0 to "Usar global",
                             1 to "Ativado",
@@ -294,7 +294,7 @@ fun GameSettingsDialog(
                             enabled = custom,
                             onSelected = { rejectUnmappedDescriptorsMode = it }
                         )
-                        Text("Upload assÃ­ncrono de texturas 3D (Eden)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Upload assíncrono de texturas 3D (Eden)", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         val async3DOptions = listOf(
                             0 to "Usar global",
                             1 to "Ativado",
@@ -368,9 +368,9 @@ fun GameSettingsDialog(
                         nceTrackingProtectionMode = 0
                         drawFlushMode = 0
                         bufferReadbackMode = 0
-                                                  relaxedDmaCopyMode = 0
-                          rejectUnmappedDescriptorsMode = 0
-                          asyncLarge3DUploadMode = 0
+                        relaxedDmaCopyMode = 0
+                        rejectUnmappedDescriptorsMode = 0
+                        asyncLarge3DUploadMode = 0
                         strictSyncMode = 0
                         driverOverride = ""
                     }) {

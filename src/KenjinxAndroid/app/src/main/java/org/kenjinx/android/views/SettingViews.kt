@@ -370,7 +370,7 @@ class SettingViews {
             val enableTextureRecompression = remember { mutableStateOf(false) }
             val enableVtgViaCompute = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableVtgViaCompute) }
             val enableNceTrackingProtection = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableNceTrackingProtection) }
-                        val enableRelaxedDmaCopy = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableRelaxedDmaCopy) }
+            val enableRelaxedDmaCopy = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableRelaxedDmaCopy) }
             val enableRejectUnmappedDescriptors = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableRejectUnmappedDescriptors) }
             val enableAsyncLarge3DUpload = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableAsyncLarge3DUpload) }
 
@@ -683,7 +683,7 @@ class SettingViews {
                 qs.orientationPreference = orientationPref.value
                 qs.enableVtgViaCompute = enableVtgViaCompute.value
                 qs.enableNceTrackingProtection = enableNceTrackingProtection.value
-                                qs.enableRelaxedDmaCopy = enableRelaxedDmaCopy.value
+                qs.enableRelaxedDmaCopy = enableRelaxedDmaCopy.value
                 qs.enableRejectUnmappedDescriptors = enableRejectUnmappedDescriptors.value
                 qs.enableAsyncLarge3DUpload = enableAsyncLarge3DUpload.value
                 qs.drawFlushMode = drawFlushMode.value
@@ -1439,8 +1439,8 @@ class SettingViews {
                                             }
                                         )
                                         HighContrastToggle(
-                                            title = "Rejeitar descritores nÃ£o mapeados",
-                                            description = "Descritores de textura com endereÃ§o nÃ£o mapeado sÃ£o descartados antes de ler o formato. Desligado por padrÃ£o global. Pode ser ajustado por jogo. (Requer reiniciar o jogo)",
+                                            title = "Rejeitar descritores não mapeados",
+                                            description = "Descritores de textura com endereço não mapeado são descartados antes de ler o formato. Desligado por padrão global. Pode ser ajustado por jogo. (Requer reiniciar o jogo)",
                                             checked = enableRejectUnmappedDescriptors.value,
                                             onCheckedChange = {
                                                 enableRejectUnmappedDescriptors.value = it
@@ -1450,8 +1450,8 @@ class SettingViews {
                                             }
                                         )
                                         HighContrastToggle(
-                                            title = "Upload assÃ­ncrono de texturas 3D (estilo Eden)",
-                                            description = "Texturas 3D grandes (4 MB ou mais) sÃ£o convertidas em segundo plano e enviadas Ã  GPU num frame seguinte. Ativado por padrÃ£o global. Pode ser ajustado por jogo. (Requer reiniciar o jogo)",
+                                            title = "Upload assíncrono de texturas 3D (estilo Eden)",
+                                            description = "Texturas 3D grandes (4 MB ou mais) são convertidas em segundo plano e enviadas à GPU num frame seguinte. Ativado por padrão global. Pode ser ajustado por jogo. (Requer reiniciar o jogo)",
                                             checked = enableAsyncLarge3DUpload.value,
                                             onCheckedChange = {
                                                 enableAsyncLarge3DUpload.value = it

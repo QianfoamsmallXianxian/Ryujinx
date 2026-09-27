@@ -136,9 +136,19 @@ namespace Ryujinx.Graphics.Gpu.Image
 
             public void SetResult(MemoryOwner<byte> result)
             {
+                bool disposeResult;
                 lock (this)
                 {
-                    _result = result;
+                    disposeResult = _disposed;
+                    if (!disposeResult)
+                    {
+                        _result = result;
+                    }
+                }
+
+                if (disposeResult)
+                {
+                    result?.Dispose();
                 }
             }
 
@@ -1877,7 +1887,8 @@ namespace Ryujinx.Graphics.Gpu.Image
             int generation = System.Threading.Interlocked.Increment(ref _eden3dGeneration);
             Eden3DPendingUpload pending = new(generation, HostTexture);
 
-            System.Threading.Volatile.Write(ref _eden3dPending, pending);
+            Eden3DPendingUpload previous = System.Threading.Interlocked.Exchange(ref _eden3dPending, pending);
+            previous?.DisposeResult();
 
             _currentData = null;
             _hasData = true;
@@ -1941,14 +1952,9 @@ namespace Ryujinx.Graphics.Gpu.Image
                 return;
             }
 
-            try
-            {
-                HostTexture.SetData(result);
-            }
-            finally
-            {
-                result.Dispose();
-            }
+            // SetData can queue the upload on the threaded renderer. The queued command
+            // owns the buffer and disposes it after the backend has consumed its data.
+            HostTexture.SetData(result);
 
             ResyncAfterEden3DUpload();
         }

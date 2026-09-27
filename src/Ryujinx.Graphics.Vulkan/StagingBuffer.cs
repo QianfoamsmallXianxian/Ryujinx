@@ -83,8 +83,13 @@ namespace Ryujinx.Graphics.Vulkan
                     FreeCompleted();
                 }
 
-                while (_freeSize == 0)
+                while (_freeSize <= 0)
                 {
+                    if (_freeSize < 0)
+                    {
+                        throw new InvalidOperationException($"Staging buffer accounting invalid: freeSize={_freeSize}, freeOffset={_freeOffset}, pending={_pendingCopies.Count}.");
+                    }
+
                     if (!WaitFreeCompleted(cbp))
                     {
                         if (isRender)
@@ -232,7 +237,7 @@ namespace Ryujinx.Graphics.Vulkan
 
         private unsafe StagingBufferReserved? TryReserveDataCore(CommandBufferScoped cbs, int size, int alignment)
         {
-            if (size <= 0 || alignment <= 0 || size > BufferSize)
+            if (size <= 0 || size > BufferSize || alignment <= 0 || (alignment & (alignment - 1)) != 0)
             {
                 return null;
             }
