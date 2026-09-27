@@ -115,7 +115,7 @@ namespace Ryujinx.Graphics.Vulkan
         internal bool IsTurnip { get; private set; }
 
         // NEOV2 CONDRENDER1: Eden skips waiting for conditional rendering values on these drivers.
-        public bool PreferUnconditionalRenderingOverReadback => IsTurnip || IsQualcommProprietary;
+        public bool PreferUnconditionalRenderingOverReadback => (IsTurnip || IsQualcommProprietary) && NeoGraphicsSettings.ConditionalRenderNoWaitEnabled;
         internal bool IsMoltenVk { get; private set; }
         internal bool IsTBDR { get; private set; }
         internal bool IsSharedMemory { get; private set; }
@@ -466,7 +466,8 @@ namespace Ryujinx.Graphics.Vulkan
 
             bool texelBufferSingleTexelAlignment = supportsTexelBufferAlignment &&
                 propertiesTexelBufferAlignment.UniformTexelBufferOffsetSingleTexelAlignment &&
-                propertiesTexelBufferAlignment.StorageTexelBufferOffsetSingleTexelAlignment;
+                propertiesTexelBufferAlignment.StorageTexelBufferOffsetSingleTexelAlignment &&
+                NeoGraphicsSettings.TexelBufferExactOffsetEnabled;
 
             ulong minTexelBufferViewOffsetAlignment = texelBufferSingleTexelAlignment
                 ? 1UL
@@ -528,7 +529,7 @@ namespace Ryujinx.Graphics.Vulkan
             // NEOV2 TURNIP-FENCE1: no Turnip (kgsl) a timeline e emulada pelo Mesa. Cada consulta ou espera
             // faz uma chamada ao kernel segurando uma trava unica da timeline, que serializa backend, submit
             // e GPU thread. O Eden desliga timeline no Turnip (Device::HasTimelineSemaphore) e usa VkFence.
-            bool useTimelineSemaphore = SupportsTimelineSemaphore && !IsTurnip;
+            bool useTimelineSemaphore = SupportsTimelineSemaphore && !(IsTurnip && NeoGraphicsSettings.TurnipFenceEnabled);
 
             QueueSubmissionWorker = new VulkanSubmissionWorker(Api, _device, Queue, QueueLock, _submissionGraphGate, useTimelineSemaphore, "Kenji Vulkan Main Submit");
             BackgroundQueueSubmissionWorker = BackgroundQueue.Handle != 0

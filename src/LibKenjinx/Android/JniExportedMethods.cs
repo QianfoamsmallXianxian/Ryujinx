@@ -1080,6 +1080,55 @@ namespace LibKenjinx
         {
             Ryujinx.Graphics.Gpu.GraphicsConfig.AsyncLarge3DTextureUpload = enable;
         }
+
+        // Opcao por jogo "Otimizacoes de GPU" (o app envia o mesmo valor para todas, menos TEXBUF-ALIGN1, sempre ligado).
+        [UnmanagedCallersOnly(EntryPoint = "deviceSetTurnipFence")]
+        public static void JniDeviceSetTurnipFence(bool enable)
+        {
+            Ryujinx.Common.Diagnostics.NeoGraphicsSettings.TurnipFenceEnabled = enable;
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "deviceSetConditionalRenderNoWait")]
+        public static void JniDeviceSetConditionalRenderNoWait(bool enable)
+        {
+            Ryujinx.Common.Diagnostics.NeoGraphicsSettings.ConditionalRenderNoWaitEnabled = enable;
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "deviceSetCommandFetchNoFlush")]
+        public static void JniDeviceSetCommandFetchNoFlush(bool enable)
+        {
+            Ryujinx.Common.Diagnostics.NeoGraphicsSettings.CommandFetchWithoutFlushEnabled = enable;
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "deviceSetTexelBufferExactOffset")]
+        public static void JniDeviceSetTexelBufferExactOffset(bool enable)
+        {
+            Ryujinx.Common.Diagnostics.NeoGraphicsSettings.TexelBufferExactOffsetEnabled = enable;
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "deviceSetQueueHysteresis")]
+        public static void JniDeviceSetQueueHysteresis(bool enable)
+        {
+            Ryujinx.Common.Diagnostics.NeoGraphicsSettings.QueueHysteresisEnabled = enable;
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "deviceSetTimelineLazy")]
+        public static void JniDeviceSetTimelineLazy(bool enable)
+        {
+            Ryujinx.Common.Diagnostics.NeoGraphicsSettings.TimelineLazyEnabled = enable;
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "deviceSetStagingBufferLock")]
+        public static void JniDeviceSetStagingBufferLock(bool enable)
+        {
+            Ryujinx.Common.Diagnostics.NeoGraphicsSettings.StagingBufferLockEnabled = enable;
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "deviceSetTexturePoolKeepInvalid")]
+        public static void JniDeviceSetTexturePoolKeepInvalid(bool enable)
+        {
+            Ryujinx.Common.Diagnostics.NeoGraphicsSettings.TexturePoolKeepInvalidEnabled = enable;
+        }
 #endif
 
         // Used by MainActivity/GameHost

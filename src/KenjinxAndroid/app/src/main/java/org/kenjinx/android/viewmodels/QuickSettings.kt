@@ -75,6 +75,9 @@ class QuickSettings(val activity: Activity) {
     var enableRejectUnmappedDescriptors: Boolean
     var enableAsyncLarge3DUpload: Boolean
 
+    // Opcao "Otimizacoes de GPU" (padrao ligado; alterada so pela configuracao por jogo).
+    var enableGpuOptimizations: Boolean
+
     // NEOV2 AUTOFLUSH1: 0 = Padrao, 1 = Reduzido, 2 = Desativado.
     var drawFlushMode: Int
 
@@ -190,6 +193,7 @@ class QuickSettings(val activity: Activity) {
 
         enableRejectUnmappedDescriptors = sharedPref.getBoolean("enableRejectUnmappedDescriptors", false)
         enableAsyncLarge3DUpload = sharedPref.getBoolean("enableAsyncLarge3DUpload", true)
+        enableGpuOptimizations = sharedPref.getBoolean("enableGpuOptimizations", true)
 
         if (!sharedPref.getBoolean("neoLogsDefaultOffV1", false)) {
             sharedPref.edit {
@@ -262,6 +266,7 @@ class QuickSettings(val activity: Activity) {
             putBoolean("enableRelaxedDmaCopy", enableRelaxedDmaCopy)
             putBoolean("enableRejectUnmappedDescriptors", enableRejectUnmappedDescriptors)
             putBoolean("enableAsyncLarge3DUpload", enableAsyncLarge3DUpload)
+            putBoolean("enableGpuOptimizations", enableGpuOptimizations)
             putInt("drawFlushMode", drawFlushMode)
             putInt("bufferReadbackMode", bufferReadbackMode)
             putInt("strictSyncMode", strictSyncMode)

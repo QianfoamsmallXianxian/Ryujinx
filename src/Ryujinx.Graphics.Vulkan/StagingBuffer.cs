@@ -29,6 +29,20 @@ namespace Ryujinx.Graphics.Vulkan
                 private int _freeSize;
         private readonly object _sync = new();
 
+        // Opcao "Otimizacoes de GPU": desligada, o StagingBuffer volta a rodar sem a trava.
+        private readonly bool _useLock = Ryujinx.Common.Diagnostics.NeoGraphicsSettings.StagingBufferLockEnabled;
+
+        private bool EnterSync()
+        {
+            if (!_useLock)
+            {
+                return false;
+            }
+
+            System.Threading.Monitor.Enter(_sync);
+            return true;
+        }
+
         private readonly VulkanRenderer _gd;
         private readonly BufferHolder _buffer;
         private readonly int _resourceAlignment;
@@ -61,9 +75,17 @@ namespace Ryujinx.Graphics.Vulkan
 
         public void PushData(CommandBufferPool cbp, CommandBufferScoped? cbs, Action endRenderPass, BufferHolder dst, int dstOffset, ReadOnlySpan<byte> data)
         {
-            lock (_sync)
+            bool locked = EnterSync();
+            try
             {
                 PushDataCore(cbp, cbs, endRenderPass, dst, dstOffset, data);
+            }
+            finally
+            {
+                if (locked)
+                {
+                    System.Threading.Monitor.Exit(_sync);
+                }
             }
         }
 
@@ -150,9 +172,17 @@ namespace Ryujinx.Graphics.Vulkan
 
         public bool TryPushData(CommandBufferScoped cbs, Action endRenderPass, BufferHolder dst, int dstOffset, ReadOnlySpan<byte> data)
         {
-            lock (_sync)
+            bool locked = EnterSync();
+            try
             {
                 return TryPushDataCore(cbs, endRenderPass, dst, dstOffset, data);
+            }
+            finally
+            {
+                if (locked)
+                {
+                    System.Threading.Monitor.Exit(_sync);
+                }
             }
         }
 
@@ -229,9 +259,17 @@ namespace Ryujinx.Graphics.Vulkan
         /// <returns>The reserved range of the staging buffer</returns>
         public unsafe StagingBufferReserved? TryReserveData(CommandBufferScoped cbs, int size, int alignment)
         {
-            lock (_sync)
+            bool locked = EnterSync();
+            try
             {
                 return TryReserveDataCore(cbs, size, alignment);
+            }
+            finally
+            {
+                if (locked)
+                {
+                    System.Threading.Monitor.Exit(_sync);
+                }
             }
         }
 
@@ -295,9 +333,17 @@ namespace Ryujinx.Graphics.Vulkan
 
         public void FreeCompleted()
         {
-            lock (_sync)
+            bool locked = EnterSync();
+            try
             {
                 FreeCompletedCore();
+            }
+            finally
+            {
+                if (locked)
+                {
+                    System.Threading.Monitor.Exit(_sync);
+                }
             }
         }
 

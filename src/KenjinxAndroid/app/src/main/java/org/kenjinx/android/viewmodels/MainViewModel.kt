@@ -251,6 +251,39 @@ class MainViewModel(val activity: MainActivity) {
             KenjinxNative.deviceSetAsyncLarge3DTextureUpload(settings.enableAsyncLarge3DUpload)
         } catch (_: Throwable) {
         }
+        // Opcao "Otimizacoes de GPU", antes de criar o renderer. TEXBUF-ALIGN1 e correcao e fica sempre ligado.
+        try {
+            KenjinxNative.deviceSetTurnipFence(settings.enableGpuOptimizations)
+        } catch (_: Throwable) {
+        }
+        try {
+            KenjinxNative.deviceSetConditionalRenderNoWait(settings.enableGpuOptimizations)
+        } catch (_: Throwable) {
+        }
+        try {
+            KenjinxNative.deviceSetCommandFetchNoFlush(settings.enableGpuOptimizations)
+        } catch (_: Throwable) {
+        }
+        try {
+            KenjinxNative.deviceSetTexelBufferExactOffset(true)
+        } catch (_: Throwable) {
+        }
+        try {
+            KenjinxNative.deviceSetQueueHysteresis(settings.enableGpuOptimizations)
+        } catch (_: Throwable) {
+        }
+        try {
+            KenjinxNative.deviceSetTimelineLazy(settings.enableGpuOptimizations)
+        } catch (_: Throwable) {
+        }
+        try {
+            KenjinxNative.deviceSetStagingBufferLock(settings.enableGpuOptimizations)
+        } catch (_: Throwable) {
+        }
+        try {
+            KenjinxNative.deviceSetTexturePoolKeepInvalid(settings.enableGpuOptimizations)
+        } catch (_: Throwable) {
+        }
 
         var success = KenjinxNative.graphicsInitialize(
             enableMacroHLE = settings.enableMacroHLE,
@@ -379,6 +412,39 @@ class MainViewModel(val activity: MainActivity) {
         }
         try {
             KenjinxNative.deviceSetAsyncLarge3DTextureUpload(settings.enableAsyncLarge3DUpload)
+        } catch (_: Throwable) {
+        }
+        // Opcao "Otimizacoes de GPU", antes de criar o renderer. TEXBUF-ALIGN1 e correcao e fica sempre ligado.
+        try {
+            KenjinxNative.deviceSetTurnipFence(settings.enableGpuOptimizations)
+        } catch (_: Throwable) {
+        }
+        try {
+            KenjinxNative.deviceSetConditionalRenderNoWait(settings.enableGpuOptimizations)
+        } catch (_: Throwable) {
+        }
+        try {
+            KenjinxNative.deviceSetCommandFetchNoFlush(settings.enableGpuOptimizations)
+        } catch (_: Throwable) {
+        }
+        try {
+            KenjinxNative.deviceSetTexelBufferExactOffset(true)
+        } catch (_: Throwable) {
+        }
+        try {
+            KenjinxNative.deviceSetQueueHysteresis(settings.enableGpuOptimizations)
+        } catch (_: Throwable) {
+        }
+        try {
+            KenjinxNative.deviceSetTimelineLazy(settings.enableGpuOptimizations)
+        } catch (_: Throwable) {
+        }
+        try {
+            KenjinxNative.deviceSetStagingBufferLock(settings.enableGpuOptimizations)
+        } catch (_: Throwable) {
+        }
+        try {
+            KenjinxNative.deviceSetTexturePoolKeepInvalid(settings.enableGpuOptimizations)
         } catch (_: Throwable) {
         }
 

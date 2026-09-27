@@ -247,7 +247,7 @@ namespace Ryujinx.Graphics.Vulkan
             // trava o QueueSubmit2 da thread de submit. Esta consulta e so oportunista (liberar command
             // buffers), entao usa apenas a conclusao ja conhecida, sem chamar o driver. As esperas reais
             // continuam atualizando esse valor. Mesmo principio do Eden (MasterSemaphore::IsFree).
-            if (_alwaysWaits && _usesTimeline)
+            if (_alwaysWaits && _usesTimeline && Ryujinx.Common.Diagnostics.NeoGraphicsSettings.TimelineLazyEnabled)
             {
                 ulong value = TimelineValue;
 

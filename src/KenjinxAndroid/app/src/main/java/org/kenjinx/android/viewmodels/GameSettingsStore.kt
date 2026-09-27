@@ -63,6 +63,13 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             if (isValid) preferences.edit { putInt(key("asyncLarge3DUploadMode"), value) }
         }
 
+    /** Otimizacoes de GPU: 0: Use Global, 1: Enabled, 2: Disabled */
+    var gpuOptimizationsMode: Int
+        get() = if (!isValid) 0 else preferences.getInt(key("gpuOptimizationsMode"), 0)
+        set(value) {
+            if (isValid) preferences.edit { putInt(key("gpuOptimizationsMode"), value) }
+        }
+
     /** 0: Use Global, 1: Enabled, 2: Disabled */
     var vtgViaComputeMode: Int
         get() = if (!isValid) 0 else preferences.getInt(key("vtgViaComputeMode"), 0)
@@ -125,6 +132,10 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             1 -> settings.enableAsyncLarge3DUpload = true
             2 -> settings.enableAsyncLarge3DUpload = false
         }
+        when (safeInt(key("gpuOptimizationsMode"), 0)) {
+            1 -> settings.enableGpuOptimizations = true
+            2 -> settings.enableGpuOptimizations = false
+        }
         when (safeInt(key("drawFlushMode"), 0)) {
             1 -> settings.drawFlushMode = 0
             2 -> settings.drawFlushMode = 1
@@ -170,6 +181,7 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             putInt(key("relaxedDmaCopyMode"), relaxedDmaCopyMode)
             putInt(key("rejectUnmappedDescriptorsMode"), rejectUnmappedDescriptorsMode)
             putInt(key("asyncLarge3DUploadMode"), asyncLarge3DUploadMode)
+            putInt(key("gpuOptimizationsMode"), gpuOptimizationsMode)
             putInt(key("drawFlushMode"), drawFlushMode)
             putInt(key("bufferReadbackMode"), bufferReadbackMode)
             putInt(key("strictSyncMode"), strictSyncMode)

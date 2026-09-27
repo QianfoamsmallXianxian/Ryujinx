@@ -72,6 +72,12 @@ namespace Ryujinx.Cpu.Nce
                     codePatch.AddCode(i, WriteMsrTpidrEl0Patch(rd));
                     Logger.Debug?.Print(LogClass.Cpu, $"Patched MSR tpidr_el0, x{rd} at 0x{address:X}.");
                 }
+                else if (((inst >> 23) & 0x7fu) == 0x10u && !IsEdenExclusive(inst))
+                {
+                    // A mascara abaixo tambem pega palavras que nao sao LDXR/STXR/LDXP/STXP (inclusive dados
+                    // dentro do .text). O Eden (instructions.h, Exclusive::Verify) so aceita par (bit 21) ou
+                    // Rt2 = 11111. Essas palavras nao sao alteradas (corrige o boot do Mario + Rabbids Sparks of Hope).
+                }
                 else if (((inst >> 23) & 0x7fu) == 0x10u) // LDXR/STXR/LDXP/STXP family (o2 = 0)
                 {
                     // NEOV2 NCE-EXCL1: the Switch Cortex-A57 behaves as if every exclusive access were ordered,
@@ -92,6 +98,19 @@ namespace Ryujinx.Cpu.Nce
             Logger.Info?.Print(LogClass.Cpu, $"[NEOV2-NCE-EXCL1] {orderedExclusives} exclusive accesses converted to ordered");
 
             return codePatch;
+        }
+
+        /// <summary>
+        /// Mesmo filtro do Eden (src/core/arm/nce/instructions.h, Exclusive::Verify): dentro da familia de
+        /// exclusivas (bits 29..23 = 0x10), so e instrucao valida se for de par (bit 21 = 1) ou se Rt2
+        /// (bits 14..10) for 11111.
+        /// </summary>
+        private static bool IsEdenExclusive(uint inst)
+        {
+            bool pair = ((inst >> 21) & 1u) != 0;
+            bool fixedRt2 = ((inst >> 10) & 0x1fu) == 0x1fu;
+
+            return pair || fixedRt2;
         }
 
         private static uint[] WriteSvcPatch(uint svcId)

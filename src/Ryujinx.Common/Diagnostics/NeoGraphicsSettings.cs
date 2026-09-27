@@ -61,5 +61,32 @@
 
         /// <summary>Per game override as selected by the user, or null when "use global" is selected. Log only.</summary>
         public static StrictSyncMode? StrictSyncGameOverride { get; set; }
+
+        // Opcao por jogo "Otimizacoes de GPU": desligada, estas otimizacoes voltam ao comportamento anterior.
+        // Todas com padrao ligado. Lidas quando o renderer e criado.
+
+        /// <summary>TURNIP-FENCE1: VkFence no lugar da timeline no Turnip.</summary>
+        public static bool TurnipFenceEnabled { get; set; } = true;
+
+        /// <summary>CONDRENDER1: renderizacao condicional sem esperar a leitura na CPU (Turnip/Qualcomm).</summary>
+        public static bool ConditionalRenderNoWaitEnabled { get; set; } = true;
+
+        /// <summary>CMDFETCH1: listas de comando do GPFIFO lidas sem flush.</summary>
+        public static bool CommandFetchWithoutFlushEnabled { get; set; } = true;
+
+        /// <summary>TEXBUF-ALIGN1: offset exato da view de texture buffer no Turnip (correcao; o app mantem sempre ligado).</summary>
+        public static bool TexelBufferExactOffsetEnabled { get; set; } = true;
+
+        /// <summary>QUEUE-HYST1: histerese na fila do ThreadedRenderer.</summary>
+        public static bool QueueHysteresisEnabled { get; set; } = true;
+
+        /// <summary>TIMELINE-LAZY1: consulta oportunista de fence so pelo valor ja conhecido.</summary>
+        public static bool TimelineLazyEnabled { get; set; } = true;
+
+        /// <summary>Trava do StagingBuffer.</summary>
+        public static bool StagingBufferLockEnabled { get; set; } = true;
+
+        /// <summary>TexturePool mantem invalido o slot com endereco 0 ao ser modificado.</summary>
+        public static bool TexturePoolKeepInvalidEnabled { get; set; } = true;
     }
 }

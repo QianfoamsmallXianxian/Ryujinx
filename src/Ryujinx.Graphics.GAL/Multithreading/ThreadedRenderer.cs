@@ -50,6 +50,9 @@ namespace Ryujinx.Graphics.GAL.Multithreading
         // Mesmo principio do Eden (Scheduler::DispatchWork), que acorda o worker uma vez por bloco.
         private const int QueueResumeFreeSlots = QueueCount / 4;
 
+        // Opcao "Otimizacoes de GPU": desligada, a fila volta ao comportamento anterior ao QUEUE-HYST1.
+        private readonly bool _queueHysteresis = Ryujinx.Common.Diagnostics.NeoGraphicsSettings.QueueHysteresisEnabled;
+
         private bool _lastSampleCounterClear = true;
 
         private readonly byte[] _commandQueue;
@@ -173,11 +176,19 @@ namespace Ryujinx.Graphics.GAL.Multithreading
                     // fica visivel antes da leitura de _producerWaiting.
                     Interlocked.Decrement(ref _commandCount);
 
-                    // NEOV2 QUEUE-HYST1: sinaliza so quando ha espaco suficiente, e uma vez por espera.
-                    if (Volatile.Read(ref _producerWaiting) != 0 &&
-                        QueueCount - 1 - Volatile.Read(ref _commandCount) >= QueueResumeFreeSlots &&
-                        Interlocked.Exchange(ref _producerWaiting, 0) != 0)
+                    if (_queueHysteresis)
                     {
+                        // NEOV2 QUEUE-HYST1: sinaliza so quando ha espaco suficiente, e uma vez por espera.
+                        if (Volatile.Read(ref _producerWaiting) != 0 &&
+                            QueueCount - 1 - Volatile.Read(ref _commandCount) >= QueueResumeFreeSlots &&
+                            Interlocked.Exchange(ref _producerWaiting, 0) != 0)
+                        {
+                            _queueSpaceAvailable.Set();
+                        }
+                    }
+                    else if (Volatile.Read(ref _producerWaiting) != 0)
+                    {
+                        // Comportamento anterior ao QUEUE-HYST1: sinaliza a cada comando.
                         _queueSpaceAvailable.Set();
                     }
                 }
@@ -196,7 +207,24 @@ namespace Ryujinx.Graphics.GAL.Multithreading
 
         internal unsafe T* New<T>() where T : unmanaged, IGALCommand
         {
-            if (_producerPtr == (Volatile.Read(ref _consumerPtr) + QueueCount - 1) % QueueCount)
+            if (!_queueHysteresis)
+            {
+                // Comportamento anterior ao QUEUE-HYST1: volta a cada posicao liberada.
+                while (_producerPtr == (Volatile.Read(ref _consumerPtr) + QueueCount - 1) % QueueCount)
+                {
+                    Interlocked.Exchange(ref _producerWaiting, 1);
+
+                    if (_producerPtr != (Volatile.Read(ref _consumerPtr) + QueueCount - 1) % QueueCount)
+                    {
+                        break;
+                    }
+
+                    _queueSpaceAvailable.WaitOne(1);
+                }
+
+                Volatile.Write(ref _producerWaiting, 0);
+            }
+            else if (_producerPtr == (Volatile.Read(ref _consumerPtr) + QueueCount - 1) % QueueCount)
             {
                 // If incrementing the producer pointer would overflow, we need to wait.
                 // _consumerPtr can only move forward, so there's no race to worry about here.

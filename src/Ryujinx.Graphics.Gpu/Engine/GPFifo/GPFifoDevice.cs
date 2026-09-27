@@ -92,7 +92,7 @@ namespace Ryujinx.Graphics.Gpu.Engine.GPFifo
         /// <summary>
         /// NEOV2 CMDFETCH1: GPFIFO command lists are fetched without flushing GPU written data.
         /// </summary>
-        private const bool CommandFetchWithoutFlush = true;
+        private static bool CommandFetchWithoutFlush => NeoGraphicsSettings.CommandFetchWithoutFlushEnabled;
 
         private readonly ConcurrentQueue<CommandBuffer> _commandBufferQueue;
 

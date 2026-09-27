@@ -534,7 +534,7 @@ namespace Ryujinx.Graphics.Gpu.Image
                         RemoveAliasList(texture);
                     }
                 }
-                else if (_invalidMap.IsSet(id))
+                else if (Ryujinx.Common.Diagnostics.NeoGraphicsSettings.TexturePoolKeepInvalidEnabled && _invalidMap.IsSet(id))
                 {
                     ref readonly TextureDescriptor newDescriptor = ref GetDescriptorRefAddress(address);
 

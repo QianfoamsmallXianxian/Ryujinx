@@ -80,6 +80,7 @@ fun GameSettingsDialog(
     var relaxedDmaCopyMode by remember(titleId) { mutableStateOf(store.relaxedDmaCopyMode) }
     var rejectUnmappedDescriptorsMode by remember(titleId) { mutableStateOf(store.rejectUnmappedDescriptorsMode) }
     var asyncLarge3DUploadMode by remember(titleId) { mutableStateOf(store.asyncLarge3DUploadMode) }
+    var gpuOptimizationsMode by remember(titleId) { mutableStateOf(store.gpuOptimizationsMode) }
     var strictSyncMode by remember(titleId) { mutableStateOf(store.strictSyncMode) }
     val driverViewModel = remember(titleId) { VulkanDriverViewModel(activity) }
     val availableDrivers = remember(titleId) { driverViewModel.getAvailableDrivers().toList() }
@@ -95,6 +96,7 @@ fun GameSettingsDialog(
             store.relaxedDmaCopyMode = relaxedDmaCopyMode
             store.rejectUnmappedDescriptorsMode = rejectUnmappedDescriptorsMode
             store.asyncLarge3DUploadMode = asyncLarge3DUploadMode
+            store.gpuOptimizationsMode = gpuOptimizationsMode
             store.strictSyncMode = strictSyncMode
             store.save(
                 initial.apply {
@@ -306,6 +308,18 @@ fun GameSettingsDialog(
                             enabled = custom,
                             onSelected = { asyncLarge3DUploadMode = it }
                         )
+                        Text("Otimizações de GPU", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        val gpuOptimizationsOptions = listOf(
+                            0 to "Usar global",
+                            1 to "Ativado",
+                            2 to "Desativado"
+                        )
+                        GameSettingSelect(
+                            selectedLabel = gpuOptimizationsOptions.firstOrNull { it.first == gpuOptimizationsMode }?.second ?: "Usar global",
+                            options = gpuOptimizationsOptions,
+                            enabled = custom,
+                            onSelected = { gpuOptimizationsMode = it }
+                        )
                         Text("Sincronização estrita da GPU", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         val strictSyncOptions = listOf(
                             0 to "Usar global",
@@ -371,6 +385,7 @@ fun GameSettingsDialog(
                         relaxedDmaCopyMode = 0
                         rejectUnmappedDescriptorsMode = 0
                         asyncLarge3DUploadMode = 0
+                        gpuOptimizationsMode = 0
                         strictSyncMode = 0
                         driverOverride = ""
                     }) {
