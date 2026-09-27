@@ -1075,6 +1075,13 @@ namespace LibKenjinx
             Ryujinx.Graphics.Gpu.GraphicsConfig.RejectUnmappedTextureDescriptors = enable;
         }
 
+        // Chave por jogo "Compatibilidade grafica 2D" (correcoes do MARVEL Cosmic Invasion).
+        [UnmanagedCallersOnly(EntryPoint = "deviceSetExperimentalGameFixes")]
+        public static void JniDeviceSetExperimentalGameFixes(bool enable)
+        {
+            Ryujinx.Common.Diagnostics.NeoGraphicsSettings.ExperimentalGameFixesEnabled = enable;
+        }
+
         [UnmanagedCallersOnly(EntryPoint = "deviceSetAsyncLarge3DTextureUpload")]
         public static void JniDeviceSetAsyncLarge3DTextureUpload(bool enable)
         {

@@ -234,6 +234,11 @@ namespace Ryujinx.Graphics.Gpu.Engine.Twod
             TwodTexture dstCopyTexture = Unsafe.As<uint, TwodTexture>(ref _state.State.SetDstFormat);
             TwodTexture srcCopyTexture = Unsafe.As<uint, TwodTexture>(ref _state.State.SetSrcFormat);
 
+            if (Ryujinx.Common.Diagnostics.NeoGraphicsSettings.ExperimentalGameFixesEnabled && srcCopyTexture.Depth != 1)
+            {
+                srcCopyTexture.Depth = 1;
+            }
+
             long srcX = ((long)_state.State.SetPixelsFromMemorySrcX0Int << 32) | (long)(ulong)_state.State.SetPixelsFromMemorySrcX0Frac;
             long srcY = ((long)_state.State.PixelsFromMemorySrcY0Int << 32) | (long)(ulong)_state.State.SetPixelsFromMemorySrcY0Frac;
 

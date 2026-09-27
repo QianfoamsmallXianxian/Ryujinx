@@ -81,6 +81,7 @@ fun GameSettingsDialog(
     var rejectUnmappedDescriptorsMode by remember(titleId) { mutableStateOf(store.rejectUnmappedDescriptorsMode) }
     var asyncLarge3DUploadMode by remember(titleId) { mutableStateOf(store.asyncLarge3DUploadMode) }
     var gpuOptimizationsMode by remember(titleId) { mutableStateOf(store.gpuOptimizationsMode) }
+    var experimentalGameFixesEnabled by remember(titleId) { mutableStateOf(store.experimentalGameFixesEnabled) }
     var strictSyncMode by remember(titleId) { mutableStateOf(store.strictSyncMode) }
     val driverViewModel = remember(titleId) { VulkanDriverViewModel(activity) }
     val availableDrivers = remember(titleId) { driverViewModel.getAvailableDrivers().toList() }
@@ -97,6 +98,7 @@ fun GameSettingsDialog(
             store.rejectUnmappedDescriptorsMode = rejectUnmappedDescriptorsMode
             store.asyncLarge3DUploadMode = asyncLarge3DUploadMode
             store.gpuOptimizationsMode = gpuOptimizationsMode
+            store.experimentalGameFixesEnabled = experimentalGameFixesEnabled
             store.strictSyncMode = strictSyncMode
             store.save(
                 initial.apply {
@@ -320,6 +322,8 @@ fun GameSettingsDialog(
                             enabled = custom,
                             onSelected = { gpuOptimizationsMode = it }
                         )
+                        ToggleRow("Compatibilidade gráfica 2D", experimentalGameFixesEnabled, custom) { experimentalGameFixesEnabled = it }
+                        Text("Corrige tela preta e escala em jogos 2D.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text("Sincronização estrita da GPU", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         val strictSyncOptions = listOf(
                             0 to "Usar global",
@@ -386,6 +390,7 @@ fun GameSettingsDialog(
                         rejectUnmappedDescriptorsMode = 0
                         asyncLarge3DUploadMode = 0
                         gpuOptimizationsMode = 0
+                        experimentalGameFixesEnabled = false
                         strictSyncMode = 0
                         driverOverride = ""
                     }) {

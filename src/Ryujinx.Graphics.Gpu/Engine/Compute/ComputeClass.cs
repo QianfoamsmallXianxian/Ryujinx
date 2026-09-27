@@ -161,17 +161,7 @@ namespace Ryujinx.Graphics.Gpu.Engine.Compute
 
                 SbDescriptor sbDescriptor = _channel.MemoryManager.Physical.Read<SbDescriptor>(sbDescAddress);
 
-                uint size;
-                if (sb.SbCbSlot == Constants.DriverReservedUniformBuffer)
-                {
-                    // Only trust the SbDescriptor size if it comes from slot 0.
-                    size = (uint)sbDescriptor.Size;
-                }
-                else
-                {
-                    // TODO: Use full mapped size and somehow speed up buffer sync.
-                    size = (uint)_channel.MemoryManager.GetMappedSize(sbDescriptor.PackAddress(), Constants.MaxUnknownStorageSize);
-                }
+                uint size = NeoStorageBufferSize.FromDriverDescriptor(_channel.MemoryManager, sbDescriptor, -1, sb.SbCbSlot);
 
                 _channel.BufferManager.SetComputeStorageBuffer(sb.Slot, sbDescriptor.PackAddress(), size, sb.Flags);
             }

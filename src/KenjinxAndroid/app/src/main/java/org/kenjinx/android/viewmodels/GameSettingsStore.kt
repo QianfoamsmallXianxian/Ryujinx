@@ -63,6 +63,13 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             if (isValid) preferences.edit { putInt(key("asyncLarge3DUploadMode"), value) }
         }
 
+    /** Compatibilidade grafica 2D (correcoes do MARVEL Cosmic Invasion). Desligada por padrao. */
+    var experimentalGameFixesEnabled: Boolean
+        get() = isValid && preferences.getBoolean(key("experimentalGameFixesEnabled"), false)
+        set(value) {
+            if (isValid) preferences.edit { putBoolean(key("experimentalGameFixesEnabled"), value) }
+        }
+
     /** Otimizacoes de GPU: 0: Use Global, 1: Enabled, 2: Disabled */
     var gpuOptimizationsMode: Int
         get() = if (!isValid) 0 else preferences.getInt(key("gpuOptimizationsMode"), 0)
@@ -182,6 +189,7 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             putInt(key("rejectUnmappedDescriptorsMode"), rejectUnmappedDescriptorsMode)
             putInt(key("asyncLarge3DUploadMode"), asyncLarge3DUploadMode)
             putInt(key("gpuOptimizationsMode"), gpuOptimizationsMode)
+            putBoolean(key("experimentalGameFixesEnabled"), experimentalGameFixesEnabled)
             putInt(key("drawFlushMode"), drawFlushMode)
             putInt(key("bufferReadbackMode"), bufferReadbackMode)
             putInt(key("strictSyncMode"), strictSyncMode)

@@ -35,6 +35,16 @@
     /// </summary>
     public static class NeoGraphicsSettings
     {
+        // Chave por jogo "Compatibilidade grafica 2D" (correcoes do MARVEL Cosmic Invasion).
+        // Definida antes de carregar o jogo. Desligada por padrao em todos os jogos.
+        private static bool _experimentalGameFixesEnabled;
+
+        public static bool ExperimentalGameFixesEnabled
+        {
+            get => System.Threading.Volatile.Read(ref _experimentalGameFixesEnabled);
+            set => System.Threading.Volatile.Write(ref _experimentalGameFixesEnabled, value);
+        }
+
         /// <summary>Value the renderer uses.</summary>
         public static DrawFlushMode DrawFlushMode { get; set; } = DrawFlushMode.Default;
 

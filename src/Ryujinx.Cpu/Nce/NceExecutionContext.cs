@@ -20,6 +20,12 @@ namespace Ryujinx.Cpu.Nce
         private readonly MemoryBlock _alternateStackMemory;
         private bool _alternateStackInstalled;
 
+        // NEOV2-COSMIC2: o escalonador (KScheduler.RescheduleOtherCores) pode pedir interrupcao
+        // de uma thread cujo contexto nativo ja foi descartado (ponteiro 0 -> NullReferenceException,
+        // visto no Marvel Cosmic Invasion). Dispose e RequestInterrupt passam a ser serializados.
+        private readonly object _neoDisposeLock = new();
+        private bool _neoDisposed;
+
         public ulong Pc => _context.GetStorage().Pc;
 
         public long TpidrEl0
@@ -232,22 +238,42 @@ namespace Ryujinx.Cpu.Nce
 
         public void RequestInterrupt()
         {
+            if (!Ryujinx.Common.Diagnostics.NeoGraphicsSettings.ExperimentalGameFixesEnabled)
+            {
+                RequestInterruptCore();
+                return;
+            }
+
+            lock (_neoDisposeLock)
+            {
+                if (_neoDisposed)
+                {
+                    // NEOV2-COSMIC2: a thread ja terminou e o contexto foi liberado; nao ha o que interromper.
+                    return;
+                }
+
+                RequestInterruptCore();
+            }
+        }
+
+        private void RequestInterruptCore()
+        {
             nint threadHandle = Volatile.Read(ref _context.GetStorage().HostThreadHandle);
             if (threadHandle != nint.Zero)
-            {
-                // Bit 0 set means that the thread is currently running managed code.
-                // Bit 1 set means that an interrupt was requested for the thread.
-                // This, we only need to send the suspend signal if the value was 0 (not running managed code,
-                // and no interrupt was requested before).
-
-                ref uint inManaged = ref _context.GetStorage().InManaged;
-                uint oldValue = Interlocked.Or(ref inManaged, 2);
-
-                if (oldValue == 0)
                 {
-                    NceThreadPal.SuspendThread(threadHandle);
+                    // Bit 0 set means that the thread is currently running managed code.
+                    // Bit 1 set means that an interrupt was requested for the thread.
+                    // This, we only need to send the suspend signal if the value was 0 (not running managed code,
+                    // and no interrupt was requested before).
+
+                    ref uint inManaged = ref _context.GetStorage().InManaged;
+                    uint oldValue = Interlocked.Or(ref inManaged, 2);
+
+                    if (oldValue == 0)
+                    {
+                        NceThreadPal.SuspendThread(threadHandle);
+                    }
                 }
-            }
         }
 
         public void StopRunning()
@@ -257,6 +283,25 @@ namespace Ryujinx.Cpu.Nce
 
         public void Dispose()
         {
+            if (!Ryujinx.Common.Diagnostics.NeoGraphicsSettings.ExperimentalGameFixesEnabled)
+            {
+                _alternateStackMemory.Dispose();
+                _context.Dispose();
+                return;
+            }
+
+            // NEOV2-COSMIC2: marca como descartado antes de liberar a memoria do contexto,
+            // para que um RequestInterrupt concorrente nao leia o ponteiro liberado.
+            lock (_neoDisposeLock)
+            {
+                if (_neoDisposed)
+                {
+                    return;
+                }
+
+                _neoDisposed = true;
+            }
+
             _alternateStackMemory.Dispose();
             _context.Dispose();
         }

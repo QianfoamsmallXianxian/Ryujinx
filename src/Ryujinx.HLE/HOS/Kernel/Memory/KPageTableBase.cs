@@ -255,6 +255,24 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
                         AslrRegionStart = Math.Max(reservedSize, 0x8000000);
                         addrSpaceEnd = reservedSize + reservedAddressSpaceSize;
                         AslrRegionEnd = addrSpaceEnd;
+
+                        // NEOV2 ALIAS1: the rule above drops the alias region from 64 GiB (console size) to 1/8 of the
+                        // reserved width when the host reserve is below 96 GiB (88 GiB gives an 8 GiB alias). .NET NativeAOT
+                        // games such as MARVEL Cosmic Invasion reserve large ranges there and abort at startup with 8 GiB.
+                        // Keep the console size whenever everything still fits in the reserved address space.
+                        if (Ryujinx.Common.Diagnostics.NeoGraphicsSettings.ExperimentalGameFixesEnabled && aliasRegion.Size < 0x1000000000)
+                        {
+                            ulong codeEnd = CodeRegionStart + codeRegionSize;
+                            ulong spaceBefore = CodeRegionStart > AslrRegionStart ? CodeRegionStart - AslrRegionStart : 0;
+                            ulong spaceAfter = addrSpaceEnd > codeEnd ? addrSpaceEnd - codeEnd : 0;
+                            ulong available = Math.Max(spaceBefore, spaceAfter);
+                            ulong extraSize = flags.HasFlag(ProcessCreationFlags.EnableAliasRegionExtraSize) ? addrSpaceEnd / 8 : 0;
+                            ulong needed = 0x1000000000UL + extraSize + heapRegion.Size + stackRegion.Size + tlsIoRegion.Size;
+                            if (needed <= available)
+                            {
+                                aliasRegion.Size = 0x1000000000;
+                            }
+                        }
                     }
                     else
                     {

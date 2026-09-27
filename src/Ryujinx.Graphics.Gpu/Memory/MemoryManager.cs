@@ -644,6 +644,95 @@ namespace Ryujinx.Graphics.Gpu.Memory
         }
 
         /// <summary>
+        /// NEOV2-COSMIC2: Returns how many bytes starting at the given GPU virtual address are mapped
+        /// AND physically contiguous (same idea as Eden MemoryManager::MaxContinuousRange).
+        /// Buffers created by TranslateAndCreateBuffer start at the physical address of the first page
+        /// and assume the whole range is contiguous, so anything past the first discontinuity is not
+        /// valid data for that buffer.
+        /// </summary>
+        /// <param name="va">GPU virtual address</param>
+        /// <param name="maxSize">Maximum size in bytes to scan</param>
+        /// <returns>Number of contiguous mapped bytes, 0 if unmapped</returns>
+        public ulong GetContiguousMappedSize(ulong va, ulong maxSize)
+        {
+            if (maxSize == 0 || !ValidateAddress(va))
+            {
+                return 0;
+            }
+
+            ulong pte = GetPte(va);
+
+            if (pte == PteUnmapped)
+            {
+                return 0;
+            }
+
+            ulong startVa = va;
+            ulong endVa = va + maxSize;
+            ulong expectedPa = UnpackPaFromPte(pte) + PageSize;
+
+            va += PageSize - (va & PageMask);
+
+            while (va < endVa && ValidateAddress(va))
+            {
+                pte = GetPte(va);
+
+                if (pte == PteUnmapped || UnpackPaFromPte(pte) != expectedPa)
+                {
+                    break;
+                }
+
+                expectedPa += PageSize;
+                va += PageSize;
+            }
+
+            return Math.Min(maxSize, va - startVa);
+        }
+
+        /// <summary>
+        /// NEOV2-COSMIC8: bytes a partir do endereco que estao mapeados E com o mesmo PteKind da primeira pagina
+        /// (Eden: MemoryManager::GetMemoryLayoutSize = kind_map.GetContinuousSizeFrom). Limita o tamanho do
+        /// storage buffer a regiao do mesmo tipo de memoria, sem avancar sobre alocacoes vizinhas de outro tipo.
+        /// </summary>
+        /// <param name="va">GPU virtual address</param>
+        /// <param name="maxSize">Maximum size in bytes to scan</param>
+        /// <returns>Number of bytes, 0 if unmapped</returns>
+        public ulong GetMemoryLayoutSize(ulong va, ulong maxSize)
+        {
+            if (maxSize == 0 || !ValidateAddress(va))
+            {
+                return 0;
+            }
+
+            ulong pte = GetPte(va);
+
+            if (pte == PteUnmapped)
+            {
+                return 0;
+            }
+
+            PteKind kind = UnpackKindFromPte(pte);
+            ulong startVa = va;
+            ulong endVa = va + maxSize;
+
+            va += PageSize - (va & PageMask);
+
+            while (va < endVa && ValidateAddress(va))
+            {
+                pte = GetPte(va);
+
+                if (pte == PteUnmapped || UnpackKindFromPte(pte) != kind)
+                {
+                    break;
+                }
+
+                va += PageSize;
+            }
+
+            return Math.Min(maxSize, va - startVa);
+        }
+
+        /// <summary>
         /// Gets the kind of a given memory page.
         /// This might indicate the type of resource that can be allocated on the page, and also texture tiling.
         /// </summary>

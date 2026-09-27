@@ -71,6 +71,7 @@ interface KenjinxNativeJna : Library {
     fun graphicsSetFullscreenStretch(enable: Boolean)
     fun deviceSetNceTrackingProtection(enable: Boolean)
     fun deviceSetRelaxedDmaCopy(enable: Boolean)
+    fun deviceSetExperimentalGameFixes(enable: Boolean)
     fun deviceSetRejectUnmappedDescriptors(enable: Boolean)
     fun deviceSetAsyncLarge3DTextureUpload(enable: Boolean)
     // Opcao por jogo "Otimizacoes de GPU".

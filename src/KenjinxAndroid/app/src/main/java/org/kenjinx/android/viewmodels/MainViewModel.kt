@@ -176,6 +176,9 @@ class MainViewModel(val activity: MainActivity) {
             }
         }
 
+        val experimentalStore = GameSettingsStore(activity, game.titleId.orEmpty())
+        KenjinxNative.deviceSetExperimentalGameFixes(experimentalStore.isEnabled && experimentalStore.experimentalGameFixesEnabled)
+
         KenjinxNative.deviceReinitEmulation()
         MainActivity.mainViewModel?.activity?.uiHandler = UiHandler()
 
@@ -394,6 +397,8 @@ class MainViewModel(val activity: MainActivity) {
         isMiiEditorLaunched = true
 
         val settings = QuickSettings(activity)
+
+        KenjinxNative.deviceSetExperimentalGameFixes(false)
 
         // NEOV2 NCE-PROT1: sem perfil de jogo, vale a configuracao global.
         try {
