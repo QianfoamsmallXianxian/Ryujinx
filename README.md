@@ -11,6 +11,39 @@
 > [!IMPORTANT]
 > Este é um fork independente. Não é uma versão oficial do Ryujinx, do Kenji-NX, do Ryubing ou do Eden e não tem vínculo com a Nintendo. O projeto não inclui jogos, firmware, chaves ou conteúdo protegido de terceiros.
 
+## Galeria de jogos
+
+Capturas reais dos meus testes do Ryujinx Neo no Android com jogos que não funcionavam no Eden no meu aparelho. O FPS mostrado em cada imagem é uma leitura instantânea, não uma média de desempenho.
+
+<table>
+  <tr>
+    <td width="50%" align="center"><a href="Imagens/Prints/Screenshot_20260927-183800.webp"><img src="Imagens/Prints/Screenshot_20260927-183800.webp" alt="DOOM (2016) em gameplay, com texturas e efeitos renderizados" width="100%"></a></td>
+    <td width="50%" align="center"><a href="Imagens/Prints/Screenshot_20260928-011337.webp"><img src="Imagens/Prints/Screenshot_20260928-011337.webp" alt="Jogo de ficção científica em primeira pessoa em gameplay" width="100%"></a></td>
+  </tr>
+  <tr>
+    <td width="50%" align="center"><a href="Imagens/Prints/Screenshot_20260926-162507.webp"><img src="Imagens/Prints/Screenshot_20260926-162507.webp" alt="Aventura de Zelda em gameplay sob chuva" width="100%"></a></td>
+    <td width="50%" align="center"><a href="Imagens/Prints/Screenshot_20260928-010644.webp"><img src="Imagens/Prints/Screenshot_20260928-010644.webp" alt="The Legend of Zelda: Link’s Awakening em gameplay" width="100%"></a></td>
+  </tr>
+  <tr>
+    <td width="50%" align="center"><a href="Imagens/Prints/Screenshot_20260928-011001.webp"><img src="Imagens/Prints/Screenshot_20260928-011001.webp" alt="Mortal Kombat 11 em uma luta" width="100%"></a></td>
+    <td width="50%" align="center"><a href="Imagens/Prints/Screenshot_20260925-230950.webp"><img src="Imagens/Prints/Screenshot_20260925-230950.webp" alt="Jogo de luta com Athena e Mai em gameplay" width="100%"></a></td>
+  </tr>
+  <tr>
+    <td width="50%" align="center"><a href="Imagens/Prints/Screenshot_20260927-153807.webp"><img src="Imagens/Prints/Screenshot_20260927-153807.webp" alt="Mario + Rabbids Kingdom Battle na tela inicial" width="100%"></a></td>
+    <td width="50%" align="center"><a href="Imagens/Prints/Screenshot_20260928-011206.webp"><img src="Imagens/Prints/Screenshot_20260928-011206.webp" alt="Jogo Pokémon em exploração de cidade" width="100%"></a></td>
+  </tr>
+  <tr>
+    <td width="50%" align="center"><a href="Imagens/Prints/Screenshot_20260926-162916.webp"><img src="Imagens/Prints/Screenshot_20260926-162916.webp" alt="Marvel Ultimate Alliance 3 em gameplay" width="100%"></a></td>
+    <td width="50%" align="center"><a href="Imagens/Prints/Screenshot_20260923-190109.webp"><img src="Imagens/Prints/Screenshot_20260923-190109.webp" alt="Marvel Ultimate Alliance 3 em diálogo" width="100%"></a></td>
+  </tr>
+  <tr>
+    <td width="50%" align="center"><a href="Imagens/Prints/Screenshot_20260927-143011.webp"><img src="Imagens/Prints/Screenshot_20260927-143011.webp" alt="Jogo de ação em pixel art em gameplay" width="100%"></a></td>
+    <td width="50%"></td>
+  </tr>
+</table>
+
+**DOOM (2016)** é um caso especial: o Kenji-NX não iniciava o jogo e, nos meus testes, o Eden não renderizava suas texturas. No Neo, a cena aparece renderizada no registro acima.
+
 ## Por que o projeto nasceu
 
 O Ryujinx Neo começou por um motivo simples e pessoal: eu queria jogar alguns títulos que, no meu aparelho e na versão do Eden que eu utilizava, não rodavam como eu precisava. A linha Android do Kenji-NX oferecia outro caminho técnico. Passei a estudá-la, testar hipóteses e adaptar o código para os jogos e dispositivos que tenho à mão.
