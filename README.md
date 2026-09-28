@@ -4,9 +4,8 @@
     <img src="Imagens/Ryujinx%20Neo%20Logo%20Escura.png" alt="Logo do Ryujinx Neo" width="360">
   </picture>
 
-  # Ryujinx Neo
-
-  **Um projeto pessoal e experimental de emulação de Nintendo Switch para Android.**
+  <h1>Ryujinx Neo</h1>
+  <p><strong>Um projeto pessoal e experimental de emulação de Nintendo Switch para Android.</strong></p>
 </div>
 
 > [!IMPORTANT]
