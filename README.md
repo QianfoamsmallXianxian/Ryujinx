@@ -34,11 +34,7 @@ Capturas reais dos meus testes do Ryujinx Neo no Android com jogos que não func
   </tr>
   <tr>
     <td width="50%" align="center"><a href="Imagens/Prints/Screenshot_20260926-162916.webp"><img src="Imagens/Prints/Screenshot_20260926-162916.webp" alt="Marvel Ultimate Alliance 3 em gameplay" width="100%"></a></td>
-    <td width="50%" align="center"><a href="Imagens/Prints/Screenshot_20260923-190109.webp"><img src="Imagens/Prints/Screenshot_20260923-190109.webp" alt="Marvel Ultimate Alliance 3 em diálogo" width="100%"></a></td>
-  </tr>
-  <tr>
     <td width="50%" align="center"><a href="Imagens/Prints/Screenshot_20260927-143011.webp"><img src="Imagens/Prints/Screenshot_20260927-143011.webp" alt="Jogo de ação em pixel art em gameplay" width="100%"></a></td>
-    <td width="50%"></td>
   </tr>
 </table>
 
