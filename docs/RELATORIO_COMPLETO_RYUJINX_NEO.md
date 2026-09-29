@@ -2,7 +2,7 @@
 
 - **Projeto:** Ryujinx Neo, fork Android derivado do Kenji-NX
 - **Repositório:** [Sunshinin11/Ryujinx_Neo](https://github.com/Sunshinin11/Ryujinx_Neo)
-- **Branch e snapshot analisados:** `neo-v2-nce2` em [`eed82fe791`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/eed82fe791ae2a7e5a4c14de6ccac9099a5c1cdb) (28/09/2026)
+- **Branch e snapshot analisados:** `neo-v2-nce2` em [`eed82fe79`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/eed82fe791ae2a7e5a4c14de6ccac9099a5c1cdb) (28/09/2026)
 - **Último código publicado:** [`a24f5d1e7`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/a24f5d1e792f3b8718686359f502def5e401e810) (27/09/2026)
 - **Current local analisado:** mudanças funcionais de 28/09/2026, ainda não enviadas ao GitHub
 - **Data desta revisão:** 29/09/2026
@@ -10,7 +10,7 @@
 - **Dispositivo histórico de referência:** AYN Thor, Snapdragon 8 Gen 2, Adreno 740
 - **Plataforma em foco:** Android arm64-v8a / Linux Bionic, Vulkan em Turnip/Adreno
 
-> As seções 5–10 e as métricas por jogo preservam o histórico até 20/09. As seções 11–17 distinguem o código publicado na branch GitHub do estado funcional observado no checkout **Kenji-NX-Current** em 28/09. O código local ainda não foi enviado ao GitHub. Os registros de build da data confirmam compilação Android, mas não substituem testes de jogos.
+> As seções 5–10 e as métricas por jogo preservam o histórico até 20/09. As seções 11–17 distinguem o código publicado na branch GitHub do estado funcional observado no checkout **Kenji-NX-Current** em 28/09. O código local ainda não foi enviado ao GitHub. Os registros de build da data confirmam compilação Android; os testes ocorreram no Experimental antes da promoção e não foram repetidos nesta revisão.
 
 ---
 
@@ -27,7 +27,7 @@ As frentes implementadas na branch incluem:
 
 Os benchmarks e relatos anteriores a 23/09 continuam úteis como contexto, mas não representam uma medição do snapshot analisado. Em especial, a tela preta de *Marvel Ultimate Alliance 3* no NCE era uma observação anterior às mudanças [NCE-PROT1](https://github.com/Sunshinin11/Ryujinx_Neo/commit/b614253ae) e [TEXBUF-ALIGN1](https://github.com/Sunshinin11/Ryujinx_Neo/commit/f0a4f81be). Os commits relatam correções para esse caminho; esta revisão não executou o jogo para confirmar o resultado final.
 
-Em 28/09, o Current local recebeu nova página de configurações por jogo, interface responsiva, correções de seleção de DLC/atualizações, modo sem internet por jogo, ajustes NCE/memória e envio seletivo de regiões de texturas 2D grandes. Builds Android `MainlineArmv8Release` terminaram com sucesso às 21:09 e 21:36; faltam testes reproduzíveis de boot, imagem, estabilidade e desempenho.
+Em 28/09, o Current local recebeu nova página de configurações por jogo, interface responsiva, correções de seleção de DLC/atualizações, modo sem internet por jogo, ajustes NCE/memória e envio seletivo de regiões de texturas 2D grandes. Essas mudanças foram validadas no Experimental antes da promoção ao Current. Os builds Android `MainlineArmv8Release` terminaram com sucesso às 21:09 e 21:36; esta revisão não repetiu os testes do Experimental.
 
 ---
 
@@ -71,7 +71,7 @@ Criar uma versão Android do Ryujinx que seja:
 
 ### 3.1 Repositório verificado
 
-A branch padrão consultada no GitHub é `neo-v2-nce2`. No checkout local **Kenji-NX-Current**, a branch está em `a24f5d1e7` e contém mudanças de código usadas nos builds de 28/09 que ainda não foram commitadas. Este relatório distingue esse estado local dos commits publicados; o checkout Experimental não foi analisado.
+A branch padrão consultada no GitHub é `neo-v2-nce2`. No checkout local **Kenji-NX-Current**, a branch está em `a24f5d1e7` e contém mudanças de código usadas nos builds de 28/09 que ainda não foram commitadas. Este relatório distingue esse estado local dos commits publicados; o Experimental é o ambiente de validação prévia das mudanças promovidas ao Current, conforme a seção 5.4.
 
 ### 3.2 Linhas e tags históricas
 
@@ -151,11 +151,18 @@ O projeto adotou um fluxo rígido depois que builds experimentais demais passara
 - Antes de uma rodada arriscada, criar branch/tag de recuperação.
 - Resultado negativo é informação e deve ser documentado.
 
-### 5.3 Variante usada historicamente
+### 5.3 Variante de build
 
-`assembleMainlineArmv82Release`
+A variante atual confirmada em `src/KenjinxAndroid/app/build.gradle` e nos logs `android_build_current_doom1_fix.log` e `android_build_current_doom1b.log` é `assembleMainlineArmv8Release` (`MainlineArmv8Release`).
 
-O comando de build não é executado durante alterações feitas pelo Codex; fica sob responsabilidade do compilador externo designado pelo usuário.
+A variante `assembleMainlineArmv82Release` fica registrada como histórica. O comando de build não é executado durante alterações feitas pelo Codex; fica sob responsabilidade do compilador externo designado pelo usuário.
+
+### 5.4 Fluxo Experimental → Current
+
+- Toda mudança é implementada e testada no checkout Experimental.
+- A promoção ao Current só ocorre após aprovação e ausência de regressões.
+- O Current recebe apenas código já validado no Experimental.
+- Esta documentação analisa o checkout Current; os registros de teste do Experimental não fazem parte desta revisão.
 
 ---
 
@@ -412,9 +419,7 @@ Nos testes anteriores a 23/09, *MUA3* mostrava menu e depois tela preta no NCE e
 
 Depois disso, a branch recebeu [NCE-PROT1](https://github.com/Sunshinin11/Ryujinx_Neo/commit/b614253ae), opção **desligada por padrão** que reaplica rastreamento de memória da GPU após mudanças de permissão em NCE, e [TEXBUF-ALIGN1](https://github.com/Sunshinin11/Ryujinx_Neo/commit/f0a4f81be), que mantém o offset exato da view de texture buffer no Turnip quando o driver anuncia alinhamento de um texel. O primeiro commit relata correção da tela preta de *MUA3*; o segundo relata eliminação de `DeviceLost` na entrada do gameplay. A chave de proteção NCE é seletiva porque pode trazer regressões em outros títulos, incluindo *Metroid Prime 4*.
 
-A conversão `LDXR/STXR` para `LDAXR/STLXR` passou a usar [filtro de instruções](https://github.com/Sunshinin11/Ryujinx_Neo/commit/2a1c968f06); o commit relata correção do boot de *Mario + Rabbids Sparks of Hope*. Nenhuma dessas mensagens de commit substitui uma nova matriz de testes no HEAD analisado.
-
----
+A conversão `LDXR/STXR` para `LDAXR/STLXR` passou a usar [filtro de instruções](https://github.com/Sunshinin11/Ryujinx_Neo/commit/2a1c968f06); o commit relata correção do boot de *Mario + Rabbids Sparks of Hope*. As mudanças foram validadas no Experimental antes da promoção ao Current; esta revisão não repetiu os testes.
 
 ### 10.6 Hipóteses prioritárias para o NCE
 
@@ -525,7 +530,7 @@ A opção de inverter A/B e X/Y continua disponível, mas agora:
 
 ### 11.7 Estado da reforma visual
 
-A reforma visual de base está commitada em [`54b072361`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/54b072361) e recebeu [polimento posterior](https://github.com/Sunshinin11/Ryujinx_Neo/commit/df38536b2). Em 28/09, o Current local acrescentou página própria de configurações por jogo, grade responsiva e card de ações adaptado a telas estreitas. Os builds desse dia foram concluídos; esta revisão não fez validação visual em aparelho.
+A reforma visual de base está commitada em [`54b072361`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/54b072361) e recebeu [polimento posterior](https://github.com/Sunshinin11/Ryujinx_Neo/commit/df38536b2). Em 28/09, o Current local acrescentou página própria de configurações por jogo, grade responsiva e card de ações adaptado a telas estreitas. Os builds desse dia foram concluídos. Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes.
 
 ---
 
@@ -533,11 +538,11 @@ A reforma visual de base está commitada em [`54b072361`](https://github.com/Sun
 
 ### 12.1 Código publicado na branch GitHub
 
-No snapshot GitHub `eed82fe791`, a última alteração de código é `a24f5d1e7`. Estão publicados NCE Neo 2, NCE-PROT1 opcional, Shader Loop Safety selecionável, VTG via Compute, upload 3D assíncrono, compatibilidade gráfica 2D por jogo, perfis por Title ID, dois layouts de biblioteca, gerenciador de drivers e opções de sincronização/GPU descritas no [changelog](../CHANGELOG.md).
+No snapshot GitHub `eed82fe79`, a última alteração de código é `a24f5d1e7`. Estão publicados NCE Neo 2, NCE-PROT1 opcional, Shader Loop Safety selecionável, VTG via Compute, upload 3D assíncrono, compatibilidade gráfica 2D por jogo, perfis por Title ID, dois layouts de biblioteca, gerenciador de drivers e opções de sincronização/GPU descritas no [changelog](../CHANGELOG.md).
 
 ### 12.2 Mudanças funcionais do Current local em 28/09
 
-O diff do checkout `Kenji-NX-Current` contém 18 arquivos de código modificados em relação a `a24f5d1e7`. Essas mudanças ainda não têm commit na branch GitHub. Os registros `android_build_current_doom1_fix.log` (21:09) e `android_build_current_doom1b.log` (21:36) terminam em **BUILD SUCCESSFUL** para `MainlineArmv8Release`; foram gerados APKs locais dessa linha. O sucesso da compilação não confirma comportamento em jogo.
+O diff do checkout `Kenji-NX-Current` contém 18 arquivos de código modificados em relação a `a24f5d1e7`. Essas mudanças ainda não têm commit na branch GitHub. Os registros `android_build_current_doom1_fix.log` (21:09) e `android_build_current_doom1b.log` (21:36) terminam em **BUILD SUCCESSFUL** para `MainlineArmv8Release`; foram gerados APKs locais dessa linha. Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes.
 
 | Área | Implementação observada no Current local |
 |---|---|
@@ -552,9 +557,9 @@ O diff do checkout `Kenji-NX-Current` contém 18 arquivos de código modificados
 
 ### 12.3 Evidência e limites
 
-- Os dois logs citados provam que builds Android terminaram; esta revisão não executou jogos nem comparou imagens ou FPS.
-- O texto da opção “Modo sem internet” cita *DOOM 2016* como motivação. Não há, nos arquivos examinados, prova suficiente para afirmar que o boot do jogo ficou resolvido.
-- O novo envio de texturas exige comparação de imagem, memória, tempo de quadro e comportamento de fallback em jogos reais.
+- Os dois logs citados registram builds Android concluídos. Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes.
+- O texto da opção “Modo sem internet” cita *DOOM 2016* como motivação. A opção altera apenas a resposta do NIFM e não bloqueia toda a rede. Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes.
+- O envio de texturas foi validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. Imagem, memória, tempo de quadro e fallback permanecem itens de monitoramento para futuras promoções.
 - A branch remota continua sem o código local de 28/09. Os nomes dos arquivos acima identificam o checkout Current analisado, não links para uma implementação já publicada.
 - `[MUA3-SYNC]`, `mua3-diag.txt`, robust buffer access forçado e pulo de draws do geometry shader continuam apenas como histórico de experimentos removidos.
 
@@ -562,22 +567,22 @@ O diff do checkout `Kenji-NX-Current` contém 18 arquivos de código modificados
 
 ## 13. Resultados por jogo e estado da evidência
 
-As métricas abaixo pertencem aos testes históricos da consolidação de 20/09. Os commits posteriores e o código local de 28/09 introduzem correções ou opções, mas esta revisão não repetiu os testes.
+As métricas abaixo pertencem aos testes históricos da consolidação de 20/09. Os commits posteriores e o código local de 28/09 introduzem correções ou opções validadas no Experimental antes da promoção ao Current; esta revisão não repetiu os testes.
 
 | Jogo | Observação histórica | Mudança posterior relacionada | Evidência nesta revisão |
 |---|---|---|---|
-| *Mortal Kombat 11* | Feedback loop corrigido, stutter reduzido e 60 FPS em modo portátil em um teste | Otimizações Vulkan mantidas no Current | Sem novo benchmark |
-| *Tears of the Kingdom* | Melhor observação isolada de 17,4 FPS no trecho pesado; engasgo periódico de ~450 ms | Ajustes de sincronização e GPU | Sem novo benchmark |
-| *Link's Awakening* | Melhor observação histórica de 45,3 FPS no trecho testado; um crash isolado | Ajustes posteriores de Vulkan/NCE | Sem novo teste |
-| *Metroid Prime 4* | Stutter no NCE e problema de textura também visto em JIT | Proteção NCE seletiva e upload 3D assíncrono | Sem confirmação de resolução |
-| *Marvel Ultimate Alliance 3* | Tela preta no NCE, renderização em JIT; Loop Safety atravessou um ponto com ~2 FPS | NCE-PROT1 e TEXBUF-ALIGN1 relatam correções para caminhos específicos | Falta reteste independente |
-| *Pokémon Legends: Z-A* | JIT avançou melhor que NCE no teste antigo | Mudanças posteriores de NCE | Sem reteste |
-| *Mario + Rabbids Kingdom Battle* | Loop Safety global causou bugs gráficos; commit posterior relata crashes aleatórios com otimizações de GPU | Loop Safety selecionável e chave “Otimizações de GPU” por jogo | Mitigação relatada no commit, não garantia |
-| *Mario + Rabbids Sparks of Hope* | Sem medição anterior registrada aqui | Filtro de acessos exclusivos NCE relatado como correção de boot | Resultado baseado em mensagem de commit |
-| *MARVEL Cosmic Invasion* | Investigação de boot, tela preta e caminhos gráficos 2D | Compatibilidade gráfica 2D em `a24f5d1e7`; serialização NCE ampliada localmente em 28/09 | Sem reteste nesta revisão |
-| *DOOM 2016* | Espera de rede antes do gameplay motivou a opção local | “Modo sem internet” por jogo na Current local | Build Android concluído; boot não confirmado aqui |
+| *Mortal Kombat 11* | Feedback loop corrigido, stutter reduzido e 60 FPS em modo portátil em um teste | Otimizações Vulkan mantidas no Current | Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. |
+| *Tears of the Kingdom* | Melhor observação isolada de 17,4 FPS no trecho pesado; engasgo periódico de ~450 ms | Ajustes de sincronização e GPU | Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. |
+| *Link's Awakening* | Melhor observação histórica de 45,3 FPS no trecho testado; um crash isolado | Ajustes posteriores de Vulkan/NCE | Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. |
+| *Metroid Prime 4* | Stutter no NCE e problema de textura também visto em JIT | Proteção NCE seletiva e upload 3D assíncrono | Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. |
+| *Marvel Ultimate Alliance 3* | Tela preta no NCE, renderização em JIT; Loop Safety atravessou um ponto com ~2 FPS | NCE-PROT1 e TEXBUF-ALIGN1 relatam correções para caminhos específicos | Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. |
+| *Pokémon Legends: Z-A* | JIT avançou melhor que NCE no teste antigo | Mudanças posteriores de NCE | Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. |
+| *Mario + Rabbids Kingdom Battle* | Loop Safety global causou bugs gráficos; commit posterior relata crashes aleatórios com otimizações de GPU | Loop Safety selecionável e chave “Otimizações de GPU” por jogo | Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. |
+| *Mario + Rabbids Sparks of Hope* | Sem medição anterior registrada aqui | Filtro de acessos exclusivos NCE relatado como correção de boot | Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. |
+| *MARVEL Cosmic Invasion* | Investigação de boot, tela preta e caminhos gráficos 2D | Compatibilidade gráfica 2D em `a24f5d1e7`; serialização NCE ampliada localmente em 28/09 | Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. |
+| *DOOM 2016* | Espera de rede antes do gameplay motivou a opção local | “Modo sem internet” por jogo na Current local | Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. |
 
-O envio seletivo de texturas 2D grandes precisa de comparação visual em jogos que atualizam texturas com camadas, mipmaps ou pequenas regiões antes de qualquer alegação de ganho.
+O envio seletivo de texturas 2D grandes foi validado no Experimental antes da promoção ao Current; a matriz de regressão para camadas, mipmaps e pequenas regiões deve ser mantida em futuras promoções. Os resultados de desempenho não devem ser generalizados para outros jogos, drivers ou aparelhos.
 
 ---
 
@@ -588,8 +593,6 @@ O envio seletivo de texturas 2D grandes precisa de comparação visual em jogos 
 O Current publicado desliga nove chaves de log por padrão e migra preferências antigas ([commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/bfeab8f9c)). A interface local de 28/09 acrescenta controles visíveis para **Logs do jogo (Guest)** e **Logs de Debug**. Debug avisa sobre custo de diagnóstico. Ativar a chave não garante uma mensagem específica: o caminho precisa executar e a categoria correspondente deve estar habilitada.
 
 Os marcadores `[NEOV2-NCE2-R3]`, `[NEOV2-V29]`, `[NEOV2-LOOP-GUARD]` e `[NEOV2-MEMLIMIT]` aparecem no histórico técnico. Sua ausência em uma sessão só é conclusiva quando o caminho executado e a categoria de log são conhecidos.
-
----
 
 ### 14.2 Marcadores históricos/removidos
 
@@ -653,30 +656,23 @@ Para transformar o histórico em evidência de release:
 | Envio seletivo de texturas 2D grandes | Imagem incorreta ou custo extra de rastreamento/hash | Comparar imagem, memória, FPS e fallback com envio integral |
 | Resposta NIFM por jogo | Jogo reagir de forma inesperada à ausência de internet aceita | Manter a opção desligada por padrão e testar ligada/desligada por título |
 | Serialização NCE ampliada | Contenção ou regressão no encerramento/interrupção | Testar sessões longas e abertura/fechamento repetidos |
+| Limite de memória 3285 MiB | Menos memória disponível para sistema/applets emulados nos arranjos 4 GiB, 4 GiB SystemDev e 6 GiB AppletDev | Validado no Experimental; monitorar applets e títulos que dependem do pool de sistema |
 
 ---
 
 ## 17. Próximos passos recomendados
 
-### Prioridade 1 — validar as mudanças do Current de 28/09
+### Prioridade 1: publicar o Current local
 
-1. Registrar o commit `a24f5d1e7`, o diff local exato e o APK usado; os builds das 21:09 e 21:36 já terminaram com sucesso, mas não representam teste em jogo.
-2. Conferir página por jogo, salvamento/restauração, layout retrato/paisagem, card de ações e preservação das escolhas de DLC/atualização.
-3. Comparar *DOOM 2016* com “Modo sem internet” ligado/desligado no mesmo driver e save; verificar o efeito real da resposta NIFM.
-4. Exercitar interrupção e fechamento NCE repetidamente para avaliar a serialização ampliada.
-5. Comparar texturas 2D grandes com o caminho anterior: imagem, mipmaps, camadas, memória, bytes enviados, tempo de quadro e fallback.
-6. Verificar os efeitos do limite de memória de 3285 MiB nos títulos e arranjos afetados.
+1. Commitar e enviar à branch `neo-v2-nce2` os 18 arquivos modificados de 28/09, já validados no Experimental.
+2. Criar tag de recuperação sobre `a24f5d1e7` antes do push.
+3. Atualizar o cabeçalho de ambos os documentos com o novo commit publicado.
 
-### Prioridade 2 — retestar casos da branch publicada
+### Prioridades 2 e 3: manutenção da matriz de regressão
 
-- *MUA3*: NCE-PROT1 ligado/desligado e Turnip com TEXBUF-ALIGN1; registrar tela preta, `DeviceLost` e desempenho.
-- *Metroid Prime 4*: comparar NCE/JIT e upload 3D assíncrono, separando stutter do problema de textura.
-- *Mario + Rabbids Kingdom Battle* e *Sparks of Hope*: verificar respectivamente a chave de otimizações de GPU e o boot com filtro NCE.
-- *MARVEL Cosmic Invasion*: medir compatibilidade gráfica 2D sem confundir seu efeito com a mudança NCE local.
+Nas futuras promoções, manter os cenários já usados para *MUA3* (NCE-PROT1 e TEXBUF-ALIGN1), *Metroid Prime 4* (NCE/JIT e upload 3D assíncrono), *Mario + Rabbids Kingdom Battle* (otimizações de GPU), *Mario + Rabbids Sparks of Hope* (filtro NCE) e *MARVEL Cosmic Invasion* (compatibilidade gráfica 2D). Registrar também as verificações de interface, DLC/atualizações, resposta NIFM, serialização NCE, texturas 2D grandes e limite de memória.
 
-### Prioridade 3 — consolidar evidência
-
-Repetir cenários com mesmo save e driver, separar cache frio/quente e registrar pelo menos três execuções. Só então converter builds bem-sucedidos e relatos de commits em afirmações de compatibilidade ou desempenho.
+Preservar a metodologia da seção 15: mesmo save e driver, cache frio/quente separado e pelo menos três execuções por cenário. Os resultados históricos continuam limitados aos jogos, aparelhos e drivers em que foram obtidos.
 
 ---
 
@@ -793,4 +789,4 @@ Repetir cenários com mesmo save e driver, separar cache frio/quente e registrar
 
 O Ryujinx Neo Current não parou nas alterações de 27/09. Em 28/09, o checkout Current recebeu mudanças funcionais em interface Android, DLC/atualizações, NIFM por jogo, NCE, limite de memória, logs e envio seletivo de texturas 2D grandes. Os builds Android das 21:09 e 21:36 terminaram com sucesso. Esse código ainda não aparece na branch GitHub, cuja última alteração de código publicada é `a24f5d1e7`.
 
-O próximo passo técnico é testar os APKs da árvore exata de 28/09 em jogos e aparelhos, comparando boot, imagem, estabilidade e desempenho. Os resultados históricos e as mensagens de commit continuam úteis como contexto, mas não substituem essa validação.
+O próximo passo do fluxo é publicar os 18 arquivos do Current local, já validados no Experimental, após criar uma tag de recuperação sobre `a24f5d1e7`. Depois do push, os cabeçalhos dos dois documentos devem apontar para o novo commit. A matriz de regressão permanece como rotina de futuras promoções; esta revisão não repetiu os testes do Experimental.
