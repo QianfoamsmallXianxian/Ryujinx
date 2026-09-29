@@ -72,6 +72,7 @@ class QuickSettings(val activity: Activity) {
 
     // NEOV2 DMA-RELAX1: copia DMA relaxada (como o Eden). Desligada por padrao.
         var enableRelaxedDmaCopy: Boolean
+
     var enableRejectUnmappedDescriptors: Boolean
     var enableAsyncLarge3DUpload: Boolean
 

@@ -1000,7 +1000,7 @@ class HomeViews {
 
                             .fillMaxSize()
 
-                            .padding(horizontal = 30.dp, vertical = 12.dp),
+                            .padding(horizontal = if (neoCompactWidth()) 12.dp else 30.dp, vertical = 12.dp),
 
                         verticalArrangement = Arrangement.spacedBy(10.dp)
 
@@ -1076,7 +1076,7 @@ class HomeViews {
 
                                     LazyVerticalGrid(
 
-                                        columns = GridCells.Fixed(7),
+                                        columns = GridCells.Fixed(neoGridColumns()),
 
                                         contentPadding = PaddingValues(16.dp),
 
@@ -1526,7 +1526,7 @@ class HomeViews {
 
                                 showAppActions.value = false
 
-                                openGameSettingsDialog.value = true
+                                navController?.navigate("gameSettings") // NEOV2-UI1: pagina propria em vez de popup
 
                             },
 
@@ -1654,33 +1654,7 @@ class HomeViews {
 
 
 
-                if (openGameSettingsDialog.value) {
-
-                    val selectedGame = viewModel.mainViewModel?.selected
-
-                    val selectedActivity = viewModel.activity
-
-                    if (selectedGame != null && selectedActivity != null) {
-
-                        GameSettingsDialog(
-
-                            activity = selectedActivity,
-
-                            titleId = selectedGame.titleId.orEmpty(),
-
-                            titleName = selectedGame.titleName.orEmpty(),
-
-                            onDismiss = { openGameSettingsDialog.value = false }
-
-                        )
-
-                    } else {
-
-                        openGameSettingsDialog.value = false
-
-                    }
-
-                }
+                // NEOV2-UI1: GameSettingsDialog virou a pagina "gameSettings" (MainView).
 
 
 
@@ -3205,11 +3179,25 @@ class HomeViews {
 
 
 
+        // NEOV2-UI1: layout responsivo. Tela estreita (celular em pe) usa cabecalho, barra e margens compactos;
+        // a biblioteca em grade usa menos colunas em modo retrato.
         @Composable
+        private fun neoCompactWidth(): Boolean = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp < 600
 
+        @Composable
+        private fun neoGridColumns(): Int {
+            val config = androidx.compose.ui.platform.LocalConfiguration.current
+            return if (config.screenHeightDp > config.screenWidthDp) {
+                if (config.screenWidthDp < 480) 3 else 4
+            } else {
+                7
+            }
+        }
+
+        @Composable
         private fun SharedHomeHeader(query: MutableState<String>) {
-
             val currentTime = remember { SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date()) }
+            val neoCompact = neoCompactWidth()
 
             Row(
 
@@ -3226,11 +3214,8 @@ class HomeViews {
             ) {
 
                 Box(
-
-                    modifier = Modifier.width(188.dp),
-
+                    modifier = Modifier.width(if (neoCompact) 104.dp else 188.dp),
                     contentAlignment = Alignment.CenterStart
-
                 ) {
 
                     Crossfade(
@@ -3261,9 +3246,8 @@ class HomeViews {
 
                             modifier = Modifier
 
-                                .width(136.dp)
-
-                                .height(50.dp)
+                                .width(if (neoCompact) 108.dp else 136.dp)
+                                .height(if (neoCompact) 40.dp else 50.dp)
 
                                 .offset(x = (-16).dp)
 
@@ -3275,18 +3259,12 @@ class HomeViews {
 
 
 
-                Spacer(Modifier.weight(1f))
-
+                Spacer(if (neoCompact) Modifier.width(6.dp) else Modifier.weight(1f))
                 Surface(
-
                     shape = CircleShape,
-
                     color = MaterialTheme.colorScheme.surface,
-
                     shadowElevation = 3.dp,
-
-                    modifier = Modifier.width(330.dp).height(38.dp)
-
+                    modifier = (if (neoCompact) Modifier.weight(1f) else Modifier.width(330.dp)).height(38.dp)
                 ) {
 
                     Row(
@@ -3355,9 +3333,8 @@ class HomeViews {
 
                 }
 
-                Spacer(Modifier.weight(1f))
-
-                Box(modifier = Modifier.width(188.dp), contentAlignment = Alignment.CenterEnd) {
+                Spacer(if (neoCompact) Modifier.width(8.dp) else Modifier.weight(1f))
+                Box(modifier = if (neoCompact) Modifier else Modifier.width(188.dp), contentAlignment = Alignment.CenterEnd) {
 
                     Text(
 
@@ -3412,15 +3389,10 @@ class HomeViews {
                 ) {
 
                     Row(
-
-                        modifier = Modifier.padding(7.dp),
-
-                        horizontalArrangement = Arrangement.spacedBy(14.dp),
-
+                        modifier = Modifier.padding(if (neoCompactWidth()) 5.dp else 7.dp),
+                        horizontalArrangement = Arrangement.spacedBy(if (neoCompactWidth()) 4.dp else 14.dp),
                         verticalAlignment = Alignment.CenterVertically
-
                     ) {
-
                         SwitchRailButton(Icons.Default.Memory, "CPU", Color(0xFFE3A33B)) { onOpenSettings("Emulacao") }
 
                         SwitchRailButton(Icons.Default.Palette, "Gráficos", Color(0xFF5DAA67)) { onOpenSettings("Graficos") }
@@ -3485,7 +3457,7 @@ class HomeViews {
 
             Surface(
 
-                modifier = modifier.size(46.dp).clip(CircleShape).clickable(onClick = onClick),
+                modifier = modifier.size(if (neoCompactWidth()) 40.dp else 46.dp).clip(CircleShape).clickable(onClick = onClick),
 
                 shape = CircleShape,
 
@@ -3567,7 +3539,7 @@ class HomeViews {
 
                     .fillMaxSize()
 
-                    .padding(horizontal = 30.dp, vertical = 12.dp)
+                    .padding(horizontal = if (neoCompactWidth()) 12.dp else 30.dp, vertical = 12.dp)
 
             ) {
 
@@ -3656,11 +3628,8 @@ class HomeViews {
                 shadowElevation = 2.dp,
 
                 modifier = Modifier
-
-                    .size(40.dp)
-
+                    .size(if (neoCompactWidth()) 34.dp else 40.dp)
                     .clip(CircleShape)
-
                     .clickable(onClick = onClick)
 
             ) {

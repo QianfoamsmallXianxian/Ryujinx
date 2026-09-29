@@ -20,6 +20,21 @@ class MainView {
                 composable("home") { HomeViews.Home(mainViewModel.homeViewModel, navController) }
                 composable("user") { UserViews.Main(mainViewModel) }
                 composable("game") { GameViews.Main() }
+                // NEOV2-UI1: configuracoes do jogo em pagina propria (antes era popup).
+                composable("gameSettings") {
+                    val game = mainViewModel.selected
+                    if (game != null) {
+                        GameSettingsPage(
+                            activity = mainViewModel.activity,
+                            titleId = game.titleId.orEmpty(),
+                            titleName = game.titleName.orEmpty(),
+                            iconBase64 = game.icon,
+                            onBack = { navController.popBackStack() }
+                        )
+                    } else {
+                        navController.popBackStack()
+                    }
+                }
                 composable(
                     route = "settings?category={category}",
                     arguments = listOf(navArgument("category") {

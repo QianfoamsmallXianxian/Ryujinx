@@ -60,6 +60,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.widthIn
 
 import androidx.compose.foundation.layout.height
 
@@ -1971,6 +1972,20 @@ class SettingViews {
 
                                         )
 
+                                        HighContrastToggle(
+                                            title = "Logs do jogo (Guest)",
+                                            description = "Mensagens que o próprio jogo escreve no log do sistema. Útil para descobrir por que um jogo falha",
+                                            checked = enableGuestLogs.value,
+                                            onCheckedChange = { enableGuestLogs.value = it }
+                                        )
+
+                                        HighContrastToggle(
+                                            title = "Logs de Debug",
+                                            description = "Detalhes internos do emulador. Pesado: use só para diagnóstico",
+                                            checked = enableDebugLogs.value,
+                                            onCheckedChange = { enableDebugLogs.value = it }
+                                        )
+
                                     }
 
 
@@ -3603,7 +3618,7 @@ class SettingViews {
 
             var expanded by remember { mutableStateOf(false) }
 
-            Box(modifier = Modifier.width(360.dp)) {
+            Box(modifier = Modifier.widthIn(max = 360.dp).fillMaxWidth()) { // NEOV2-UI1: cabe no celular em pe
 
                 Surface(
 

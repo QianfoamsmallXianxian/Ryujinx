@@ -97,11 +97,17 @@ class TitleUpdateViews {
             val paths = remember { mutableStateListOf<String>() }
 
             var selectedIndex by remember { mutableIntStateOf(0) }
-            viewModel.data?.apply {
-                selectedIndex = paths.indexOf(this.selected) + 1
-            }
 
-            viewModel.setPaths(paths, canClose)
+            // NEOV2-UI1: carrega a lista e a atualizacao ativa uma unica vez. Antes isso rodava a cada
+            // recomposicao e desfazia na hora a escolha feita no switch (parecia que nao dava para trocar).
+            val initialized = remember(titleId) { mutableStateOf(false) }
+            if (!initialized.value) {
+                viewModel.setPaths(paths, canClose)
+                viewModel.data?.apply {
+                    selectedIndex = paths.indexOf(this.selected) + 1
+                }
+                initialized.value = true
+            }
 
             var indexToDelete by remember { mutableStateOf<Int?>(null) }
             var expandedIndex by remember { mutableStateOf<Int?>(null) }

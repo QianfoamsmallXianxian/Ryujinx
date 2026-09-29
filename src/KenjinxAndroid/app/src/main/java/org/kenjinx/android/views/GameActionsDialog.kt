@@ -90,6 +90,10 @@ fun GameActionsDialog(
             val iconFile = File(context.filesDir, "game_icons/${game.titleId}.jpg")
             if (iconFile.exists()) {
                 android.graphics.BitmapFactory.decodeFile(iconFile.absolutePath)
+            } else if (game.icon?.isNotEmpty() == true) {
+                // NEOV2-UI1: mesma origem da capa na lista de jogos (icone embutido no jogo, em base64).
+                val bytes = java.util.Base64.getDecoder().decode(game.icon)
+                android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
             } else null
         } catch (_: Throwable) {
             null
@@ -111,6 +115,10 @@ fun GameActionsDialog(
         DialogAction(Icons.Default.Delete, "Excluir todo o cache", "Remove PPTC, shaders e arquivos", false, true, { showDeleteCacheConfirm = true })
     )
 
+    // NEOV2-UI1: no celular em pe o popup ocupa a largura da tela e mostra as acoes em 1 coluna.
+    val config = androidx.compose.ui.platform.LocalConfiguration.current
+    val compact = config.screenWidthDp < 600
+
     BasicAlertDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -119,10 +127,17 @@ fun GameActionsDialog(
             shape = RoundedCornerShape(18.dp),
             color = MaterialTheme.colorScheme.surface,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
-            modifier = Modifier
-                .width(620.dp)
-                .height(440.dp)
-                .padding(12.dp)
+            modifier = if (compact) {
+                Modifier
+                    .fillMaxWidth(0.96f)
+                    .heightIn(max = (config.screenHeightDp * 0.85f).dp)
+                    .padding(8.dp)
+            } else {
+                Modifier
+                    .width(620.dp)
+                    .height(440.dp)
+                    .padding(12.dp)
+            }
         ) {
             Column(
                 modifier = Modifier
@@ -187,7 +202,7 @@ fun GameActionsDialog(
 
                 // Landscape 4:3 action area, arranged in two columns for handhelds.
                 LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
+                    columns = GridCells.Fixed(if (compact) 1 else 2),
                     modifier = Modifier.weight(1f),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)

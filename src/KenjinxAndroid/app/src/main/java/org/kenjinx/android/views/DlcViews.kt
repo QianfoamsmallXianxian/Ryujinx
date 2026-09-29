@@ -91,7 +91,13 @@ class DlcViews {
             var itemToDelete by remember { mutableStateOf<DlcItem?>(null) }
             var expandedPathItem by remember { mutableStateOf<DlcItem?>(null) }
 
-            viewModel.setDlcItems(dlcItems, canClose)
+            // NEOV2-UI1: carrega a lista uma unica vez. Antes isso rodava a cada recomposicao e recriava os itens
+            // a partir do arquivo salvo, desfazendo na hora o switch de ativar/desativar DLC.
+            val initialized = remember(titleId) { mutableStateOf(false) }
+            if (!initialized.value) {
+                viewModel.setDlcItems(dlcItems, canClose)
+                initialized.value = true
+            }
 
             val selectedGame = MainActivity.mainViewModel?.selected
             val bitmap = remember(selectedGame?.titleId) {
