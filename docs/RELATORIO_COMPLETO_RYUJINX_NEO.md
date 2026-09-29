@@ -1,38 +1,32 @@
 # Ryujinx Neo — Relatório técnico completo do projeto
 
-**Projeto:** Ryujinx Neo, fork Android derivado do Kenji-NX  
-**Repositório de trabalho:** `C:\Desenvolvimento\Kenji-NX-Current`  
-**Repositório público do fork:** `https://github.com/Sunshinin11/Ryujinx_Neo`  
-**Branch atual:** `neo-v2-nce2`  
-**Commit-base atual:** `54b07236143be555f45a2a0dfbff6574829f9b10`  
-**Data desta consolidação:** 20/09/2026  
-**Dispositivo principal de referência:** AYN Thor, Snapdragon 8 Gen 2, Adreno 740  
-**Plataforma:** Android arm64-v8a / Linux Bionic  
-**Backend gráfico principal:** Vulkan, com foco em Turnip/Adreno  
+- **Projeto:** Ryujinx Neo, fork Android derivado do Kenji-NX
+- **Repositório:** [Sunshinin11/Ryujinx_Neo](https://github.com/Sunshinin11/Ryujinx_Neo)
+- **Branch e snapshot analisados:** `neo-v2-nce2` em [`eed82fe791`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/eed82fe791ae2a7e5a4c14de6ccac9099a5c1cdb) (28/09/2026)
+- **Última alteração de código identificada:** [`a24f5d1e7`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/a24f5d1e792f3b8718686359f502def5e401e810) (27/09/2026)
+- **Data desta revisão:** 29/09/2026
+- **Versão Android no código:** `0.0.1`, `versionCode 20108` ([build.gradle](https://github.com/Sunshinin11/Ryujinx_Neo/blob/neo-v2-nce2/src/KenjinxAndroid/app/build.gradle))
+- **Dispositivo histórico de referência:** AYN Thor, Snapdragon 8 Gen 2, Adreno 740
+- **Plataforma em foco:** Android arm64-v8a / Linux Bionic, Vulkan em Turnip/Adreno
 
-> Este documento separa deliberadamente três coisas: o que está no código atual, o que foi observado em testes e o que ainda é hipótese. Experimentos removidos continuam registrados como histórico, mas não são descritos como recursos ativos.
+> As seções 5–10 e as métricas por jogo preservam o histórico de desenvolvimento até 20/09. O estado atual foi revisado contra a branch indicada até `eed82fe791` (último commit de código identificado: `a24f5d1e7`). Alterações não commitadas de qualquer checkout foram ignoradas. “Implementado” significa presente no código, sem novo teste de APK nesta revisão.
 
 ---
 
 ## 1. Resumo executivo
 
-O Ryujinx Neo nasceu como uma evolução experimental do Kenji-NX para Android, inicialmente focada em desempenho Vulkan no AYN Thor. O projeto avançou em quatro frentes principais:
+O Ryujinx Neo é um fork Android do Kenji-NX com trabalho próprio no backend Vulkan, NCE, compatibilidade gráfica e interface. A linha **Neo Current** está em `neo-v2-nce2`; o código Android declara versão `0.0.1` (`versionCode 20108`). O [changelog](../CHANGELOG.md) lista as mudanças por período.
 
-1. **Caminho Vulkan e GPU:** worker de submissão, timeline semaphores, batching, listas de formatos compatíveis com UBWC, cache persistente de pipelines, melhorias em render pass, barreiras, cache de texturas e redução de trabalho por quadro.
-2. **CPU e NCE:** criação do NCE Neo 2, reestruturação de contexto/sinais, pilha alternativa de sinal, índice de contexto por thread e proteções adicionais de cache e flush.
-3. **Compatibilidade de shaders:** correção V29 para o MUA3 e proteção selecionável contra loops infinitos em shaders, com caches separados para o modo protegido e o modo normal.
-4. **Experiência Android:** configurações por jogo, persistência do controle virtual e das estatísticas, dois layouts de biblioteca, identidade visual própria, menus reorganizados e interface pensada para Thor/Odin.
+As frentes implementadas na branch incluem:
 
-Os maiores ganhos históricos medidos vieram das listas de formatos de textura, da compatibilidade com UBWC, do cache persistente de pipelines, do agrupamento de submissões, do cache maior de texturas e da substituição do pool próprio de memória pelo `ArrayPool<T>.Shared`.
+1. **GPU/Vulkan:** worker de submissão, ajustes de sincronização, cache de pipelines e texturas, caminho VTG via Compute, offset exato de texture buffer no Turnip, upload 3D assíncrono e chaves de compatibilidade.
+2. **CPU/NCE:** arquitetura NCE Neo 2, proteção opcional de rastreamento da GPU após mudanças de permissão e conversão seletiva de acessos exclusivos.
+3. **Android:** identidade Ryujinx Neo, dois layouts da biblioteca, perfis por Title ID, gerenciador de drivers Vulkan e controles globais/por jogo.
+4. **Diagnóstico:** categorias de log configuráveis, com nove chaves desligadas por padrão na linha Current.
 
-O principal problema técnico em aberto é o **NCE**. Nos testes atuais, ele não demonstrou a vantagem esperada sobre o JIT e apresentou regressões específicas:
+Os benchmarks e relatos anteriores a 23/09 continuam úteis como contexto, mas não representam uma medição do snapshot analisado. Em especial, a tela preta de *Marvel Ultimate Alliance 3* no NCE era uma observação anterior às mudanças [NCE-PROT1](https://github.com/Sunshinin11/Ryujinx_Neo/commit/b614253ae) e [TEXBUF-ALIGN1](https://github.com/Sunshinin11/Ryujinx_Neo/commit/f0a4f81be). Os commits relatam correções para esse caminho; esta revisão não executou o jogo para confirmar o resultado final.
 
-- MUA3 renderiza no JIT, mas permanece preto no NCE;
-- MP4 apresenta stuttering no NCE e fica suave no JIT;
-- Pokémon Legends: Z-A conseguiu avançar no JIT, enquanto o NCE apresentou problemas;
-- TOTK, Link's Awakening e MK11 tiveram desempenho semelhante entre NCE e JIT nos testes realizados.
-
-O JIT, porém, aquece muito o Thor. Portanto, ele é uma referência de comportamento e desempenho, não uma solução aceitável como padrão. Fazer o NCE funcionar corretamente continua sendo o trabalho mais importante para considerar o emulador pronto.
+O trabalho pendente é validar, com APK e cenários reproduzíveis, a compatibilidade e o custo das opções seletivas em diferentes jogos, drivers e aparelhos. A leitura estática não estabelece ganho geral de FPS nem estabilidade de release.
 
 ---
 
@@ -74,31 +68,22 @@ Criar uma versão Android do Ryujinx que seja:
 
 ## 3. Repositório, branches e pontos de recuperação
 
-### 3.1 Remotes
+### 3.1 Repositório verificado
 
-| Remote | Endereço | Uso |
-|---|---|---|
-| `origin` | `https://git.ryujinx.app/projects/Kenji-NX.git` | Upstream Kenji-NX |
-| `sunshinin11` | `https://github.com/Sunshinin11/Ryujinx_Neo.git` | Fork Ryujinx Neo |
+A branch padrão do repositório consultado no GitHub é `neo-v2-nce2`. Os remotes `origin` (Kenji-NX) e `sunshinin11` descritos na consolidação de 20/09 pertenciam ao checkout usado naquela etapa; este relatório documenta o estado publicado no GitHub, sem depender de alterações locais não commitadas.
 
-### 3.2 Branches locais relevantes
+### 3.2 Linhas e tags históricas
 
-| Branch | Finalidade |
+| Referência | Papel registrado |
 |---|---|
 | `libryujinx_bionic` | Linha Android/Bionic de referência |
-| `neo-v2-baseline` | Baseline experimental do NEO V2 |
-| `neo-v2-fase1` | Etapas de desempenho Vulkan/GPU |
-| `neo-v2-nce2` | Linha atual, com NCE Neo 2, Loop Safety selecionável e interface nova |
-| `preserve-batching-db668399` | Ponto de estudo relacionado ao batching |
+| `neo-v2-baseline` | Baseline experimental NEO V2 |
+| `neo-v2-fase1` | Etapas históricas de desempenho Vulkan/GPU |
+| `neo-v2-nce2` | Linha Current documentada aqui |
+| `neo-v2-mua3-stable-pre-nce2-20260919` | Snapshot anterior ao NCE Neo 2 (`f8d0b8e06`) |
+| `neo-v2-nce2-r3-pre-ui-20260919` | NCE2 R3 e Loop Safety antes da reforma visual (`7cb21885e`) |
 
-### 3.3 Tags de segurança
-
-| Tag | Commit | Significado |
-|---|---|---|
-| `neo-v2-mua3-stable-pre-nce2-20260919` | `f8d0b8e06` | Estado valioso do MUA3 antes da introdução do NCE Neo 2 |
-| `neo-v2-nce2-r3-pre-ui-20260919` | `7cb21885e` | NCE2 R3 e Loop Safety corrigidos antes da reforma visual |
-
-Esses pontos existem para impedir que uma rodada experimental destrua uma build funcional ou torne difícil separar problemas de interface, NCE e GPU.
+As referências antigas são pontos de comparação do histórico. O estado atual descrito neste relatório corresponde ao HEAD indicado no início.
 
 ---
 
@@ -265,6 +250,8 @@ Memory Slack não cria RAM física e não deve ser descrito como aumento real de
 
 ## 8. Investigação do Marvel Ultimate Alliance 3
 
+> Esta seção registra a investigação anterior às correções de 23/09. Para o estado da branch Current, consulte as seções 12 e 13. O experimento `[MUA3-SYNC]` e as hipóteses descartadas continuam apenas como histórico.
+
 ### 8.1 Sintomas históricos
 
 - corrupção/explosão de vértices em determinadas versões;
@@ -365,6 +352,8 @@ O limite artificial muda a semântica do shader. Ele pode impedir um loop realme
 
 ## 10. NCE Neo 2
 
+> As subseções 10.1–10.4 descrevem a implantação inicial. As comparações de 10.5 são históricas; a branch recebeu correções adicionais depois daqueles testes.
+
 ### 10.1 Motivação
 
 O NCE deveria executar código ARM64 do jogo quase nativamente no ARM64 do Android, reduzindo o custo do JIT. Na prática observada, o NCE original e as primeiras revisões do Neo 2 não entregaram essa vantagem e ainda apresentaram problemas de compatibilidade.
@@ -416,18 +405,15 @@ O marcador atual esperado é:
 
 Esses erros foram problemas de código/integração, não resultados de runtime.
 
-### 10.5 Evidências atuais de que o NCE ainda está quebrado ou incompleto
+### 10.5 Observações históricas e mudanças posteriores
 
-| Jogo | JIT | NCE | Interpretação atual |
-|---|---|---|---|
-| MUA3 | Renderiza; proteção extrema chegou a permitir avanço com desempenho muito baixo | Menu aparece, jogo fica preto | Forte candidato a erro de estado/execução específico do NCE |
-| Metroid Prime 4 | Sem stuttering perceptível no teste | Stuttering recorrente | NCE introduz pausas que o JIT não apresenta |
-| Pokémon Legends: Z-A | Conseguiu rodar/avançar | Histórico de falha ou comportamento incompleto | Outro sinal de incompatibilidade NCE |
-| TOTK | Desempenho semelhante ao NCE | Desempenho semelhante ao JIT | NCE não demonstra a vantagem esperada |
-| Link's Awakening | Desempenho semelhante ao NCE | Desempenho semelhante ao JIT | Mesmo padrão |
-| MK11 | Desempenho semelhante ao NCE | Desempenho semelhante ao JIT | Mesmo padrão |
+Nos testes anteriores a 23/09, *MUA3* mostrava menu e depois tela preta no NCE enquanto o JIT renderizava; *Metroid Prime 4* apresentava stutter no NCE, e *Pokémon Legends: Z-A* avançava melhor no JIT. No mesmo conjunto de testes, *TOTK*, *Link's Awakening* e *MK11* tiveram desempenho parecido nos dois modos. O teste com Turnip T30 não isolou o driver como causa única. Esses resultados pertencem às builds e trechos testados naquela fase.
 
-O teste com Turnip T30 não alterou a conclusão: o problema principal permaneceu ligado ao caminho NCE, não foi explicado apenas pelo driver.
+Depois disso, a branch recebeu [NCE-PROT1](https://github.com/Sunshinin11/Ryujinx_Neo/commit/b614253ae), opção **desligada por padrão** que reaplica rastreamento de memória da GPU após mudanças de permissão em NCE, e [TEXBUF-ALIGN1](https://github.com/Sunshinin11/Ryujinx_Neo/commit/f0a4f81be), que mantém o offset exato da view de texture buffer no Turnip quando o driver anuncia alinhamento de um texel. O primeiro commit relata correção da tela preta de *MUA3*; o segundo relata eliminação de `DeviceLost` na entrada do gameplay. A chave de proteção NCE é seletiva porque pode trazer regressões em outros títulos, incluindo *Metroid Prime 4*.
+
+A conversão `LDXR/STXR` para `LDAXR/STLXR` passou a usar [filtro de instruções](https://github.com/Sunshinin11/Ryujinx_Neo/commit/2a1c968f06); o commit relata correção do boot de *Mario + Rabbids Sparks of Hope*. Nenhuma dessas mensagens de commit substitui uma nova matriz de testes no HEAD analisado.
+
+---
 
 ### 10.6 Hipóteses prioritárias para o NCE
 
@@ -538,119 +524,60 @@ A opção de inverter A/B e X/Y continua disponível, mas agora:
 
 ### 11.7 Estado da reforma visual
 
-As alterações visuais mais recentes estão na árvore de trabalho e ainda não fazem parte do commit-base `54b072361`. Elas foram revisadas estaticamente, mas ainda aguardam a primeira compilação externa. Nenhum APK foi gerado durante essa revisão.
+A reforma visual está commitada: a base foi introduzida em [`54b072361`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/54b072361) e a identidade/interface receberam [polimento posterior](https://github.com/Sunshinin11/Ryujinx_Neo/commit/df38536b2). O README publicado apresenta o projeto e, desde 28/09, inclui uma [galeria Android](https://github.com/Sunshinin11/Ryujinx_Neo/commit/141a112d5d). A revisão de 29/09 foi estática; não gerou APK nem validou a interface em aparelho.
 
 ---
 
-## 12. Estado atual exato do código
+## 12. Estado do código publicado
 
-### 12.1 Funcionalidades presentes no commit-base/branch
+### 12.1 Funcionalidades presentes na branch
 
-- otimizações gerais NEO V2;
-- snapshot limpo do MUA3 anterior ao NCE2;
-- V29;
-- NCE Neo 2 e correções R3;
-- Shader Loop Safety selecionável;
-- caches de shader isolados;
-- Memory Slack 0/12 GiB;
-- configurações por jogo;
-- primeira grande reforma visual.
+No snapshot `eed82fe791`, a última alteração de código identificada é `a24f5d1e7`. A branch publicada contém:
 
-### 12.2 Alterações não commitadas atuais
+- otimizações NEO V2 no backend Vulkan, cache de texturas/pipelines e controles de sincronização;
+- NCE Neo 2, proteção de rastreamento NCE opcional, acessos exclusivos ordenados com filtro e leitura de GPFIFO sem flush;
+- Shader Loop Safety selecionável, VTG via Compute, upload 3D assíncrono e opções de compatibilidade gráfica;
+- Memory Slack 0/12 GiB de espaço de endereçamento;
+- perfis por jogo, dois layouts de biblioteca, identidade visual Ryujinx Neo e gerenciador de drivers;
+- opção por jogo “Otimizações de GPU” e “Compatibilidade gráfica 2D”;
+- nove categorias de log desligadas por padrão.
 
-As mudanças pendentes estão concentradas na interface Android:
+O [changelog](../CHANGELOG.md) relaciona cada mudança aos commits. A presença de código não comprova funcionamento em todos os títulos citados.
 
-- manifesto, nome e ícones;
-- `DocumentProvider` e notificação;
-- paleta e tema;
-- persistência de opções;
-- diálogos de ações e configuração por jogo;
-- biblioteca NEO/Switch;
-- navegação direta para categorias;
-- reorganização das configurações;
-- logo escura;
-- recursos adaptativos do launcher.
+### 12.2 Limites da revisão
 
-O diretório `Imagens/` contém ativos de origem e permanece não rastreado. O diretório `.kotlin/` também não é parte do código-fonte do projeto e não deve ser versionado.
-
-### 12.3 O que não deve ser confundido com o estado atual
-
-- `[MUA3-SYNC]` não é uma correção ativa;
-- telemetria específica de diagnóstico MUA3 foi removida;
-- robust buffer access forçado em Qualcomm não ficou como solução;
-- pulo de draws do geometry shader não ficou ativo;
-- arquivo de configuração `mua3-diag.txt` não faz parte do fluxo atual;
-- AHB error não é considerado causa principal do crash;
-- JIT não foi escolhido como padrão.
+- Alterações não commitadas de checkouts locais foram ignoradas.
+- A tela preta de *MUA3* e o `DeviceLost` descritos em testes antigos motivaram NCE-PROT1 e TEXBUF-ALIGN1; não são resultados medidos do HEAD publicado.
+- `[MUA3-SYNC]`, `mua3-diag.txt`, robust buffer access forçado e pulo de draws do geometry shader continuam registrados apenas como experimentos históricos removidos.
+- Nenhuma compilação, execução de jogo ou comparação de FPS foi realizada nesta revisão documental.
 
 ---
 
-## 13. Resultados por jogo
+## 13. Resultados por jogo e estado da evidência
 
-### 13.1 Mortal Kombat 11
+As métricas abaixo pertencem aos testes históricos da consolidação de 20/09. Os commits posteriores registram correções implementadas; esta revisão não repetiu os testes no snapshot analisado.
 
-- a correção de feedback loop eliminou corrupção visual observada em menus/cutscenes;
-- listas de formato e UBWC reduziram stutter;
-- chegou a 60 FPS em modo portátil nos testes da fase;
-- JIT e NCE apresentaram desempenho semelhante em teste posterior, levantando dúvida sobre o benefício do NCE.
-
-### 13.2 The Legend of Zelda: Tears of the Kingdom
-
-- grande redução inicial de stutter com formatos/UBWC;
-- o ganho final de FPS foi modesto e variável;
-- melhor observação isolada na fase de batching: 17,4 FPS no cenário pesado;
-- permaneceu um engasgo periódico perto de 450 ms;
-- NCE e JIT ficaram próximos nos testes recentes.
-
-### 13.3 The Legend of Zelda: Link's Awakening
-
-- melhora com sincronização e pool de memória;
-- melhor resultado histórico registrado: 45,3 FPS no trecho testado;
-- um crash isolado após a mudança do contador do host foi registrado;
-- JIT e NCE também ficaram próximos em desempenho recente.
-
-### 13.4 Metroid Prime 4
-
-- teve histórico de `DeviceLost` em fases anteriores;
-- no estudo atual, o problema mais claro é stutter no NCE;
-- o mesmo trecho em JIT foi descrito como sem stuttering;
-- o problema de textura é separado e continuou existindo no JIT.
-
-### 13.5 Marvel Ultimate Alliance 3
-
-- V29 é necessária para o caminho visual trabalhado;
-- o hang original não foi explicado pelo geometry shader, AHB error, vertex buffers, compilação paralela ou robust buffer access;
-- Loop Safety pode atravessar o problema, mas com custo e regressões;
-- JIT renderiza, NCE fica preto;
-- a prioridade agora é investigar divergência NCE/JIT, não repetir as hipóteses descartadas.
-
-### 13.6 Pokémon Legends: Z-A
-
-- funciona melhor no JIT no teste citado;
-- NCE apresentou falha/comportamento incompleto;
-- reforça que a investigação deve começar no NCE comum a vários títulos.
-
-### 13.7 Mario + Rabbids Kingdom Battle
-
-- exibiu bugs gráficos quando a proteção de loop era imposta globalmente;
-- foi a evidência decisiva para tornar Shader Loop Safety selecionável.
+| Jogo | Observação histórica | Mudança posterior relacionada | Evidência nesta revisão |
+|---|---|---|---|
+| *Mortal Kombat 11* | Feedback loop corrigido, stutter reduzido e 60 FPS em modo portátil em um teste | Otimizações Vulkan mantidas no Current | Sem novo benchmark |
+| *Tears of the Kingdom* | Melhor observação isolada de 17,4 FPS no trecho pesado; engasgo periódico de ~450 ms | Ajustes de sincronização e GPU | Sem novo benchmark |
+| *Link's Awakening* | Melhor observação histórica de 45,3 FPS no trecho testado; um crash isolado | Ajustes posteriores de Vulkan/NCE | Sem novo teste |
+| *Metroid Prime 4* | Stutter no NCE e problema de textura também visto em JIT | Proteção NCE seletiva e upload 3D assíncrono | Sem confirmação de resolução |
+| *Marvel Ultimate Alliance 3* | Tela preta no NCE, renderização em JIT; Loop Safety atravessou um ponto com ~2 FPS | NCE-PROT1 e TEXBUF-ALIGN1 relatam correções para caminhos específicos | Falta reteste independente no HEAD |
+| *Pokémon Legends: Z-A* | JIT avançou melhor que NCE no teste antigo | Mudanças posteriores de NCE | Sem reteste |
+| *Mario + Rabbids Kingdom Battle* | Loop Safety global causou bugs gráficos; commit posterior relata crashes aleatórios com otimizações de GPU | Loop Safety selecionável e chave “Otimizações de GPU” por jogo | Mitigação relatada no commit, não garantia |
+| *Mario + Rabbids Sparks of Hope* | Sem medição anterior registrada aqui | Filtro de acessos exclusivos NCE relatado como correção de boot | Resultado baseado em mensagem de commit |
+| *MARVEL Cosmic Invasion* | Investigação de boot, tela preta e caminhos gráficos 2D | Compatibilidade gráfica 2D por jogo em `a24f5d1e7` | Sem validação independente nesta revisão |
 
 ---
 
 ## 14. Telemetria e logs
 
-### 14.1 Marcadores úteis ainda existentes
+### 14.1 Estado dos logs
 
-| Marcador | Significado |
-|---|---|
-| `[NEOV2-NCE2-R3]` | NCE Neo 2 R3 ativo |
-| `[NEOV2-V29]` | Conversão especial do shader do MUA3 ativa |
-| `[NEOV2-LOOP-GUARD]` | Estado da proteção de loops |
-| `[NEOV2-MEMLIMIT]` | Região, slack e limite total de memória |
-| `[NEOV2-ETAPA12]` | Estratégia de espera do VSync |
-| `[NEOV2-ETAPA16]` | Resumo/origem dos flushes |
-| `[NEOV2-ETAPA18]` | Capacidade do cache de texturas |
-| `[NEOV2-ETAPA21]` | Pool de memória usando `ArrayPool.Shared` |
+O Current desliga nove chaves de log por padrão e migra preferências antigas ([commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/bfeab8f9c)). Os marcadores `[NEOV2-NCE2-R3]`, `[NEOV2-V29]`, `[NEOV2-LOOP-GUARD]` e `[NEOV2-MEMLIMIT]` aparecem no histórico técnico. Sua ausência em uma sessão só é conclusiva quando o caminho executado e a categoria de log correspondente são conhecidos.
+
+---
 
 ### 14.2 Marcadores históricos/removidos
 
@@ -716,41 +643,18 @@ Para transformar o histórico em evidência de release:
 
 ## 17. Próximos passos recomendados
 
-### Prioridade 1 — estabilizar e medir a interface atual
+### Prioridade 1 — validar a branch publicada
 
-- compilar externamente a árvore visual atual;
-- validar launcher, tela de recentes e nome Ryujinx Neo;
-- validar modos NEO e Switch;
-- conferir configurações globais e por jogo;
-- confirmar que DRAM usa seletor e opções binárias usam switches;
-- confirmar persistência de layout, controle e estatísticas.
+1. Compilar um APK do commit exato e registrar driver, aparelho, firmware e opções efetivas.
+2. Conferir launcher, biblioteca NEO/Switch, perfis por jogo, gerenciador de drivers e persistência da interface.
+3. Retestar *MUA3* com NCE-PROT1 ligado/desligado e verificar tela preta, `DeviceLost` e desempenho.
+4. Comparar NCE/JIT em *Metroid Prime 4* e separar stutter do problema de textura; testar upload 3D assíncrono ligado/desligado.
+5. Verificar *Mario + Rabbids Kingdom Battle* com a chave de otimizações de GPU e *Sparks of Hope* com o filtro NCE.
+6. Verificar *MARVEL Cosmic Invasion* com Compatibilidade gráfica 2D ligada/desligada por jogo.
 
-### Prioridade 2 — congelar a versão visual
+### Prioridade 2 — consolidar evidência
 
-- corrigir apenas falhas visuais comprovadas;
-- criar commit e tag de recuperação;
-- não misturar a próxima rodada de NCE com reforma visual.
-
-### Prioridade 3 — NCE versus JIT
-
-1. Escolher um trecho reproduzível do MP4 para stutter.
-2. Escolher o ponto do MUA3 em que o NCE fica preto.
-3. Comparar opções efetivas de boot e estado de memória.
-4. Auditar cache maintenance, `mprotect`, sinais e retomada de contexto.
-5. Implementar uma correção real acompanhada de métricas suficientes na mesma build.
-6. Repetir em Pokémon Z-A para verificar se a causa é compartilhada.
-
-### Prioridade 4 — problemas gráficos separados
-
-- investigar a textura do MP4 sem atribuí-la automaticamente ao NCE;
-- manter V29 enquanto seu benefício visual for necessário;
-- usar Loop Safety somente onde o ganho superar as regressões.
-
-### Prioridade 5 — validação ampla de desempenho
-
-- repetir os benchmarks principais;
-- decidir se etapas neutras ou arriscadas ainda justificam manutenção;
-- documentar configuração recomendada por jogo.
+Repetir cenários com mesmo save e driver, separar cache frio/quente, registrar pelo menos três execuções e comparar imagem, estabilidade, FPS e frametime. Só depois converter relatos de commits e métricas antigas em afirmações sobre o Current.
 
 ---
 
@@ -810,16 +714,18 @@ Para transformar o histórico em evidência de release:
 | Commit | Descrição |
 |---|---|
 | `4c5abb58f` | Port da correção MUA3 V29 geometry-as-compute |
-| `98e23e65e` | Regras de Git e documentação inicial do fork |
-| `e564bb060` | Consolidação das otimizações Vulkan, Memory Slack e experimentos MUA3 |
-| `f8d0b8e06` | Snapshot estável do MUA3 antes do NCE Neo 2 |
-| `f24d6f706` | Introdução da arquitetura NCE Neo 2 |
-| `5243dc5af` | Correção do campo duplicado da pilha alternativa |
-| `cd86aa8f9` | Proteção de cache maintenance antes do mapeamento |
-| `d29a1ebf5` | NCE2 R3 e Loop Safety selecionável |
-| `7cb21885e` | Correção de escopo da proteção de loop |
-| `762b4af08` | Biblioteca NEO e configurações por jogo |
-| `54b072361` | Reforma visual com cartuchos e painéis modulares |
+| `e564bb060` | Consolidação inicial das otimizações Vulkan e Memory Slack |
+| `f8d0b8e06` | Snapshot do MUA3 anterior ao NCE Neo 2 |
+| `f24d6f706` | Arquitetura NCE Neo 2 |
+| `d29a1ebf5` / `7cb21885e` | NCE2 R3 e Loop Safety selecionável, depois corrigido |
+| `762b4af08` / `54b072361` | Perfis por jogo e reforma visual |
+| `df38536b2` / `1d34c02d8` | Identidade Neo e gerenciador de drivers |
+| `d517b9276` | Promoção para Neo Current 0.0.1 |
+| `b614253ae` / `f0a4f81be` | NCE-PROT1 e offset exato de texture buffer |
+| `b9baca871` / `69fd95c78` | Migração do Experimental e upload 3D assíncrono |
+| `2a1c968f0` | Filtro de exclusivas NCE e chave de otimizações de GPU |
+| `a24f5d1e7` | Compatibilidade gráfica 2D por jogo; último commit de código identificado |
+| `eed82fe791` | Ajuste documental da galeria do README; HEAD analisado |
 
 ---
 
@@ -861,10 +767,6 @@ Para transformar o histórico em evidência de release:
 
 ## 22. Conclusão
 
-O Ryujinx Neo já deixou de ser apenas uma coleção de patches. Ele possui uma linha de pesquisa documentada, pontos de recuperação, uma arquitetura própria para configurações Android, identidade visual e alterações profundas no caminho Vulkan e no NCE.
+A branch publicada do Ryujinx Neo Current reúne trabalho em NCE, Vulkan, compatibilidade por jogo e experiência Android. Correções posteriores à consolidação de 20/09 tornam alguns diagnósticos daquele período históricos; os testes antigos não descrevem automaticamente o comportamento do HEAD atual.
 
-Os resultados mais fortes estão no lado gráfico: cache, formatos, UBWC, barreiras, submissão e retenção de texturas. A investigação do MUA3 também produziu valor mesmo sem resolver tudo, porque eliminou várias hipóteses e separou o AHB error do hang real.
-
-O gargalo decisivo agora é o NCE. A semelhança de desempenho com o JIT, o stutter exclusivo do MP4, a tela preta do MUA3 e o comportamento do Pokémon Z-A indicam que ainda existe problema de correção e/ou sincronização no caminho nativo. Resolver isso sem perder a eficiência térmica é o passo que falta para transformar o Ryujinx Neo em uma build realmente pronta para uso diário nos aparelhos-alvo.
-
-Até essa validação, a descrição correta do projeto é: **fork Android experimental avançado, com ganhos gráficos reais, interface própria e NCE em desenvolvimento ativo**.
+A descrição responsável do projeto é **fork Android experimental em desenvolvimento ativo**, com funcionalidades presentes no código e compatibilidade por título ainda dependente de validação. O próximo marco é compilar o commit publicado e retestar, de forma reproduzível, boot, imagem, estabilidade e desempenho.
