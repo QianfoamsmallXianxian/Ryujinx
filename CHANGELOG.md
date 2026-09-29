@@ -1,13 +1,19 @@
 # Ryujinx Neo Current — changelog e funcionalidades
 
-**Versão no código:** Android 0.0.1 (`versionCode 20108`)  
-**Branch analisada:** [`neo-v2-nce2`](https://github.com/Sunshinin11/Ryujinx_Neo/tree/neo-v2-nce2)  
-**Último commit analisado:** [`a24f5d1e7`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/a24f5d1e792f3b8718686359f502def5e401e810), de 27/09/2026  
-**Data da revisão:** 28/09/2026
+- **Versão no código:** Android 0.0.1 (`versionCode 20108`)
+- **Branch analisada:** [`neo-v2-nce2`](https://github.com/Sunshinin11/Ryujinx_Neo/tree/neo-v2-nce2)
+- **HEAD da branch:** [`eed82fe791`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/eed82fe791ae2a7e5a4c14de6ccac9099a5c1cdb), de 28/09/2026
+- **Último commit de código identificado:** [`a24f5d1e7`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/a24f5d1e792f3b8718686359f502def5e401e810), de 27/09/2026
+- **Data da revisão:** 29/09/2026
 
-Este texto cobre **somente a linha Ryujinx Neo Current em `neo-v2-nce2`**. A branch padrão `neo-v2-fase1` e o trabalho Linux ARM64 do Hugare não fazem parte deste changelog. A análise combinou o histórico de commits, o [relatório técnico existente](https://github.com/Sunshinin11/Ryujinx_Neo/blob/neo-v2-nce2/docs/RELATORIO_COMPLETO_RYUJINX_NEO.md) e leitura do código atual. “Implementado” indica que o caminho está no código; não equivale a uma validação de APK ou de todos os jogos.
+Este texto cobre **somente a linha Ryujinx Neo Current em `neo-v2-nce2`**. A linha histórica `neo-v2-fase1` e o trabalho Linux ARM64 do Hugare não fazem parte deste changelog. A análise combinou o histórico de commits, o [relatório técnico atualizado](docs/RELATORIO_COMPLETO_RYUJINX_NEO.md) e leitura estática do código publicado até `eed82fe791`. Alterações não commitadas do checkout foram ignoradas. “Implementado” indica que o caminho está no código; não equivale a uma validação de APK ou de todos os jogos.
 
 ## Changelog do Neo Current
+
+### 28 de setembro — documentação do projeto
+
+- **README e guias:** apresentação do Ryujinx Neo em português, com origem, créditos e transparência sobre uso de IA; índice da documentação e guia de contribuição revistos. Mudanças documentais, sem alteração do comportamento do emulador. [Apresentação](https://github.com/Sunshinin11/Ryujinx_Neo/commit/f59913fb21) · [guia](https://github.com/Sunshinin11/Ryujinx_Neo/commit/486e298ebe) · [índice](https://github.com/Sunshinin11/Ryujinx_Neo/commit/f08fe2e427)
+- **Galeria Android:** capturas adicionadas ao README, com ajustes posteriores da seleção e resolução das imagens. [Galeria](https://github.com/Sunshinin11/Ryujinx_Neo/commit/141a112d5d) · [último ajuste](https://github.com/Sunshinin11/Ryujinx_Neo/commit/eed82fe791)
 
 ### 27 de setembro — compatibilidade por jogo e correções finais
 
@@ -63,7 +69,7 @@ Este texto cobre **somente a linha Ryujinx Neo Current em `neo-v2-nce2`**. A bra
 
 ### Emulação, imagem e controles
 
-- Núcleo herdado de Ryujinx/Kenji-NX para CPU ARM, serviços do Switch, áudio, entrada, shaders e gerenciamento de dados; no Android, o projeto expõe NCE ou JIT, PPTC, modos de memória e opções de compatibilidade. A presença na base é documentada pelo [README herdado](https://github.com/Sunshinin11/Ryujinx_Neo/blob/neo-v2-nce2/README.md) e pelas [configurações Android](https://github.com/Sunshinin11/Ryujinx_Neo/blob/neo-v2-nce2/src/KenjinxAndroid/app/src/main/java/org/kenjinx/android/views/SettingViews.kt); compatibilidade por título exige testes separados.
+- Núcleo herdado de Ryujinx/Kenji-NX para CPU ARM, serviços do Switch, áudio, entrada, shaders e gerenciamento de dados; no Android, o projeto expõe NCE ou JIT, PPTC, modos de memória e opções de compatibilidade. A origem e o escopo da base são descritos no [README atual](https://github.com/Sunshinin11/Ryujinx_Neo/blob/neo-v2-nce2/README.md) e pelas [configurações Android](https://github.com/Sunshinin11/Ryujinx_Neo/blob/neo-v2-nce2/src/KenjinxAndroid/app/src/main/java/org/kenjinx/android/views/SettingViews.kt); compatibilidade por título exige testes separados.
 - Renderização Vulkan com escala de resolução, anisotropia, VSync, cache de shaders, recompressão de textura, VTG via Compute, Shader Loop Safety, cópia DMA relaxada, upload 3D assíncrono e ajustes de sincronização. [Configuração gráfica](https://github.com/Sunshinin11/Ryujinx_Neo/blob/neo-v2-nce2/src/Ryujinx.Graphics.Gpu/GraphicsConfig.cs) · [opções efetivas](https://github.com/Sunshinin11/Ryujinx_Neo/blob/neo-v2-nce2/src/Ryujinx.Common/Diagnostics/NeoGraphicsSettings.cs)
 - Controle na tela com seis layouts, toque quando o controle virtual está oculto, suporte a movimento e menu rápido durante o jogo para controle, estatísticas, VSync, movimento e cinco slots Amiibo. [Interface de jogo](https://github.com/Sunshinin11/Ryujinx_Neo/blob/neo-v2-nce2/src/KenjinxAndroid/app/src/main/java/org/kenjinx/android/views/GameViews.kt)
 - Configurações de sistema para idioma, região, firmware e chaves; seções separadas para emulação/CPU, gráficos, controles, jogos/dados, logs e informações. [Interface de configurações](https://github.com/Sunshinin11/Ryujinx_Neo/blob/neo-v2-nce2/src/KenjinxAndroid/app/src/main/java/org/kenjinx/android/views/SettingViews.kt)
@@ -75,9 +81,7 @@ Este texto cobre **somente a linha Ryujinx Neo Current em `neo-v2-nce2`**. A bra
 
 ## Estado e limites conhecidos
 
-- **A documentação antiga está desatualizada em pontos importantes.** Ela registra tela preta de *MUA3* no NCE e descreve a reforma visual como não commitada, mas a branch atual contém commits posteriores para proteção NCE, alinhamento de texture buffer e interface. Esses commits indicam correções implementadas; sem teste independente de APK nesta revisão, não afirmo compatibilidade definitiva. [Relatório antigo](https://github.com/Sunshinin11/Ryujinx_Neo/blob/neo-v2-nce2/docs/RELATORIO_COMPLETO_RYUJINX_NEO.md) · [NCE](https://github.com/Sunshinin11/Ryujinx_Neo/commit/b614253ae) · [texture buffer](https://github.com/Sunshinin11/Ryujinx_Neo/commit/f0a4f81be)
+- **MUA3 e NCE:** testes anteriores registraram tela preta no NCE; depois, esta linha recebeu proteção de rastreamento de memória NCE (opcional) e correção de offset de texture buffer no Turnip. Os commits relatam correções para esse caminho, mas esta revisão não mediu o resultado em aparelho. [NCE](https://github.com/Sunshinin11/Ryujinx_Neo/commit/b614253ae) · [texture buffer](https://github.com/Sunshinin11/Ryujinx_Neo/commit/f0a4f81be) · [relatório técnico](docs/RELATORIO_COMPLETO_RYUJINX_NEO.md)
 - **As opções de compatibilidade são seletivas.** Shader Loop Safety, proteção de memória NCE, cópia DMA relaxada, descritores não mapeados, upload 3D assíncrono, otimizações de GPU e compatibilidade 2D existem para contornar comportamentos de drivers/jogos específicos. Alguns vêm desligados por padrão; outros podem ser desligados por jogo quando houver regressão. [Padrões atuais](https://github.com/Sunshinin11/Ryujinx_Neo/blob/neo-v2-nce2/src/KenjinxAndroid/app/src/main/java/org/kenjinx/android/viewmodels/QuickSettings.kt)
 - **Resultados de desempenho são locais aos testes relatados.** O histórico cita ganhos de carregamento de pipeline e FPS em trechos de *MUA3*, *MK11*, *TOTK* e *Link's Awakening*, mas muitos testes tiveram poucas repetições. Não há base para prometer o mesmo ganho em outro aparelho, driver ou jogo. [Relatório técnico](https://github.com/Sunshinin11/Ryujinx_Neo/blob/neo-v2-nce2/docs/RELATORIO_COMPLETO_RYUJINX_NEO.md)
-- **Estado verificado nesta revisão:** leitura estática de código e histórico até `a24f5d1e7`. Não compilei APK, não rodei jogos e não confirmei uma release publicada para este commit.
-
-
+- **Estado verificado nesta revisão:** leitura estática da branch publicada até `eed82fe791` (último commit de código identificado: `a24f5d1e7`). Alterações não commitadas foram ignoradas. Não compilei APK nem rodei jogos nesta revisão.
