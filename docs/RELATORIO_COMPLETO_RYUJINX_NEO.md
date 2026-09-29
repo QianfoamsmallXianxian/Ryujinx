@@ -2,15 +2,15 @@
 
 - **Projeto:** Ryujinx Neo, fork Android derivado do Kenji-NX
 - **Repositório:** [Sunshinin11/Ryujinx_Neo](https://github.com/Sunshinin11/Ryujinx_Neo)
-- **Branch e snapshot analisados:** `neo-v2-nce2` em [`eed82fe79`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/eed82fe791ae2a7e5a4c14de6ccac9099a5c1cdb) (28/09/2026)
+- **Branch analisada:** `neo-v2-nce2` no GitHub e no checkout `Kenji-NX-Current`
 - **Último código publicado:** [`a24f5d1e7`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/a24f5d1e792f3b8718686359f502def5e401e810) (27/09/2026)
-- **Current local analisado:** mudanças funcionais de 28/09/2026, ainda não enviadas ao GitHub
+- **Current local analisado:** cinco commits criados em 29/09/2026 para as mudanças funcionais de 28/09, ainda não enviados ao GitHub
 - **Data desta revisão:** 29/09/2026
 - **Versão Android no código:** `0.0.1`, `versionCode 20108` ([build.gradle](https://github.com/Sunshinin11/Ryujinx_Neo/blob/neo-v2-nce2/src/KenjinxAndroid/app/build.gradle))
 - **Dispositivo histórico de referência:** AYN Thor, Snapdragon 8 Gen 2, Adreno 740
 - **Plataforma em foco:** Android arm64-v8a / Linux Bionic, Vulkan em Turnip/Adreno
 
-> As seções 5–10 e as métricas por jogo preservam o histórico até 20/09. As seções 11–17 distinguem o código publicado na branch GitHub do estado funcional observado no checkout **Kenji-NX-Current** em 28/09. O código local ainda não foi enviado ao GitHub. Os registros de build da data confirmam compilação Android; os testes ocorreram no Experimental antes da promoção e não foram repetidos nesta revisão.
+> As seções 5–10 e as métricas por jogo preservam o histórico até 20/09. As seções 11–17 distinguem o código publicado na branch GitHub do estado funcional observado no checkout **Kenji-NX-Current** em 28/09. Os cinco commits de código criados localmente em 29/09 ainda não foram enviados ao GitHub. Os registros de build da data confirmam compilação Android; os testes ocorreram no Experimental antes da promoção e não foram repetidos nesta revisão.
 
 ---
 
@@ -71,7 +71,7 @@ Criar uma versão Android do Ryujinx que seja:
 
 ### 3.1 Repositório verificado
 
-A branch padrão consultada no GitHub é `neo-v2-nce2`. No checkout local **Kenji-NX-Current**, a branch está em `a24f5d1e7` e contém mudanças de código usadas nos builds de 28/09 que ainda não foram commitadas. Este relatório distingue esse estado local dos commits publicados; o Experimental é o ambiente de validação prévia das mudanças promovidas ao Current, conforme a seção 5.4.
+A branch padrão consultada no GitHub é `neo-v2-nce2`. No checkout local **Kenji-NX-Current**, cinco commits criados em 29/09 sobre `a24f5d1e7` registram os 18 arquivos de código alterados em 28/09. O HEAD local está em `8bd3d0369`; esses commits ainda não foram enviados ao GitHub. Este relatório distingue esse estado local dos commits publicados; o Experimental é o ambiente de validação prévia das mudanças promovidas ao Current, conforme a seção 5.4.
 
 ### 3.2 Linhas e tags históricas
 
@@ -538,11 +538,11 @@ A reforma visual de base está commitada em [`54b072361`](https://github.com/Sun
 
 ### 12.1 Código publicado na branch GitHub
 
-No snapshot GitHub `eed82fe79`, a última alteração de código é `a24f5d1e7`. Estão publicados NCE Neo 2, NCE-PROT1 opcional, Shader Loop Safety selecionável, VTG via Compute, upload 3D assíncrono, compatibilidade gráfica 2D por jogo, perfis por Title ID, dois layouts de biblioteca, gerenciador de drivers e opções de sincronização/GPU descritas no [changelog](../CHANGELOG.md).
+Na branch GitHub, a última alteração de código publicada é `a24f5d1e7`. Estão publicados NCE Neo 2, NCE-PROT1 opcional, Shader Loop Safety selecionável, VTG via Compute, upload 3D assíncrono, compatibilidade gráfica 2D por jogo, perfis por Title ID, dois layouts de biblioteca, gerenciador de drivers e opções de sincronização/GPU descritas no [changelog](../CHANGELOG.md).
 
 ### 12.2 Mudanças funcionais do Current local em 28/09
 
-O diff do checkout `Kenji-NX-Current` contém 18 arquivos de código modificados em relação a `a24f5d1e7`. Essas mudanças ainda não têm commit na branch GitHub. Os registros `android_build_current_doom1_fix.log` (21:09) e `android_build_current_doom1b.log` (21:36) terminam em **BUILD SUCCESSFUL** para `MainlineArmv8Release`; foram gerados APKs locais dessa linha. Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes.
+O diff entre `a24f5d1e7` e o HEAD local `8bd3d0369` abrange 18 arquivos de código, alterados em 28/09 e organizados nos cinco commits locais abaixo em 29/09. Eles ainda não estão na branch GitHub. Os registros `android_build_current_doom1_fix.log` (21:09) e `android_build_current_doom1b.log` (21:36) terminam em **BUILD SUCCESSFUL** para `MainlineArmv8Release`; foram gerados APKs locais dessa linha. Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes.
 
 | Área | Implementação observada no Current local |
 |---|---|
@@ -555,12 +555,14 @@ O diff do checkout `Kenji-NX-Current` contém 18 arquivos de código modificados
 | Texturas 2D grandes | `TextureGroup.cs` implementa rastreamento por regiões em texturas block-linear elegíveis a partir de 4 MiB, inclusive camadas/mipmaps. Escritas localizadas podem provocar envio só das regiões alteradas; há fallback para envio integral e verificação rotativa por hash de mudanças não notificadas. |
 | Logs | `SettingViews.kt` expõe as chaves Guest e Debug na interface, com descrição do custo de Debug. |
 
+Os commits locais são `653256590` (texturas 2D grandes), `181375e3c` (limite de memória), `b3ef70fc6` (sincronização NCE), `fbcfa896a` (NIFM por jogo) e `8bd3d0369` (interface Android, DLC, atualizações e logs). Os hashes ainda não têm links no GitHub porque não houve push.
+
 ### 12.3 Evidência e limites
 
 - Os dois logs citados registram builds Android concluídos. Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes.
 - O texto da opção “Modo sem internet” cita *DOOM 2016* como motivação. A opção altera apenas a resposta do NIFM e não bloqueia toda a rede. Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes.
 - O envio de texturas foi validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. Imagem, memória, tempo de quadro e fallback permanecem itens de monitoramento para futuras promoções.
-- A branch remota continua sem o código local de 28/09. Os nomes dos arquivos acima identificam o checkout Current analisado, não links para uma implementação já publicada.
+- A branch remota continua sem os cinco commits locais do código de 28/09. Os nomes dos arquivos acima identificam o checkout Current analisado, não links para uma implementação já publicada.
 - `[MUA3-SYNC]`, `mua3-diag.txt`, robust buffer access forçado e pulo de draws do geometry shader continuam apenas como histórico de experimentos removidos.
 
 ---
@@ -664,9 +666,9 @@ Para transformar o histórico em evidência de release:
 
 ### Prioridade 1: publicar o Current local
 
-1. Commitar e enviar à branch `neo-v2-nce2` os 18 arquivos modificados de 28/09, já validados no Experimental.
+1. Integrar os cinco commits locais à branch GitHub `neo-v2-nce2`, conciliando antes os commits de documentação publicados remotamente.
 2. Criar tag de recuperação sobre `a24f5d1e7` antes do push.
-3. Atualizar o cabeçalho de ambos os documentos com o novo commit publicado.
+3. Após o push, atualizar os cabeçalhos de ambos os documentos para identificar o novo commit de código publicado.
 
 ### Prioridades 2 e 3: manutenção da matriz de regressão
 
@@ -745,7 +747,12 @@ Preservar a metodologia da seção 15: mesmo save e driver, cache frio/quente se
 | `b614253ae` / `f0a4f81be` | NCE-PROT1 e offset exato de texture buffer |
 | `b9baca871` / `69fd95c78` | Migração do Experimental e upload 3D assíncrono |
 | `2a1c968f0` | Filtro de exclusivas NCE e chave de otimizações de GPU |
-| `a24f5d1e7` | Compatibilidade gráfica 2D por jogo; último commit de código publicado antes das mudanças locais de 28/09 |
+| `a24f5d1e7` | Compatibilidade gráfica 2D por jogo; último commit de código publicado antes das mudanças de 28/09 |
+| `653256590` | Texturas 2D grandes; commit local criado em 29/09, ainda não enviado |
+| `181375e3c` | Limite de memória 3285 MiB; commit local criado em 29/09, ainda não enviado |
+| `b3ef70fc6` | Serialização NCE; commit local criado em 29/09, ainda não enviado |
+| `fbcfa896a` | Modo sem internet por jogo; commit local criado em 29/09, ainda não enviado |
+| `8bd3d0369` | Interface Android, DLC, atualizações e logs; commit local criado em 29/09, ainda não enviado |
 
 ---
 
@@ -787,6 +794,6 @@ Preservar a metodologia da seção 15: mesmo save e driver, cache frio/quente se
 
 ## 22. Conclusão
 
-O Ryujinx Neo Current não parou nas alterações de 27/09. Em 28/09, o checkout Current recebeu mudanças funcionais em interface Android, DLC/atualizações, NIFM por jogo, NCE, limite de memória, logs e envio seletivo de texturas 2D grandes. Os builds Android das 21:09 e 21:36 terminaram com sucesso. Esse código ainda não aparece na branch GitHub, cuja última alteração de código publicada é `a24f5d1e7`.
+O Ryujinx Neo Current não parou nas alterações de 27/09. Em 28/09, o checkout Current recebeu mudanças funcionais em interface Android, DLC/atualizações, NIFM por jogo, NCE, limite de memória, logs e envio seletivo de texturas 2D grandes. Os builds Android das 21:09 e 21:36 terminaram com sucesso. O código foi organizado em cinco commits locais em 29/09, ainda ausentes da branch GitHub, cuja última alteração de código publicada é `a24f5d1e7`.
 
-O próximo passo do fluxo é publicar os 18 arquivos do Current local, já validados no Experimental, após criar uma tag de recuperação sobre `a24f5d1e7`. Depois do push, os cabeçalhos dos dois documentos devem apontar para o novo commit. A matriz de regressão permanece como rotina de futuras promoções; esta revisão não repetiu os testes do Experimental.
+O próximo passo do fluxo é integrar e publicar os cinco commits locais do Current, que reúnem os 18 arquivos de código de 28/09, após conciliar os commits remotos de documentação e criar uma tag de recuperação sobre `a24f5d1e7`. Depois do push, os cabeçalhos dos dois documentos devem apontar para o novo commit de código publicado. A matriz de regressão permanece como rotina de futuras promoções; esta revisão não repetiu os testes do Experimental.
