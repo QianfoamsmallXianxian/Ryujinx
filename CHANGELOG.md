@@ -2,7 +2,7 @@
 
 - **Versão no código:** Android 0.0.1 (`versionCode 20108`)
 - **Branch analisada:** [`neo-v2-nce2`](https://github.com/Sunshinin11/Ryujinx_Neo/tree/neo-v2-nce2)
-- **HEAD da branch:** [`eed82fe791`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/eed82fe791ae2a7e5a4c14de6ccac9099a5c1cdb), de 28/09/2026
+- **Snapshot analisado da branch:** [`eed82fe791`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/eed82fe791ae2a7e5a4c14de6ccac9099a5c1cdb), de 28/09/2026
 - **Último commit de código identificado:** [`a24f5d1e7`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/a24f5d1e792f3b8718686359f502def5e401e810), de 27/09/2026
 - **Data da revisão:** 29/09/2026
 
