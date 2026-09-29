@@ -1213,5 +1213,12 @@ namespace LibKenjinx
             Fatal = 0x07,
             Silent = 0x08,
         }
+
+        // Opcao por jogo "Modo sem internet" (DOOM 2016).
+        [UnmanagedCallersOnly(EntryPoint = "deviceSetNifmOffline")]
+        public static void JniDeviceSetNifmOffline(bool enable)
+        {
+            Ryujinx.Common.Diagnostics.NeoGraphicsSettings.NifmOfflineEnabled = enable;
+        }
     }
 }

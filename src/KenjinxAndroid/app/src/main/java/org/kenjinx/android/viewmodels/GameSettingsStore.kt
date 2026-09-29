@@ -70,6 +70,13 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             if (isValid) preferences.edit { putBoolean(key("experimentalGameFixesEnabled"), value) }
         }
 
+    /** Modo sem internet: o servico de rede responde que nenhum pedido de internet foi aceito. Desligado por padrao. */
+    var nifmOfflineEnabled: Boolean
+        get() = isValid && preferences.getBoolean(key("nifmOfflineEnabled"), false)
+        set(value) {
+            if (isValid) preferences.edit { putBoolean(key("nifmOfflineEnabled"), value) }
+        }
+
     /** Otimizacoes de GPU: 0: Use Global, 1: Enabled, 2: Disabled */
     var gpuOptimizationsMode: Int
         get() = if (!isValid) 0 else preferences.getInt(key("gpuOptimizationsMode"), 0)
@@ -190,6 +197,7 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             putInt(key("asyncLarge3DUploadMode"), asyncLarge3DUploadMode)
             putInt(key("gpuOptimizationsMode"), gpuOptimizationsMode)
             putBoolean(key("experimentalGameFixesEnabled"), experimentalGameFixesEnabled)
+            putBoolean(key("nifmOfflineEnabled"), nifmOfflineEnabled)
             putInt(key("drawFlushMode"), drawFlushMode)
             putInt(key("bufferReadbackMode"), bufferReadbackMode)
             putInt(key("strictSyncMode"), strictSyncMode)

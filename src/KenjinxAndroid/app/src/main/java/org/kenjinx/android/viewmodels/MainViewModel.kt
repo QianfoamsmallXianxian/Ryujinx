@@ -176,8 +176,10 @@ class MainViewModel(val activity: MainActivity) {
             }
         }
 
+        // Opcoes por jogo "Compatibilidade grafica 2D" (MARVEL Cosmic Invasion) e "Modo sem internet" (DOOM 2016).
         val experimentalStore = GameSettingsStore(activity, game.titleId.orEmpty())
         KenjinxNative.deviceSetExperimentalGameFixes(experimentalStore.isEnabled && experimentalStore.experimentalGameFixesEnabled)
+        KenjinxNative.deviceSetNifmOffline(experimentalStore.isEnabled && experimentalStore.nifmOfflineEnabled)
 
         KenjinxNative.deviceReinitEmulation()
         MainActivity.mainViewModel?.activity?.uiHandler = UiHandler()
@@ -399,6 +401,7 @@ class MainViewModel(val activity: MainActivity) {
         val settings = QuickSettings(activity)
 
         KenjinxNative.deviceSetExperimentalGameFixes(false)
+        KenjinxNative.deviceSetNifmOffline(false)
 
         // NEOV2 NCE-PROT1: sem perfil de jogo, vale a configuracao global.
         try {

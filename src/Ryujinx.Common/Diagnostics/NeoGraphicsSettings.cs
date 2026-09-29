@@ -96,6 +96,14 @@
         /// <summary>Trava do StagingBuffer.</summary>
         public static bool StagingBufferLockEnabled { get; set; } = true;
 
+        private static bool _nifmOfflineEnabled;
+
+        public static bool NifmOfflineEnabled
+        {
+            get => _nifmOfflineEnabled;
+            set => _nifmOfflineEnabled = value;
+        }
+
         /// <summary>TexturePool mantem invalido o slot com endereco 0 ao ser modificado.</summary>
         public static bool TexturePoolKeepInvalidEnabled { get; set; } = true;
     }
