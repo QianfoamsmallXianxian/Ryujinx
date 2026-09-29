@@ -4,30 +4,30 @@
 - **Repositório:** [Sunshinin11/Ryujinx_Neo](https://github.com/Sunshinin11/Ryujinx_Neo)
 - **Branch analisada:** `neo-v2-nce2` no GitHub e no checkout `Kenji-NX-Current`
 - **Último código publicado:** [`a24f5d1e7`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/a24f5d1e792f3b8718686359f502def5e401e810) (27/09/2026)
-- **Current local analisado:** cinco commits criados em 29/09/2026 para as mudanças funcionais de 28/09, ainda não enviados ao GitHub
+- **Código das mudanças de 28/09 publicado:** cinco commits criados e publicados no GitHub em 29/09/2026
 - **Data desta revisão:** 29/09/2026
 - **Versão Android no código:** `0.0.1`, `versionCode 20108` ([build.gradle](https://github.com/Sunshinin11/Ryujinx_Neo/blob/neo-v2-nce2/src/KenjinxAndroid/app/build.gradle))
 - **Dispositivo histórico de referência:** AYN Thor, Snapdragon 8 Gen 2, Adreno 740
 - **Plataforma em foco:** Android arm64-v8a / Linux Bionic, Vulkan em Turnip/Adreno
 
-> As seções 5–10 e as métricas por jogo preservam o histórico até 20/09. As seções 11–17 distinguem o código publicado na branch GitHub do estado funcional observado no checkout **Kenji-NX-Current** em 28/09. Os cinco commits de código criados localmente em 29/09 ainda não foram enviados ao GitHub. Os registros de build da data confirmam compilação Android; os testes ocorreram no Experimental antes da promoção e não foram repetidos nesta revisão.
+> As seções 5–10 e as métricas por jogo preservam o histórico até 20/09. As seções 11–17 distinguem o código publicado na branch GitHub do estado funcional observado no checkout **Kenji-NX-Current** em 28/09. Os cinco commits de código criados em 29/09 foram integrados e publicados no GitHub na branch `neo-v2-nce2`. Os registros de build da data confirmam compilação Android; os testes ocorreram no Experimental antes da promoção e não foram repetidos nesta revisão.
 
 ---
 
 ## 1. Resumo executivo
 
-O Ryujinx Neo é um fork Android do Kenji-NX com trabalho próprio no backend Vulkan, NCE, compatibilidade gráfica e interface. A linha **Neo Current** está em `neo-v2-nce2`; o código Android declara versão `0.0.1` (`versionCode 20108`). O [changelog](../CHANGELOG.md) lista as mudanças por período, incluindo o trabalho funcional de 28/09 encontrado no Current local.
+O Ryujinx Neo é um fork Android do Kenji-NX com trabalho próprio no backend Vulkan, NCE, compatibilidade gráfica e interface. A linha **Neo Current** está em `neo-v2-nce2`; o código Android declara versão `0.0.1` (`versionCode 20108`). O [changelog](../CHANGELOG.md) lista as mudanças por período, incluindo o trabalho funcional de 28/09 publicado na branch.
 
 As frentes implementadas na branch incluem:
 
 1. **GPU/Vulkan:** worker de submissão, ajustes de sincronização, cache de pipelines e texturas, caminho VTG via Compute, offset exato de texture buffer no Turnip, upload 3D assíncrono e chaves de compatibilidade.
 2. **CPU/NCE:** arquitetura NCE Neo 2, proteção opcional de rastreamento da GPU após mudanças de permissão e conversão seletiva de acessos exclusivos.
 3. **Android:** identidade Ryujinx Neo, dois layouts da biblioteca, perfis por Title ID, gerenciador de drivers Vulkan e controles globais/por jogo.
-4. **Diagnóstico:** categorias de log configuráveis, com nove chaves desligadas por padrão na linha Current e controles Guest/Debug expostos no checkout local.
+4. **Diagnóstico:** categorias de log configuráveis, com nove chaves desligadas por padrão na linha Current e controles Guest/Debug expostos no aplicativo.
 
 Os benchmarks e relatos anteriores a 23/09 continuam úteis como contexto, mas não representam uma medição do snapshot analisado. Em especial, a tela preta de *Marvel Ultimate Alliance 3* no NCE era uma observação anterior às mudanças [NCE-PROT1](https://github.com/Sunshinin11/Ryujinx_Neo/commit/b614253ae) e [TEXBUF-ALIGN1](https://github.com/Sunshinin11/Ryujinx_Neo/commit/f0a4f81be). Os commits relatam correções para esse caminho; esta revisão não executou o jogo para confirmar o resultado final.
 
-Em 28/09, o Current local recebeu nova página de configurações por jogo, interface responsiva, correções de seleção de DLC/atualizações, modo sem internet por jogo, ajustes NCE/memória e envio seletivo de regiões de texturas 2D grandes. Essas mudanças foram validadas no Experimental antes da promoção ao Current. Os builds Android `MainlineArmv8Release` terminaram com sucesso às 21:09 e 21:36; esta revisão não repetiu os testes do Experimental.
+Em 28/09, a linha Current recebeu nova página de configurações por jogo, interface responsiva, correções de seleção de DLC/atualizações, modo sem internet por jogo, ajustes NCE/memória e envio seletivo de regiões de texturas 2D grandes. Essas mudanças foram validadas no Experimental antes da promoção ao Current. Os builds Android `MainlineArmv8Release` terminaram com sucesso às 21:09 e 21:36; esta revisão não repetiu os testes do Experimental.
 
 ---
 
@@ -71,7 +71,7 @@ Criar uma versão Android do Ryujinx que seja:
 
 ### 3.1 Repositório verificado
 
-A branch padrão consultada no GitHub é `neo-v2-nce2`. No checkout local **Kenji-NX-Current**, cinco commits criados em 29/09 sobre `a24f5d1e7` registram os 18 arquivos de código alterados em 28/09. O HEAD local está em `8bd3d0369`; esses commits ainda não foram enviados ao GitHub. Este relatório distingue esse estado local dos commits publicados; o Experimental é o ambiente de validação prévia das mudanças promovidas ao Current, conforme a seção 5.4.
+A branch padrão consultada no GitHub é `neo-v2-nce2`. Na branch **neo-v2-nce2**, cinco commits de código criados em 29/09 registram os 18 arquivos alterados em 28/09, agora devidamente integrados e publicados no GitHub ([`339470edc`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/339470edc8b891c3994a36931027750380fa835e), [`526f03540`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/526f035405a021819b071fa3be19332a1193d506), [`dc519b29b`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/dc519b29b9c885491198f8983b2ef9ecab8df2c3), [`6283a0ca4`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/6283a0ca4fa79d390c53eba70488cbff4ca69d9e), [`e39e26833`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/e39e26833225516be048a725d42927269b434d86)).
 
 ### 3.2 Linhas e tags históricas
 
@@ -540,11 +540,11 @@ A reforma visual de base está commitada em [`54b072361`](https://github.com/Sun
 
 Na branch GitHub, a última alteração de código publicada é `a24f5d1e7`. Estão publicados NCE Neo 2, NCE-PROT1 opcional, Shader Loop Safety selecionável, VTG via Compute, upload 3D assíncrono, compatibilidade gráfica 2D por jogo, perfis por Title ID, dois layouts de biblioteca, gerenciador de drivers e opções de sincronização/GPU descritas no [changelog](../CHANGELOG.md).
 
-### 12.2 Mudanças funcionais do Current local em 28/09
+### 12.2 Mudanças funcionais de 28/09 publicadas no GitHub
 
-O diff entre `a24f5d1e7` e o HEAD local `8bd3d0369` abrange 18 arquivos de código, alterados em 28/09 e organizados nos cinco commits locais abaixo em 29/09. Eles ainda não estão na branch GitHub. Os registros `android_build_current_doom1_fix.log` (21:09) e `android_build_current_doom1b.log` (21:36) terminam em **BUILD SUCCESSFUL** para `MainlineArmv8Release`; foram gerados APKs locais dessa linha. Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes.
+As 18 alterações de código feitas em 28/09 foram organizadas nos cinco commits abaixo, publicados no GitHub na branch `neo-v2-nce2`. Os registros `android_build_current_doom1_fix.log` (21:09) e `android_build_current_doom1b.log` (21:36) terminam em **BUILD SUCCESSFUL** para `MainlineArmv8Release`; foram gerados APKs locais dessa linha. Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes.
 
-| Área | Implementação observada no Current local |
+| Área | Implementação publicada no GitHub |
 |---|---|
 | Configurações por jogo | `GameSettingsDialog.kt` foi reorganizado como `GameSettingsPage`, com seções de sistema/CPU, gráficos, controles/interface, compatibilidade e sincronização. `MainView.kt` registra a rota `gameSettings`; `HomeViews.kt` abre a página pelo menu do título. Voltar sai sem salvar; há ações de salvar e restaurar. |
 | Layout responsivo | `HomeViews.kt` usa três ou quatro colunas em retrato conforme a largura e sete em paisagem, além de reduzir margens e cabeçalho em telas estreitas. `GameActionsDialog.kt` usa uma coluna no celular e tenta a capa embutida quando não há imagem salva. |
@@ -555,7 +555,7 @@ O diff entre `a24f5d1e7` e o HEAD local `8bd3d0369` abrange 18 arquivos de códi
 | Texturas 2D grandes | `TextureGroup.cs` implementa rastreamento por regiões em texturas block-linear elegíveis a partir de 4 MiB, inclusive camadas/mipmaps. Escritas localizadas podem provocar envio só das regiões alteradas; há fallback para envio integral e verificação rotativa por hash de mudanças não notificadas. |
 | Logs | `SettingViews.kt` expõe as chaves Guest e Debug na interface, com descrição do custo de Debug. |
 
-Os commits locais são `653256590` (texturas 2D grandes), `181375e3c` (limite de memória), `b3ef70fc6` (sincronização NCE), `fbcfa896a` (NIFM por jogo) e `8bd3d0369` (interface Android, DLC, atualizações e logs). Os hashes ainda não têm links no GitHub porque não houve push.
+Os commits publicados são [`339470edc`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/339470edc8b891c3994a36931027750380fa835e) (texturas 2D grandes), [`526f03540`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/526f035405a021819b071fa3be19332a1193d506) (limite de memória), [`dc519b29b`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/dc519b29b9c885491198f8983b2ef9ecab8df2c3) (sincronização NCE), [`6283a0ca4`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/6283a0ca4fa79d390c53eba70488cbff4ca69d9e) (NIFM por jogo) e [`e39e26833`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/e39e26833225516be048a725d42927269b434d86) (interface Android, DLC, atualizações e logs).
 
 ### 12.3 Evidência e limites
 
@@ -581,8 +581,8 @@ As métricas abaixo pertencem aos testes históricos da consolidação de 20/09.
 | *Pokémon Legends: Z-A* | JIT avançou melhor que NCE no teste antigo | Mudanças posteriores de NCE | Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. |
 | *Mario + Rabbids Kingdom Battle* | Loop Safety global causou bugs gráficos; commit posterior relata crashes aleatórios com otimizações de GPU | Loop Safety selecionável e chave “Otimizações de GPU” por jogo | Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. |
 | *Mario + Rabbids Sparks of Hope* | Sem medição anterior registrada aqui | Filtro de acessos exclusivos NCE relatado como correção de boot | Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. |
-| *MARVEL Cosmic Invasion* | Investigação de boot, tela preta e caminhos gráficos 2D | Compatibilidade gráfica 2D em `a24f5d1e7`; serialização NCE ampliada localmente em 28/09 | Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. |
-| *DOOM 2016* | Espera de rede antes do gameplay motivou a opção local | “Modo sem internet” por jogo na Current local | Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. |
+| *MARVEL Cosmic Invasion* | Investigação de boot, tela preta e caminhos gráficos 2D | Compatibilidade gráfica 2D em `a24f5d1e7`; serialização NCE ampliada em [`dc519b29b`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/dc519b29b9c885491198f8983b2ef9ecab8df2c3) | Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. |
+| *DOOM 2016* | Espera de rede antes do gameplay motivou a opção | “Modo sem internet” por jogo em [`6283a0ca4`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/6283a0ca4fa79d390c53eba70488cbff4ca69d9e) | Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. |
 
 O envio seletivo de texturas 2D grandes foi validado no Experimental antes da promoção ao Current; a matriz de regressão para camadas, mipmaps e pequenas regiões deve ser mantida em futuras promoções. Os resultados de desempenho não devem ser generalizados para outros jogos, drivers ou aparelhos.
 
@@ -664,9 +664,9 @@ Para transformar o histórico em evidência de release:
 
 ## 17. Próximos passos recomendados
 
-### Prioridade 1: publicar o Current local
+### Prioridade 1: publicar o Current local (Concluído)
 
-1. Integrar os cinco commits locais à branch GitHub `neo-v2-nce2`, conciliando antes os commits de documentação publicados remotamente.
+1. Integrar os cinco commits locais à branch GitHub `neo-v2-nce2`, conciliando antes os commits de documentação publicados remotamente. (Concluído em 29/09)
 2. Criar tag de recuperação sobre `a24f5d1e7` antes do push.
 3. Após o push, atualizar os cabeçalhos de ambos os documentos para identificar o novo commit de código publicado.
 
@@ -748,11 +748,11 @@ Preservar a metodologia da seção 15: mesmo save e driver, cache frio/quente se
 | `b9baca871` / `69fd95c78` | Migração do Experimental e upload 3D assíncrono |
 | `2a1c968f0` | Filtro de exclusivas NCE e chave de otimizações de GPU |
 | `a24f5d1e7` | Compatibilidade gráfica 2D por jogo; último commit de código publicado antes das mudanças de 28/09 |
-| `653256590` | Texturas 2D grandes; commit local criado em 29/09, ainda não enviado |
-| `181375e3c` | Limite de memória 3285 MiB; commit local criado em 29/09, ainda não enviado |
-| `b3ef70fc6` | Serialização NCE; commit local criado em 29/09, ainda não enviado |
-| `fbcfa896a` | Modo sem internet por jogo; commit local criado em 29/09, ainda não enviado |
-| `8bd3d0369` | Interface Android, DLC, atualizações e logs; commit local criado em 29/09, ainda não enviado |
+| [`339470edc`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/339470edc8b891c3994a36931027750380fa835e) | Texturas 2D grandes; publicado na branch `neo-v2-nce2` |
+| [`526f03540`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/526f035405a021819b071fa3be19332a1193d506) | Limite de memória 3285 MiB; publicado na branch `neo-v2-nce2` |
+| [`dc519b29b`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/dc519b29b9c885491198f8983b2ef9ecab8df2c3) | Serialização NCE; publicado na branch `neo-v2-nce2` |
+| [`6283a0ca4`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/6283a0ca4fa79d390c53eba70488cbff4ca69d9e) | Modo sem internet por jogo; publicado na branch `neo-v2-nce2` |
+| [`e39e26833`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/e39e26833225516be048a725d42927269b434d86) | Interface Android, DLC, atualizações e logs; publicado na branch `neo-v2-nce2` |
 
 ---
 
@@ -794,6 +794,6 @@ Preservar a metodologia da seção 15: mesmo save e driver, cache frio/quente se
 
 ## 22. Conclusão
 
-O Ryujinx Neo Current não parou nas alterações de 27/09. Em 28/09, o checkout Current recebeu mudanças funcionais em interface Android, DLC/atualizações, NIFM por jogo, NCE, limite de memória, logs e envio seletivo de texturas 2D grandes. Os builds Android das 21:09 e 21:36 terminaram com sucesso. O código foi organizado em cinco commits locais em 29/09, ainda ausentes da branch GitHub, cuja última alteração de código publicada é `a24f5d1e7`.
+O Ryujinx Neo Current não parou nas alterações de 27/09. Em 28/09, o checkout Current recebeu mudanças funcionais em interface Android, DLC/atualizações, NIFM por jogo, NCE, limite de memória, logs e envio seletivo de texturas 2D grandes. Os builds Android das 21:09 e 21:36 terminaram com sucesso. O código foi organizado e publicado em cinco commits na branch GitHub em 29/09 (`339470edc`, `526f03540`, `dc519b29b`, `6283a0ca4` e `e39e26833`).
 
 O próximo passo do fluxo é integrar e publicar os cinco commits locais do Current, que reúnem os 18 arquivos de código de 28/09, após conciliar os commits remotos de documentação e criar uma tag de recuperação sobre `a24f5d1e7`. Depois do push, os cabeçalhos dos dois documentos devem apontar para o novo commit de código publicado. A matriz de regressão permanece como rotina de futuras promoções; esta revisão não repetiu os testes do Experimental.
