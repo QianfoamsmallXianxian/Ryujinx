@@ -238,11 +238,7 @@ namespace Ryujinx.Cpu.Nce
 
         public void RequestInterrupt()
         {
-            if (!Ryujinx.Common.Diagnostics.NeoGraphicsSettings.ExperimentalGameFixesEnabled)
-            {
-                RequestInterruptCore();
-                return;
-            }
+
 
             lock (_neoDisposeLock)
             {
@@ -283,12 +279,7 @@ namespace Ryujinx.Cpu.Nce
 
         public void Dispose()
         {
-            if (!Ryujinx.Common.Diagnostics.NeoGraphicsSettings.ExperimentalGameFixesEnabled)
-            {
-                _alternateStackMemory.Dispose();
-                _context.Dispose();
-                return;
-            }
+
 
             // NEOV2-COSMIC2: marca como descartado antes de liberar a memoria do contexto,
             // para que um RequestInterrupt concorrente nao leia o ponteiro liberado.
