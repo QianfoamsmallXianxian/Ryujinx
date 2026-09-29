@@ -3,30 +3,31 @@
 - **Projeto:** Ryujinx Neo, fork Android derivado do Kenji-NX
 - **Repositório:** [Sunshinin11/Ryujinx_Neo](https://github.com/Sunshinin11/Ryujinx_Neo)
 - **Branch e snapshot analisados:** `neo-v2-nce2` em [`eed82fe791`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/eed82fe791ae2a7e5a4c14de6ccac9099a5c1cdb) (28/09/2026)
-- **Última alteração de código identificada:** [`a24f5d1e7`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/a24f5d1e792f3b8718686359f502def5e401e810) (27/09/2026)
+- **Último código publicado:** [`a24f5d1e7`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/a24f5d1e792f3b8718686359f502def5e401e810) (27/09/2026)
+- **Current local analisado:** mudanças funcionais de 28/09/2026, ainda não enviadas ao GitHub
 - **Data desta revisão:** 29/09/2026
 - **Versão Android no código:** `0.0.1`, `versionCode 20108` ([build.gradle](https://github.com/Sunshinin11/Ryujinx_Neo/blob/neo-v2-nce2/src/KenjinxAndroid/app/build.gradle))
 - **Dispositivo histórico de referência:** AYN Thor, Snapdragon 8 Gen 2, Adreno 740
 - **Plataforma em foco:** Android arm64-v8a / Linux Bionic, Vulkan em Turnip/Adreno
 
-> As seções 5–10 e as métricas por jogo preservam o histórico de desenvolvimento até 20/09. O estado atual foi revisado contra a branch indicada até `eed82fe791` (último commit de código identificado: `a24f5d1e7`). Alterações não commitadas de qualquer checkout foram ignoradas. “Implementado” significa presente no código, sem novo teste de APK nesta revisão.
+> As seções 5–10 e as métricas por jogo preservam o histórico até 20/09. As seções 11–17 distinguem o código publicado na branch GitHub do estado funcional observado no checkout **Kenji-NX-Current** em 28/09. O código local ainda não foi enviado ao GitHub. Os registros de build da data confirmam compilação Android, mas não substituem testes de jogos.
 
 ---
 
 ## 1. Resumo executivo
 
-O Ryujinx Neo é um fork Android do Kenji-NX com trabalho próprio no backend Vulkan, NCE, compatibilidade gráfica e interface. A linha **Neo Current** está em `neo-v2-nce2`; o código Android declara versão `0.0.1` (`versionCode 20108`). O [changelog](../CHANGELOG.md) lista as mudanças por período.
+O Ryujinx Neo é um fork Android do Kenji-NX com trabalho próprio no backend Vulkan, NCE, compatibilidade gráfica e interface. A linha **Neo Current** está em `neo-v2-nce2`; o código Android declara versão `0.0.1` (`versionCode 20108`). O [changelog](../CHANGELOG.md) lista as mudanças por período, incluindo o trabalho funcional de 28/09 encontrado no Current local.
 
 As frentes implementadas na branch incluem:
 
 1. **GPU/Vulkan:** worker de submissão, ajustes de sincronização, cache de pipelines e texturas, caminho VTG via Compute, offset exato de texture buffer no Turnip, upload 3D assíncrono e chaves de compatibilidade.
 2. **CPU/NCE:** arquitetura NCE Neo 2, proteção opcional de rastreamento da GPU após mudanças de permissão e conversão seletiva de acessos exclusivos.
 3. **Android:** identidade Ryujinx Neo, dois layouts da biblioteca, perfis por Title ID, gerenciador de drivers Vulkan e controles globais/por jogo.
-4. **Diagnóstico:** categorias de log configuráveis, com nove chaves desligadas por padrão na linha Current.
+4. **Diagnóstico:** categorias de log configuráveis, com nove chaves desligadas por padrão na linha Current e controles Guest/Debug expostos no checkout local.
 
 Os benchmarks e relatos anteriores a 23/09 continuam úteis como contexto, mas não representam uma medição do snapshot analisado. Em especial, a tela preta de *Marvel Ultimate Alliance 3* no NCE era uma observação anterior às mudanças [NCE-PROT1](https://github.com/Sunshinin11/Ryujinx_Neo/commit/b614253ae) e [TEXBUF-ALIGN1](https://github.com/Sunshinin11/Ryujinx_Neo/commit/f0a4f81be). Os commits relatam correções para esse caminho; esta revisão não executou o jogo para confirmar o resultado final.
 
-O trabalho pendente é validar, com APK e cenários reproduzíveis, a compatibilidade e o custo das opções seletivas em diferentes jogos, drivers e aparelhos. A leitura estática não estabelece ganho geral de FPS nem estabilidade de release.
+Em 28/09, o Current local recebeu nova página de configurações por jogo, interface responsiva, correções de seleção de DLC/atualizações, modo sem internet por jogo, ajustes NCE/memória e envio seletivo de regiões de texturas 2D grandes. Builds Android `MainlineArmv8Release` terminaram com sucesso às 21:09 e 21:36; faltam testes reproduzíveis de boot, imagem, estabilidade e desempenho.
 
 ---
 
@@ -70,7 +71,7 @@ Criar uma versão Android do Ryujinx que seja:
 
 ### 3.1 Repositório verificado
 
-A branch padrão do repositório consultado no GitHub é `neo-v2-nce2`. Os remotes `origin` (Kenji-NX) e `sunshinin11` descritos na consolidação de 20/09 pertenciam ao checkout usado naquela etapa; este relatório documenta o estado publicado no GitHub, sem depender de alterações locais não commitadas.
+A branch padrão consultada no GitHub é `neo-v2-nce2`. No checkout local **Kenji-NX-Current**, a branch está em `a24f5d1e7` e contém mudanças de código usadas nos builds de 28/09 que ainda não foram commitadas. Este relatório distingue esse estado local dos commits publicados; o checkout Experimental não foi analisado.
 
 ### 3.2 Linhas e tags históricas
 
@@ -83,7 +84,7 @@ A branch padrão do repositório consultado no GitHub é `neo-v2-nce2`. Os remot
 | `neo-v2-mua3-stable-pre-nce2-20260919` | Snapshot anterior ao NCE Neo 2 (`f8d0b8e06`) |
 | `neo-v2-nce2-r3-pre-ui-20260919` | NCE2 R3 e Loop Safety antes da reforma visual (`7cb21885e`) |
 
-As referências antigas são pontos de comparação do histórico. O estado atual descrito neste relatório corresponde ao HEAD indicado no início.
+As referências antigas são pontos de comparação do histórico. O estado publicado corresponde ao snapshot GitHub indicado no início; o estado funcional local de 28/09 é detalhado na seção 12.
 
 ---
 
@@ -524,38 +525,44 @@ A opção de inverter A/B e X/Y continua disponível, mas agora:
 
 ### 11.7 Estado da reforma visual
 
-A reforma visual está commitada: a base foi introduzida em [`54b072361`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/54b072361) e a identidade/interface receberam [polimento posterior](https://github.com/Sunshinin11/Ryujinx_Neo/commit/df38536b2). O README publicado apresenta o projeto e, desde 28/09, inclui uma [galeria Android](https://github.com/Sunshinin11/Ryujinx_Neo/commit/141a112d5d). A revisão de 29/09 foi estática; não gerou APK nem validou a interface em aparelho.
+A reforma visual de base está commitada em [`54b072361`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/54b072361) e recebeu [polimento posterior](https://github.com/Sunshinin11/Ryujinx_Neo/commit/df38536b2). Em 28/09, o Current local acrescentou página própria de configurações por jogo, grade responsiva e card de ações adaptado a telas estreitas. Os builds desse dia foram concluídos; esta revisão não fez validação visual em aparelho.
 
 ---
 
-## 12. Estado do código publicado
+## 12. Estado do Current em 28/09/2026
 
-### 12.1 Funcionalidades presentes na branch
+### 12.1 Código publicado na branch GitHub
 
-No snapshot `eed82fe791`, a última alteração de código identificada é `a24f5d1e7`. A branch publicada contém:
+No snapshot GitHub `eed82fe791`, a última alteração de código é `a24f5d1e7`. Estão publicados NCE Neo 2, NCE-PROT1 opcional, Shader Loop Safety selecionável, VTG via Compute, upload 3D assíncrono, compatibilidade gráfica 2D por jogo, perfis por Title ID, dois layouts de biblioteca, gerenciador de drivers e opções de sincronização/GPU descritas no [changelog](../CHANGELOG.md).
 
-- otimizações NEO V2 no backend Vulkan, cache de texturas/pipelines e controles de sincronização;
-- NCE Neo 2, proteção de rastreamento NCE opcional, acessos exclusivos ordenados com filtro e leitura de GPFIFO sem flush;
-- Shader Loop Safety selecionável, VTG via Compute, upload 3D assíncrono e opções de compatibilidade gráfica;
-- Memory Slack 0/12 GiB de espaço de endereçamento;
-- perfis por jogo, dois layouts de biblioteca, identidade visual Ryujinx Neo e gerenciador de drivers;
-- opção por jogo “Otimizações de GPU” e “Compatibilidade gráfica 2D”;
-- nove categorias de log desligadas por padrão.
+### 12.2 Mudanças funcionais do Current local em 28/09
 
-O [changelog](../CHANGELOG.md) relaciona cada mudança aos commits. A presença de código não comprova funcionamento em todos os títulos citados.
+O diff do checkout `Kenji-NX-Current` contém 18 arquivos de código modificados em relação a `a24f5d1e7`. Essas mudanças ainda não têm commit na branch GitHub. Os registros `android_build_current_doom1_fix.log` (21:09) e `android_build_current_doom1b.log` (21:36) terminam em **BUILD SUCCESSFUL** para `MainlineArmv8Release`; foram gerados APKs locais dessa linha. O sucesso da compilação não confirma comportamento em jogo.
 
-### 12.2 Limites da revisão
+| Área | Implementação observada no Current local |
+|---|---|
+| Configurações por jogo | `GameSettingsDialog.kt` foi reorganizado como `GameSettingsPage`, com seções de sistema/CPU, gráficos, controles/interface, compatibilidade e sincronização. `MainView.kt` registra a rota `gameSettings`; `HomeViews.kt` abre a página pelo menu do título. Voltar sai sem salvar; há ações de salvar e restaurar. |
+| Layout responsivo | `HomeViews.kt` usa três ou quatro colunas em retrato conforme a largura e sete em paisagem, além de reduzir margens e cabeçalho em telas estreitas. `GameActionsDialog.kt` usa uma coluna no celular e tenta a capa embutida quando não há imagem salva. |
+| DLC e atualizações | `DlcViews.kt` e `TitleUpdateViews.kt` deixam de recarregar o estado salvo em cada recomposição; `DlcViewModel.kt` preserva alterações de ativação pendentes ao reconstruir a lista. |
+| Modo sem internet por jogo | `GameSettingsStore.kt` guarda uma opção desligada por padrão. `MainViewModel.kt` a aplica no início do jogo e a limpa no fluxo geral; Kotlin/JNI repassam o valor para `NeoGraphicsSettings`. `IGeneralService` responde que nenhum pedido de internet foi aceito quando ligada. Isso não bloqueia toda a rede do Android. |
+| Segurança NCE | `NceExecutionContext.cs` faz `RequestInterrupt` e `Dispose` usarem a mesma serialização para todos os títulos, em vez de condicioná-la à opção de compatibilidade 2D. |
+| Memória | `KSystemControl.cs` altera de 3173 para 3285 MiB o retorno para os arranjos 4 GiB, 4 GiB SystemDev e 6 GiB AppletDev. |
+| Texturas 2D grandes | `TextureGroup.cs` implementa rastreamento por regiões em texturas block-linear elegíveis a partir de 4 MiB, inclusive camadas/mipmaps. Escritas localizadas podem provocar envio só das regiões alteradas; há fallback para envio integral e verificação rotativa por hash de mudanças não notificadas. |
+| Logs | `SettingViews.kt` expõe as chaves Guest e Debug na interface, com descrição do custo de Debug. |
 
-- Alterações não commitadas de checkouts locais foram ignoradas.
-- A tela preta de *MUA3* e o `DeviceLost` descritos em testes antigos motivaram NCE-PROT1 e TEXBUF-ALIGN1; não são resultados medidos do HEAD publicado.
-- `[MUA3-SYNC]`, `mua3-diag.txt`, robust buffer access forçado e pulo de draws do geometry shader continuam registrados apenas como experimentos históricos removidos.
-- Nenhuma compilação, execução de jogo ou comparação de FPS foi realizada nesta revisão documental.
+### 12.3 Evidência e limites
+
+- Os dois logs citados provam que builds Android terminaram; esta revisão não executou jogos nem comparou imagens ou FPS.
+- O texto da opção “Modo sem internet” cita *DOOM 2016* como motivação. Não há, nos arquivos examinados, prova suficiente para afirmar que o boot do jogo ficou resolvido.
+- O novo envio de texturas exige comparação de imagem, memória, tempo de quadro e comportamento de fallback em jogos reais.
+- A branch remota continua sem o código local de 28/09. Os nomes dos arquivos acima identificam o checkout Current analisado, não links para uma implementação já publicada.
+- `[MUA3-SYNC]`, `mua3-diag.txt`, robust buffer access forçado e pulo de draws do geometry shader continuam apenas como histórico de experimentos removidos.
 
 ---
 
 ## 13. Resultados por jogo e estado da evidência
 
-As métricas abaixo pertencem aos testes históricos da consolidação de 20/09. Os commits posteriores registram correções implementadas; esta revisão não repetiu os testes no snapshot analisado.
+As métricas abaixo pertencem aos testes históricos da consolidação de 20/09. Os commits posteriores e o código local de 28/09 introduzem correções ou opções, mas esta revisão não repetiu os testes.
 
 | Jogo | Observação histórica | Mudança posterior relacionada | Evidência nesta revisão |
 |---|---|---|---|
@@ -563,11 +570,14 @@ As métricas abaixo pertencem aos testes históricos da consolidação de 20/09.
 | *Tears of the Kingdom* | Melhor observação isolada de 17,4 FPS no trecho pesado; engasgo periódico de ~450 ms | Ajustes de sincronização e GPU | Sem novo benchmark |
 | *Link's Awakening* | Melhor observação histórica de 45,3 FPS no trecho testado; um crash isolado | Ajustes posteriores de Vulkan/NCE | Sem novo teste |
 | *Metroid Prime 4* | Stutter no NCE e problema de textura também visto em JIT | Proteção NCE seletiva e upload 3D assíncrono | Sem confirmação de resolução |
-| *Marvel Ultimate Alliance 3* | Tela preta no NCE, renderização em JIT; Loop Safety atravessou um ponto com ~2 FPS | NCE-PROT1 e TEXBUF-ALIGN1 relatam correções para caminhos específicos | Falta reteste independente no HEAD |
+| *Marvel Ultimate Alliance 3* | Tela preta no NCE, renderização em JIT; Loop Safety atravessou um ponto com ~2 FPS | NCE-PROT1 e TEXBUF-ALIGN1 relatam correções para caminhos específicos | Falta reteste independente |
 | *Pokémon Legends: Z-A* | JIT avançou melhor que NCE no teste antigo | Mudanças posteriores de NCE | Sem reteste |
 | *Mario + Rabbids Kingdom Battle* | Loop Safety global causou bugs gráficos; commit posterior relata crashes aleatórios com otimizações de GPU | Loop Safety selecionável e chave “Otimizações de GPU” por jogo | Mitigação relatada no commit, não garantia |
 | *Mario + Rabbids Sparks of Hope* | Sem medição anterior registrada aqui | Filtro de acessos exclusivos NCE relatado como correção de boot | Resultado baseado em mensagem de commit |
-| *MARVEL Cosmic Invasion* | Investigação de boot, tela preta e caminhos gráficos 2D | Compatibilidade gráfica 2D por jogo em `a24f5d1e7` | Sem validação independente nesta revisão |
+| *MARVEL Cosmic Invasion* | Investigação de boot, tela preta e caminhos gráficos 2D | Compatibilidade gráfica 2D em `a24f5d1e7`; serialização NCE ampliada localmente em 28/09 | Sem reteste nesta revisão |
+| *DOOM 2016* | Espera de rede antes do gameplay motivou a opção local | “Modo sem internet” por jogo na Current local | Build Android concluído; boot não confirmado aqui |
+
+O envio seletivo de texturas 2D grandes precisa de comparação visual em jogos que atualizam texturas com camadas, mipmaps ou pequenas regiões antes de qualquer alegação de ganho.
 
 ---
 
@@ -575,7 +585,9 @@ As métricas abaixo pertencem aos testes históricos da consolidação de 20/09.
 
 ### 14.1 Estado dos logs
 
-O Current desliga nove chaves de log por padrão e migra preferências antigas ([commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/bfeab8f9c)). Os marcadores `[NEOV2-NCE2-R3]`, `[NEOV2-V29]`, `[NEOV2-LOOP-GUARD]` e `[NEOV2-MEMLIMIT]` aparecem no histórico técnico. Sua ausência em uma sessão só é conclusiva quando o caminho executado e a categoria de log correspondente são conhecidos.
+O Current publicado desliga nove chaves de log por padrão e migra preferências antigas ([commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/bfeab8f9c)). A interface local de 28/09 acrescenta controles visíveis para **Logs do jogo (Guest)** e **Logs de Debug**. Debug avisa sobre custo de diagnóstico. Ativar a chave não garante uma mensagem específica: o caminho precisa executar e a categoria correspondente deve estar habilitada.
+
+Os marcadores `[NEOV2-NCE2-R3]`, `[NEOV2-V29]`, `[NEOV2-LOOP-GUARD]` e `[NEOV2-MEMLIMIT]` aparecem no histórico técnico. Sua ausência em uma sessão só é conclusiva quando o caminho executado e a categoria de log são conhecidos.
 
 ---
 
@@ -638,23 +650,33 @@ Para transformar o histórico em evidência de release:
 | Alterações simultâneas | Impossível atribuir resultado | Uma hipótese principal por rodada |
 | Ícone/tema em cache pelo Android | Aparência antiga mesmo após correção | Reinstalação limpa durante validação visual |
 | Configuração antiga persistida | Resultado diferente do esperado | Migrações explícitas e log das opções efetivas |
+| Envio seletivo de texturas 2D grandes | Imagem incorreta ou custo extra de rastreamento/hash | Comparar imagem, memória, FPS e fallback com envio integral |
+| Resposta NIFM por jogo | Jogo reagir de forma inesperada à ausência de internet aceita | Manter a opção desligada por padrão e testar ligada/desligada por título |
+| Serialização NCE ampliada | Contenção ou regressão no encerramento/interrupção | Testar sessões longas e abertura/fechamento repetidos |
 
 ---
 
 ## 17. Próximos passos recomendados
 
-### Prioridade 1 — validar a branch publicada
+### Prioridade 1 — validar as mudanças do Current de 28/09
 
-1. Compilar um APK do commit exato e registrar driver, aparelho, firmware e opções efetivas.
-2. Conferir launcher, biblioteca NEO/Switch, perfis por jogo, gerenciador de drivers e persistência da interface.
-3. Retestar *MUA3* com NCE-PROT1 ligado/desligado e verificar tela preta, `DeviceLost` e desempenho.
-4. Comparar NCE/JIT em *Metroid Prime 4* e separar stutter do problema de textura; testar upload 3D assíncrono ligado/desligado.
-5. Verificar *Mario + Rabbids Kingdom Battle* com a chave de otimizações de GPU e *Sparks of Hope* com o filtro NCE.
-6. Verificar *MARVEL Cosmic Invasion* com Compatibilidade gráfica 2D ligada/desligada por jogo.
+1. Registrar o commit `a24f5d1e7`, o diff local exato e o APK usado; os builds das 21:09 e 21:36 já terminaram com sucesso, mas não representam teste em jogo.
+2. Conferir página por jogo, salvamento/restauração, layout retrato/paisagem, card de ações e preservação das escolhas de DLC/atualização.
+3. Comparar *DOOM 2016* com “Modo sem internet” ligado/desligado no mesmo driver e save; verificar o efeito real da resposta NIFM.
+4. Exercitar interrupção e fechamento NCE repetidamente para avaliar a serialização ampliada.
+5. Comparar texturas 2D grandes com o caminho anterior: imagem, mipmaps, camadas, memória, bytes enviados, tempo de quadro e fallback.
+6. Verificar os efeitos do limite de memória de 3285 MiB nos títulos e arranjos afetados.
 
-### Prioridade 2 — consolidar evidência
+### Prioridade 2 — retestar casos da branch publicada
 
-Repetir cenários com mesmo save e driver, separar cache frio/quente, registrar pelo menos três execuções e comparar imagem, estabilidade, FPS e frametime. Só depois converter relatos de commits e métricas antigas em afirmações sobre o Current.
+- *MUA3*: NCE-PROT1 ligado/desligado e Turnip com TEXBUF-ALIGN1; registrar tela preta, `DeviceLost` e desempenho.
+- *Metroid Prime 4*: comparar NCE/JIT e upload 3D assíncrono, separando stutter do problema de textura.
+- *Mario + Rabbids Kingdom Battle* e *Sparks of Hope*: verificar respectivamente a chave de otimizações de GPU e o boot com filtro NCE.
+- *MARVEL Cosmic Invasion*: medir compatibilidade gráfica 2D sem confundir seu efeito com a mudança NCE local.
+
+### Prioridade 3 — consolidar evidência
+
+Repetir cenários com mesmo save e driver, separar cache frio/quente e registrar pelo menos três execuções. Só então converter builds bem-sucedidos e relatos de commits em afirmações de compatibilidade ou desempenho.
 
 ---
 
@@ -693,6 +715,7 @@ Repetir cenários com mesmo save e driver, separar cache frio/quente, registrar 
 - `src/Ryujinx.Graphics.Vulkan/AutoFlushCounter.cs`
 - `src/Ryujinx.Graphics.Vulkan/Window.cs`
 - `src/Ryujinx.Graphics.Gpu/Image/AutoDeleteCache.cs`
+- `src/Ryujinx.Graphics.Gpu/Image/TextureGroup.cs` (envio seletivo de texturas 2D da Current local)
 - `src/Ryujinx.Common/Memory/MemoryOwner.cs`
 
 ### Android e configurações
@@ -706,6 +729,8 @@ Repetir cenários com mesmo save e driver, separar cache frio/quente, registrar 
 - `src/KenjinxAndroid/app/src/main/java/org/kenjinx/android/views/GameSettingsDialog.kt`
 - `src/KenjinxAndroid/app/src/main/java/org/kenjinx/android/views/GameActionsDialog.kt`
 - `src/KenjinxAndroid/app/src/main/java/org/kenjinx/android/views/GameViews.kt`
+- `src/LibKenjinx/Android/JniExportedMethods.cs` (opção NIFM da Current local)
+- `src/Ryujinx.HLE/HOS/Services/Nifm/StaticService/IGeneralService.cs` (resposta NIFM da Current local)
 
 ---
 
@@ -724,8 +749,7 @@ Repetir cenários com mesmo save e driver, separar cache frio/quente, registrar 
 | `b614253ae` / `f0a4f81be` | NCE-PROT1 e offset exato de texture buffer |
 | `b9baca871` / `69fd95c78` | Migração do Experimental e upload 3D assíncrono |
 | `2a1c968f0` | Filtro de exclusivas NCE e chave de otimizações de GPU |
-| `a24f5d1e7` | Compatibilidade gráfica 2D por jogo; último commit de código identificado |
-| `eed82fe791` | Ajuste documental da galeria do README; HEAD analisado |
+| `a24f5d1e7` | Compatibilidade gráfica 2D por jogo; último commit de código publicado antes das mudanças locais de 28/09 |
 
 ---
 
@@ -767,6 +791,6 @@ Repetir cenários com mesmo save e driver, separar cache frio/quente, registrar 
 
 ## 22. Conclusão
 
-A branch publicada do Ryujinx Neo Current reúne trabalho em NCE, Vulkan, compatibilidade por jogo e experiência Android. Correções posteriores à consolidação de 20/09 tornam alguns diagnósticos daquele período históricos; os testes antigos não descrevem automaticamente o comportamento do HEAD atual.
+O Ryujinx Neo Current não parou nas alterações de 27/09. Em 28/09, o checkout Current recebeu mudanças funcionais em interface Android, DLC/atualizações, NIFM por jogo, NCE, limite de memória, logs e envio seletivo de texturas 2D grandes. Os builds Android das 21:09 e 21:36 terminaram com sucesso. Esse código ainda não aparece na branch GitHub, cuja última alteração de código publicada é `a24f5d1e7`.
 
-A descrição responsável do projeto é **fork Android experimental em desenvolvimento ativo**, com funcionalidades presentes no código e compatibilidade por título ainda dependente de validação. O próximo marco é compilar o commit publicado e retestar, de forma reproduzível, boot, imagem, estabilidade e desempenho.
+O próximo passo técnico é testar os APKs da árvore exata de 28/09 em jogos e aparelhos, comparando boot, imagem, estabilidade e desempenho. Os resultados históricos e as mensagens de commit continuam úteis como contexto, mas não substituem essa validação.
