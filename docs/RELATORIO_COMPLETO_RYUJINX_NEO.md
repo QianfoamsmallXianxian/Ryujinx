@@ -3,14 +3,15 @@
 - **Projeto:** Ryujinx Neo, fork Android derivado do Kenji-NX
 - **Repositório:** [Sunshinin11/Ryujinx_Neo](https://github.com/Sunshinin11/Ryujinx_Neo)
 - **Branch analisada:** `neo-v2-nce2` no GitHub e no checkout `Kenji-NX-Current`
-- **Último código publicado:** [`a24f5d1e7`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/a24f5d1e792f3b8718686359f502def5e401e810) (27/09/2026)
-- **Código das mudanças de 28/09 publicado:** cinco commits criados e publicados no GitHub em 29/09/2026
+- **Último código publicado:** [`d805ae2bf`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/d805ae2bf214f1906183c61861da2f1bbed856f3) (29/09/2026)
+- **Código das mudanças de 28/09 publicado:** cinco commits integrados ao GitHub em 29/09/2026
+- **Mudança de 29/09:** caminho VP9 via FFmpeg e otimizações NEON no NVDEC, publicado no GitHub
 - **Data desta revisão:** 29/09/2026
 - **Versão Android no código:** `0.0.1`, `versionCode 20108` ([build.gradle](https://github.com/Sunshinin11/Ryujinx_Neo/blob/neo-v2-nce2/src/KenjinxAndroid/app/build.gradle))
 - **Dispositivo histórico de referência:** AYN Thor, Snapdragon 8 Gen 2, Adreno 740
 - **Plataforma em foco:** Android arm64-v8a / Linux Bionic, Vulkan em Turnip/Adreno
 
-> As seções 5–10 e as métricas por jogo preservam o histórico até 20/09. As seções 11–17 distinguem o código publicado na branch GitHub do estado funcional observado no checkout **Kenji-NX-Current** em 28/09. Os cinco commits de código criados em 29/09 foram integrados e publicados no GitHub na branch `neo-v2-nce2`. Os registros de build da data confirmam compilação Android; os testes ocorreram no Experimental antes da promoção e não foram repetidos nesta revisão.
+> As seções 5–10 e as métricas por jogo preservam o histórico até 20/09. As seções 11–17 registram as mudanças do Current publicadas até 29/09, distinguindo o que os commits relatam das medições históricas. Esta revisão não executou novas medições. Os cinco commits de código criados em 29/09 foram integrados e publicados no GitHub na branch `neo-v2-nce2`. Os registros de build de 28/09 confirmam compilação Android daquela versão; os testes ocorreram no Experimental antes da promoção e não foram repetidos nesta revisão.
 
 ---
 
@@ -24,10 +25,11 @@ As frentes implementadas na branch incluem:
 2. **CPU/NCE:** arquitetura NCE Neo 2, proteção opcional de rastreamento da GPU após mudanças de permissão e conversão seletiva de acessos exclusivos.
 3. **Android:** identidade Ryujinx Neo, dois layouts da biblioteca, perfis por Title ID, gerenciador de drivers Vulkan e controles globais/por jogo.
 4. **Diagnóstico:** categorias de log configuráveis, com nove chaves desligadas por padrão na linha Current e controles Guest/Debug expostos no aplicativo.
+5. **Vídeo/NVDEC:** decodificação VP9 via FFmpeg com cabeçalhos recompostos e retorno ao caminho em C# em falhas; NEON em etapas do decodificador VP9 no ARM64.
 
 Os benchmarks e relatos anteriores a 23/09 continuam úteis como contexto, mas não representam uma medição do snapshot analisado. Em especial, a tela preta de *Marvel Ultimate Alliance 3* no NCE era uma observação anterior às mudanças [NCE-PROT1](https://github.com/Sunshinin11/Ryujinx_Neo/commit/b614253ae) e [TEXBUF-ALIGN1](https://github.com/Sunshinin11/Ryujinx_Neo/commit/f0a4f81be). Os commits relatam correções para esse caminho; esta revisão não executou o jogo para confirmar o resultado final.
 
-Em 28/09, a linha Current recebeu nova página de configurações por jogo, interface responsiva, correções de seleção de DLC/atualizações, modo sem internet por jogo, ajustes NCE/memória e envio seletivo de regiões de texturas 2D grandes. Essas mudanças foram validadas no Experimental antes da promoção ao Current. Os builds Android `MainlineArmv8Release` terminaram com sucesso às 21:09 e 21:36; esta revisão não repetiu os testes do Experimental.
+Em 28/09, a linha Current recebeu nova página de configurações por jogo, interface responsiva, correções de seleção de DLC/atualizações, modo sem internet por jogo, ajustes NCE/memória e envio seletivo de regiões de texturas 2D grandes. Essas mudanças foram validadas no Experimental antes da promoção ao Current. Os builds Android `MainlineArmv8Release` terminaram com sucesso às 21:09 e 21:36. Em 29/09, o commit [`d805ae2bf`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/d805ae2bf214f1906183c61861da2f1bbed856f3) acrescentou VP9 via FFmpeg e otimizações NEON; o commit relata validação no Experimental e melhora no vídeo de abertura de *Link's Awakening*. Esta revisão não repetiu os testes nem executou uma nova build.
 
 ---
 
@@ -71,7 +73,7 @@ Criar uma versão Android do Ryujinx que seja:
 
 ### 3.1 Repositório verificado
 
-A branch padrão consultada no GitHub é `neo-v2-nce2`. Na branch **neo-v2-nce2**, cinco commits de código criados em 29/09 registram os 18 arquivos alterados em 28/09, agora devidamente integrados e publicados no GitHub ([`339470edc`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/339470edc8b891c3994a36931027750380fa835e), [`526f03540`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/526f035405a021819b071fa3be19332a1193d506), [`dc519b29b`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/dc519b29b9c885491198f8983b2ef9ecab8df2c3), [`6283a0ca4`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/6283a0ca4fa79d390c53eba70488cbff4ca69d9e), [`e39e26833`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/e39e26833225516be048a725d42927269b434d86)).
+A branch consultada no GitHub é `neo-v2-nce2`; o último commit de código examinado é `d805ae2bf`. Na branch **neo-v2-nce2**, cinco commits de código criados em 29/09 registram os 18 arquivos alterados em 28/09, agora devidamente integrados e publicados no GitHub ([`339470edc`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/339470edc8b891c3994a36931027750380fa835e), [`526f03540`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/526f035405a021819b071fa3be19332a1193d506), [`dc519b29b`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/dc519b29b9c885491198f8983b2ef9ecab8df2c3), [`6283a0ca4`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/6283a0ca4fa79d390c53eba70488cbff4ca69d9e), [`e39e26833`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/e39e26833225516be048a725d42927269b434d86)).
 
 ### 3.2 Linhas e tags históricas
 
@@ -84,7 +86,7 @@ A branch padrão consultada no GitHub é `neo-v2-nce2`. Na branch **neo-v2-nce2*
 | `neo-v2-mua3-stable-pre-nce2-20260919` | Snapshot anterior ao NCE Neo 2 (`f8d0b8e06`) |
 | `neo-v2-nce2-r3-pre-ui-20260919` | NCE2 R3 e Loop Safety antes da reforma visual (`7cb21885e`) |
 
-As referências antigas são pontos de comparação do histórico. O estado publicado corresponde ao snapshot GitHub indicado no início; o estado funcional local de 28/09 é detalhado na seção 12.
+As referências antigas são pontos de comparação do histórico. O estado publicado até 29/09 é detalhado na seção 12.
 
 ---
 
@@ -530,15 +532,15 @@ A opção de inverter A/B e X/Y continua disponível, mas agora:
 
 ### 11.7 Estado da reforma visual
 
-A reforma visual de base está commitada em [`54b072361`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/54b072361) e recebeu [polimento posterior](https://github.com/Sunshinin11/Ryujinx_Neo/commit/df38536b2). Em 28/09, o Current local acrescentou página própria de configurações por jogo, grade responsiva e card de ações adaptado a telas estreitas. Os builds desse dia foram concluídos. Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes.
+A reforma visual de base está commitada em [`54b072361`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/54b072361) e recebeu [polimento posterior](https://github.com/Sunshinin11/Ryujinx_Neo/commit/df38536b2). Em 28/09, o Current acrescentou página própria de configurações por jogo, grade responsiva e card de ações adaptado a telas estreitas. Os builds desse dia foram concluídos. Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes.
 
 ---
 
-## 12. Estado do Current em 28/09/2026
+## 12. Estado do Current até 29/09/2026
 
 ### 12.1 Código publicado na branch GitHub
 
-Na branch GitHub, a última alteração de código publicada é `a24f5d1e7`. Estão publicados NCE Neo 2, NCE-PROT1 opcional, Shader Loop Safety selecionável, VTG via Compute, upload 3D assíncrono, compatibilidade gráfica 2D por jogo, perfis por Title ID, dois layouts de biblioteca, gerenciador de drivers e opções de sincronização/GPU descritas no [changelog](../CHANGELOG.md).
+Na branch GitHub, a última alteração de código publicada nesta revisão é [`d805ae2bf`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/d805ae2bf214f1906183c61861da2f1bbed856f3). Estão publicados NCE Neo 2, NCE-PROT1 opcional, Shader Loop Safety selecionável, VTG via Compute, upload 3D assíncrono, compatibilidade gráfica 2D por jogo, perfis por Title ID, dois layouts de biblioteca, gerenciador de drivers, opções de sincronização/GPU e o novo caminho VP9 no NVDEC descritos no [changelog](../CHANGELOG.md).
 
 ### 12.2 Mudanças funcionais de 28/09 publicadas no GitHub
 
@@ -562,20 +564,30 @@ Os commits publicados são [`339470edc`](https://github.com/Sunshinin11/Ryujinx_
 - Os dois logs citados registram builds Android concluídos. Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes.
 - O texto da opção “Modo sem internet” cita *DOOM 2016* como motivação. A opção altera apenas a resposta do NIFM e não bloqueia toda a rede. Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes.
 - O envio de texturas foi validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. Imagem, memória, tempo de quadro e fallback permanecem itens de monitoramento para futuras promoções.
-- A branch remota continua sem os cinco commits locais do código de 28/09. Os nomes dos arquivos acima identificam o checkout Current analisado, não links para uma implementação já publicada.
+- Os cinco commits de 28/09 foram publicados no GitHub. Os links da seção 12.2 apontam para a implementação analisada.
 - `[MUA3-SYNC]`, `mua3-diag.txt`, robust buffer access forçado e pulo de draws do geometry shader continuam apenas como histórico de experimentos removidos.
+
+---
+
+### 12.4 VP9 no NVDEC em 29/09
+
+O commit [`d805ae2bf`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/d805ae2bf214f1906183c61861da2f1bbed856f3) acrescenta um caminho de decodificação VP9 pelo FFmpeg. Como o NVDEC fornece os tiles sem o cabeçalho VP9 completo, o novo `Vp9HeaderComposer` recompõe os cabeçalhos e usa as probabilidades do decodificador em C#. O contexto FFmpeg configura threads por tile e as opções `low_delay` e `fast`. O caminho aguarda quadro-chave para iniciar, mantém uma fila de um quadro e retorna ao decodificador em C# se houver falha; quando o FFmpeg está indisponível, permanece no caminho em C#.
+
+No ARM64, a convolução de 8 taps do decodificador VP9 em C# usa NEON quando as condições do bloco permitem, como largura múltipla de oito e ausência de escala; a escrita de croma usa intercalamento vetorial. Os caminhos existentes continuam disponíveis nos demais casos. A implementação altera 13 arquivos distribuídos entre `Ryujinx.Graphics.Nvdec`, `Ryujinx.Graphics.Nvdec.FFmpeg` e `Ryujinx.Graphics.Nvdec.Vp9`.
+
+O commit relata, no vídeo de abertura de *Zelda: Link's Awakening* no AYN Thor, redução de 15–16 ms para 3–6 ms por quadro após validação no Experimental. Esta revisão não repetiu a medição. Os logs de build de 28/09 citados acima antecedem esse commit e não comprovam sua compilação. A observação não estabelece ganho geral em outros vídeos, aparelhos ou jogos.
 
 ---
 
 ## 13. Resultados por jogo e estado da evidência
 
-As métricas abaixo pertencem aos testes históricos da consolidação de 20/09. Os commits posteriores e o código local de 28/09 introduzem correções ou opções validadas no Experimental antes da promoção ao Current; esta revisão não repetiu os testes.
+As métricas abaixo pertencem aos testes históricos da consolidação de 20/09. Os commits posteriores introduzem correções ou opções validadas no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. A observação nova de VP9 é atribuída ao commit de 29/09.
 
 | Jogo | Observação histórica | Mudança posterior relacionada | Evidência nesta revisão |
 |---|---|---|---|
 | *Mortal Kombat 11* | Feedback loop corrigido, stutter reduzido e 60 FPS em modo portátil em um teste | Otimizações Vulkan mantidas no Current | Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. |
 | *Tears of the Kingdom* | Melhor observação isolada de 17,4 FPS no trecho pesado; engasgo periódico de ~450 ms | Ajustes de sincronização e GPU | Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. |
-| *Link's Awakening* | Melhor observação histórica de 45,3 FPS no trecho testado; um crash isolado | Ajustes posteriores de Vulkan/NCE | Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. |
+| *Link's Awakening* | Melhor observação histórica de 45,3 FPS no trecho testado; um crash isolado | Ajustes de Vulkan/NCE e vídeo VP9 via FFmpeg em [`d805ae2bf`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/d805ae2bf214f1906183c61861da2f1bbed856f3) | O commit de 29/09 relata 15–16 ms → 3–6 ms por quadro no vídeo de abertura no AYN Thor, após validação no Experimental. Esta revisão não repetiu a medição. |
 | *Metroid Prime 4* | Stutter no NCE e problema de textura também visto em JIT | Proteção NCE seletiva e upload 3D assíncrono | Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. |
 | *Marvel Ultimate Alliance 3* | Tela preta no NCE, renderização em JIT; Loop Safety atravessou um ponto com ~2 FPS | NCE-PROT1 e TEXBUF-ALIGN1 relatam correções para caminhos específicos | Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. |
 | *Pokémon Legends: Z-A* | JIT avançou melhor que NCE no teste antigo | Mudanças posteriores de NCE | Validado no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. |
@@ -633,7 +645,7 @@ Para transformar o histórico em evidência de release:
 | Jogo | Motivo |
 |---|---|
 | TOTK | CPU/GPU pesado, flushes e stutter periódico |
-| Link's Awakening | Sensível a pacing e estabilidade |
+| Link's Awakening | Sensível a pacing, estabilidade e tempo de decodificação do vídeo VP9 de abertura |
 | MK11 | Feedback loop, UBWC e desempenho gráfico |
 | MP4 | Stutter NCE e problema de textura |
 | MUA3 | Tela preta NCE, V29 e loops de shader |
@@ -659,20 +671,21 @@ Para transformar o histórico em evidência de release:
 | Resposta NIFM por jogo | Jogo reagir de forma inesperada à ausência de internet aceita | Manter a opção desligada por padrão e testar ligada/desligada por título |
 | Serialização NCE ampliada | Contenção ou regressão no encerramento/interrupção | Testar sessões longas e abertura/fechamento repetidos |
 | Limite de memória 3285 MiB | Menos memória disponível para sistema/applets emulados nos arranjos 4 GiB, 4 GiB SystemDev e 6 GiB AppletDev | Validado no Experimental; monitorar applets e títulos que dependem do pool de sistema |
+| VP9 via FFmpeg | Cabeçalho recomposto, atraso de um quadro ou fallback podem afetar vídeos específicos | Comparar vídeo, áudio e tempo de quadro com o decodificador em C#; observar retornos ao fallback e mudanças de resolução |
 
 ---
 
 ## 17. Próximos passos recomendados
 
-### Prioridade 1: publicar o Current local (Concluído)
+### Prioridade 1: acompanhar o caminho VP9 publicado
 
-1. Integrar os cinco commits locais à branch GitHub `neo-v2-nce2`, conciliando antes os commits de documentação publicados remotamente. (Concluído em 29/09)
-2. Criar tag de recuperação sobre `a24f5d1e7` antes do push.
-3. Após o push, atualizar os cabeçalhos de ambos os documentos para identificar o novo commit de código publicado.
+1. Registrar o commit [`d805ae2bf`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/d805ae2bf214f1906183c61861da2f1bbed856f3) nos APKs e logs usados em testes posteriores.
+2. Comparar o vídeo de abertura de *Link's Awakening* no AYN Thor com os mesmos parâmetros, incluindo qualidade de imagem, sincronização de áudio e tempo por quadro.
+3. Verificar vídeos VP9 com mudanças de resolução, quadros ocultos e o retorno ao decodificador em C# após falha. O commit relata validação no Experimental; esta revisão não executou nova build ou teste.
 
 ### Prioridades 2 e 3: manutenção da matriz de regressão
 
-Nas futuras promoções, manter os cenários já usados para *MUA3* (NCE-PROT1 e TEXBUF-ALIGN1), *Metroid Prime 4* (NCE/JIT e upload 3D assíncrono), *Mario + Rabbids Kingdom Battle* (otimizações de GPU), *Mario + Rabbids Sparks of Hope* (filtro NCE) e *MARVEL Cosmic Invasion* (compatibilidade gráfica 2D). Registrar também as verificações de interface, DLC/atualizações, resposta NIFM, serialização NCE, texturas 2D grandes e limite de memória.
+Nas futuras promoções, manter os cenários já usados para *MUA3* (NCE-PROT1 e TEXBUF-ALIGN1), *Metroid Prime 4* (NCE/JIT e upload 3D assíncrono), *Mario + Rabbids Kingdom Battle* (otimizações de GPU), *Mario + Rabbids Sparks of Hope* (filtro NCE) e *MARVEL Cosmic Invasion* (compatibilidade gráfica 2D). Registrar também as verificações de interface, DLC/atualizações, resposta NIFM, serialização NCE, texturas 2D grandes, limite de memória e vídeo VP9 no NVDEC.
 
 Preservar a metodologia da seção 15: mesmo save e driver, cache frio/quente separado e pelo menos três execuções por cenário. Os resultados históricos continuam limitados aos jogos, aparelhos e drivers em que foram obtidos.
 
@@ -713,7 +726,7 @@ Preservar a metodologia da seção 15: mesmo save e driver, cache frio/quente se
 - `src/Ryujinx.Graphics.Vulkan/AutoFlushCounter.cs`
 - `src/Ryujinx.Graphics.Vulkan/Window.cs`
 - `src/Ryujinx.Graphics.Gpu/Image/AutoDeleteCache.cs`
-- `src/Ryujinx.Graphics.Gpu/Image/TextureGroup.cs` (envio seletivo de texturas 2D da Current local)
+- `src/Ryujinx.Graphics.Gpu/Image/TextureGroup.cs` (envio seletivo de texturas 2D)
 - `src/Ryujinx.Common/Memory/MemoryOwner.cs`
 
 ### Android e configurações
@@ -727,8 +740,19 @@ Preservar a metodologia da seção 15: mesmo save e driver, cache frio/quente se
 - `src/KenjinxAndroid/app/src/main/java/org/kenjinx/android/views/GameSettingsDialog.kt`
 - `src/KenjinxAndroid/app/src/main/java/org/kenjinx/android/views/GameActionsDialog.kt`
 - `src/KenjinxAndroid/app/src/main/java/org/kenjinx/android/views/GameViews.kt`
-- `src/LibKenjinx/Android/JniExportedMethods.cs` (opção NIFM da Current local)
-- `src/Ryujinx.HLE/HOS/Services/Nifm/StaticService/IGeneralService.cs` (resposta NIFM da Current local)
+- `src/LibKenjinx/Android/JniExportedMethods.cs` (opção NIFM)
+- `src/Ryujinx.HLE/HOS/Services/Nifm/StaticService/IGeneralService.cs` (resposta NIFM)
+
+---
+
+### NVDEC e vídeo VP9
+
+- `src/Ryujinx.Graphics.Nvdec/Vp9FFmpeg/Vp9HeaderComposer.cs`
+- `src/Ryujinx.Graphics.Nvdec/Vp9FFmpeg/Vp9FFmpegPath.cs`
+- `src/Ryujinx.Graphics.Nvdec/Vp9Decoder.cs`
+- `src/Ryujinx.Graphics.Nvdec.Vp9/Dsp/Convolve.cs`
+- `src/Ryujinx.Graphics.Nvdec/Image/SurfaceWriter.cs`
+- `src/Ryujinx.Graphics.Nvdec.FFmpeg/FFmpegContext.cs`
 
 ---
 
@@ -753,6 +777,7 @@ Preservar a metodologia da seção 15: mesmo save e driver, cache frio/quente se
 | [`dc519b29b`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/dc519b29b9c885491198f8983b2ef9ecab8df2c3) | Serialização NCE; publicado na branch `neo-v2-nce2` |
 | [`6283a0ca4`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/6283a0ca4fa79d390c53eba70488cbff4ca69d9e) | Modo sem internet por jogo; publicado na branch `neo-v2-nce2` |
 | [`e39e26833`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/e39e26833225516be048a725d42927269b434d86) | Interface Android, DLC, atualizações e logs; publicado na branch `neo-v2-nce2` |
+| [`d805ae2bf`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/d805ae2bf214f1906183c61861da2f1bbed856f3) | VP9 via FFmpeg no NVDEC e NEON no decodificador em C#; publicado em 29/09 |
 
 ---
 
@@ -796,4 +821,4 @@ Preservar a metodologia da seção 15: mesmo save e driver, cache frio/quente se
 
 O Ryujinx Neo Current não parou nas alterações de 27/09. Em 28/09, o checkout Current recebeu mudanças funcionais em interface Android, DLC/atualizações, NIFM por jogo, NCE, limite de memória, logs e envio seletivo de texturas 2D grandes. Os builds Android das 21:09 e 21:36 terminaram com sucesso. O código foi organizado e publicado em cinco commits na branch GitHub em 29/09 (`339470edc`, `526f03540`, `dc519b29b`, `6283a0ca4` e `e39e26833`).
 
-O próximo passo do fluxo é integrar e publicar os cinco commits locais do Current, que reúnem os 18 arquivos de código de 28/09, após conciliar os commits remotos de documentação e criar uma tag de recuperação sobre `a24f5d1e7`. Depois do push, os cabeçalhos dos dois documentos devem apontar para o novo commit de código publicado. A matriz de regressão permanece como rotina de futuras promoções; esta revisão não repetiu os testes do Experimental.
+Em 29/09, o commit [`d805ae2bf`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/d805ae2bf214f1906183c61861da2f1bbed856f3) acrescentou o caminho VP9 via FFmpeg e otimizações NEON no ARM64. O ganho relatado para o vídeo de abertura de *Link's Awakening* pertence à medição descrita nesse commit. A matriz de regressão permanece como rotina das futuras promoções; esta revisão não repetiu os testes do Experimental.
