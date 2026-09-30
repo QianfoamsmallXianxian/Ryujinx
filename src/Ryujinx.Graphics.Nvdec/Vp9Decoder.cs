@@ -16,9 +16,16 @@ namespace Ryujinx.Graphics.Nvdec
     {
         private static readonly Decoder _decoder = new();
 
-        public unsafe static void Decode(ResourceManager rm, ref NvdecRegisters state)
+        public unsafe static void Decode(NvdecDecoderContext context, ResourceManager rm, ref NvdecRegisters state)
         {
             PictureInfo pictureInfo = rm.MemoryManager.DeviceRead<PictureInfo>(state.SetDrvPicSetupOffset);
+
+            // VP9 pelo FFmpeg (esquema do Eden). Em qualquer falha, segue no decodificador em C#.
+            if (context != null && context.Vp9FFmpegDecoder.TryDecode(rm, ref state, in pictureInfo))
+            {
+                return;
+            }
+
             EntropyProbs entropy = rm.MemoryManager.DeviceRead<EntropyProbs>(state.Vp9SetProbTabBufOffset);
 
             ISurface Rent(uint lumaOffset, uint chromaOffset, FrameSize size)
