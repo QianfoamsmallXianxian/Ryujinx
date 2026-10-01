@@ -21,8 +21,6 @@ Este texto cobre **somente a linha Ryujinx Neo Current em `neo-v2-nce2`**. A lin
 - **Pilha no Android:** em processos de 39 bits com espaço de endereços reduzido, a região de pilha pode chegar a 2 GiB quando couber junto das demais regiões, para acomodar jogos com muitas threads. [Commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/6c51417ab065d72271b217f3e150c618861c1498)
 - **Teclado na tela:** se o Android não oferecer o teclado inline, o applet usa um diálogo de entrada e devolve ao jogo alterações do texto, confirmação ou cancelamento. [Commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/6c51417ab065d72271b217f3e150c618861c1498)
 
-O log local `android_build_release.log` registra **BUILD SUCCESSFUL** para `assembleMainlineArmv8Release` em 30/09. O APK local resultante tem 51.735.013 bytes. Esse build confirma compilação; a correção de *GRID Autosport* é relatada pelo commit e não foi reproduzida nesta revisão.
-
 ### 29 de setembro — vídeo VP9 no NVDEC
 
 - **Decodificação VP9 pelo FFmpeg:** o NVDEC remonta os cabeçalhos VP9 a partir dos dados recebidos e usa o FFmpeg com threads por tile e opções de baixa latência. Se o caminho falhar, volta ao decodificador em C# até o próximo quadro-chave; se o FFmpeg não estiver disponível, mantém o caminho em C#. [Commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/d805ae2bf214f1906183c61861da2f1bbed856f3)
