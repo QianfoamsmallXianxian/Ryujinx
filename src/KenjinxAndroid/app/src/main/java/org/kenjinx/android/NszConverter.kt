@@ -120,6 +120,10 @@ object NszConverter {
 
                 when (result) {
                     0 -> {
+                        val candidateSize = part!!.length()
+                        if (candidateSize <= 0L || candidateSize >= sourceSize) {
+                            throw IllegalStateException("Não houve redução de tamanho. O NSP original foi mantido.")
+                        }
                         if (!part!!.renameTo(outName)) {
                             throw IllegalStateException("Não foi possível renomear o arquivo comprimido. O original foi mantido.")
                         }
@@ -138,6 +142,7 @@ object NszConverter {
                         success = true
                     }
                     2 -> message = "Conversão cancelada. O arquivo original foi mantido."
+                    3 -> message = "Não houve redução de tamanho. O NSP original foi mantido."
                     else -> message = "Falha na conversão. O arquivo original foi mantido."
                 }
             } catch (t: Throwable) {

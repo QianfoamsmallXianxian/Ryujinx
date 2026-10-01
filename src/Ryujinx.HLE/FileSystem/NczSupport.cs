@@ -153,6 +153,12 @@ namespace Ryujinx.HLE.FileSystem
         private readonly long[] _starts;
         private readonly long _totalSize;
 
+        public override void Dispose()
+        {
+            foreach (Entry entry in _entries) entry.File.Dispose();
+            base.Dispose();
+        }
+
         public VirtualPfsFile(List<Entry> entries)
         {
             _entries = entries.ToArray();
@@ -351,15 +357,22 @@ namespace Ryujinx.HLE.FileSystem
 
         // Modo bloco
         private readonly bool _isBlock;
-        private readonly int _blockSize;
-        private readonly long[] _blockOffsets;
-        private readonly int[] _blockCompressedSizes;
+        private int _blockSize;
+        private long[] _blockOffsets;
+        private int[] _blockCompressedSizes;
         private readonly Dictionary<int, byte[]> _blockCache = new();
         private readonly LinkedList<int> _blockOrder = new();
         private Decompressor _decompressor;
 
         // Modo solido
         private System.IO.FileStream _solidCache;
+        private static readonly object SolidCacheLock = new();
+        private static readonly Dictionary<string, int> ActiveSolidCaches = new();
+        private string _solidCachePath;
+        private bool _disposed;
+        private const long SolidCacheBudget = 4L * 1024 * 1024 * 1024;
+        private long _cacheHits;
+        private long _cacheMisses;
 
         public long NcaSize { get; }
 
@@ -439,6 +452,9 @@ namespace Ryujinx.HLE.FileSystem
                 {
                     throw new InvalidDataException($"NCZBLOCK invalido: {name}");
                 }
+                if (decompressedSize <= 0 || blockCount != ((decompressedSize - 1) / (1L << exponent)) + 1 ||
+                    blockCount > (_baseSize - position - 0x18) / 4)
+                    throw new InvalidDataException($"NCZBLOCK table invalid: {name}");
 
                 byte[] sizes = new byte[blockCount * 4];
                 ReadBaseExact(position + 0x18, sizes);
@@ -454,6 +470,10 @@ namespace Ryujinx.HLE.FileSystem
                 for (int i = 0; i < blockCount; i++)
                 {
                     _blockCompressedSizes[i] = BinaryPrimitives.ReadInt32LittleEndian(sizes.AsSpan(i * 4));
+                    long rawSize = Math.Min(_blockSize, decompressedSize - (long)i * _blockSize);
+                    if (_blockCompressedSizes[i] <= 0 || _blockCompressedSizes[i] > rawSize ||
+                        _blockCompressedSizes[i] > _baseSize - current)
+                        throw new InvalidDataException($"NCZBLOCK size invalid: {name} block={i}");
                     _blockOffsets[i] = current;
                     current += _blockCompressedSizes[i];
                 }
@@ -467,6 +487,7 @@ namespace Ryujinx.HLE.FileSystem
                 _dataOffset = position;
                 NcaSize = expected;
             }
+            Logger.Notice.Print(LogClass.Loader, $"[NEOV2-NCZ3] Open {_name}: mode={(_isBlock ? "NCZBLOCK" : "solid")} compressed={_baseSize} nca={NcaSize}");
         }
 
         private void ReadBaseExact(long offset, Span<byte> destination)
@@ -529,7 +550,12 @@ namespace Ryujinx.HLE.FileSystem
 
         private void ReadDecompressed(long offset, Span<byte> destination)
         {
-            if (_isBlock)
+            if (!_isBlock)
+            {
+                EnsureSolidCache();
+            }
+
+            if (_isBlock || _solidCache != null)
             {
                 int done = 0;
 
@@ -545,19 +571,13 @@ namespace Ryujinx.HLE.FileSystem
                     done += count;
                 }
             }
-            else
-            {
-                EnsureSolidCache();
-
-                _solidCache.Position = offset;
-                _solidCache.ReadExactly(destination);
-            }
         }
 
         private byte[] GetBlock(int index)
         {
             if (_blockCache.TryGetValue(index, out byte[] cached))
             {
+                _cacheHits++;
                 _blockOrder.Remove(index);
                 _blockOrder.AddFirst(index);
 
@@ -565,11 +585,20 @@ namespace Ryujinx.HLE.FileSystem
             }
 
             long totalDecompressed = NcaSize - UncompressableHeaderSize;
+            _cacheMisses++;
             int decompressedSize = (int)Math.Min(_blockSize, totalDecompressed - ((long)index * _blockSize));
             int compressedSize = _blockCompressedSizes[index];
 
             byte[] compressed = new byte[compressedSize];
-            ReadBaseExact(_blockOffsets[index], compressed);
+            if (_solidCache != null)
+            {
+                _solidCache.Position = _blockOffsets[index];
+                _solidCache.ReadExactly(compressed);
+            }
+            else
+            {
+                ReadBaseExact(_blockOffsets[index], compressed);
+            }
 
             byte[] block;
 
@@ -605,52 +634,206 @@ namespace Ryujinx.HLE.FileSystem
             return block;
         }
 
+        // Internal cache: NCZBLOCK header/table/data plus SHA-256 sidecar. The source remains untouched.
         private void EnsureSolidCache()
         {
-            if (_solidCache != null)
+            if (_solidCache != null) return;
+            lock (SolidCacheLock)
             {
-                return;
-            }
-
-            long totalDecompressed = NcaSize - UncompressableHeaderSize;
-            string cacheDir = Path.Combine(AppDataManager.BaseDirPath, "ncz_cache");
-            string cachePath = Path.Combine(cacheDir, $"{_name}_{_baseSize}.bin");
-
-            System.IO.Directory.CreateDirectory(cacheDir);
-
-            if (!System.IO.File.Exists(cachePath) || new System.IO.FileInfo(cachePath).Length != totalDecompressed)
-            {
-                Logger.Info?.Print(LogClass.Loader, $"[NEOV2-NCZ1] Solid NCZ, decompressing to cache: {_name} ({totalDecompressed / (1024 * 1024)} MiB)");
-
-                string partPath = cachePath + ".part";
-
-                using (IFileReadStream input = new(_base, _dataOffset, _baseSize))
-                using (DecompressionStream zstd = new(input))
-                using (System.IO.FileStream output = new(partPath, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None, 1 << 20))
+                string cacheDir = Path.Combine(AppDataManager.BaseDirPath, "ncz_cache");
+                System.IO.Directory.CreateDirectory(cacheDir);
+                // Full compressed-source identity avoids name/length collisions.
+                string identity;
+                var watch = System.Diagnostics.Stopwatch.StartNew();
+                Logger.Notice.Print(LogClass.Loader, $"[NEOV2-NCZ3] Checking solid source {_name}: bytes={_baseSize}");
+                using (IFileReadStream source = new(_base, 0, _baseSize))
+                    identity = Convert.ToHexString(SHA256.HashData(source));
+                string path = Path.Combine(cacheDir, identity + ".ncb");
+                string digestPath = path + ".sha256";
+                foreach (string stale in System.IO.Directory.GetFiles(cacheDir, identity + ".*.part*"))
+                    TryDeleteCache(stale);
+                bool reused = false;
+                if (System.IO.File.Exists(path) && System.IO.File.Exists(digestPath))
                 {
-                    byte[] buffer = new byte[1 << 20];
-                    long remaining = totalDecompressed;
-
-                    while (remaining > 0)
+                    try
                     {
-                        int read = zstd.Read(buffer, 0, (int)Math.Min(buffer.Length, remaining));
-
-                        if (read <= 0)
-                        {
-                            throw new InvalidDataException($"NCZ solido terminou antes do esperado: {_name}");
-                        }
-
-                        output.Write(buffer, 0, read);
-                        remaining -= read;
+                        using System.IO.FileStream candidate = System.IO.File.OpenRead(path);
+                        string actual = Convert.ToHexString(SHA256.HashData(candidate));
+                        if (!string.Equals(actual, System.IO.File.ReadAllText(digestPath).Trim(), StringComparison.Ordinal))
+                            throw new InvalidDataException("Compressed cache checksum mismatch");
+                        candidate.Position = 0;
+                        LoadSolidBlockTable(candidate);
+                        reused = true;
+                    }
+                    catch (Exception ex) when (ex is IOException || ex is InvalidDataException || ex is OverflowException)
+                    {
+                        Logger.Notice.Print(LogClass.Loader, $"[NEOV2-NCZ3] Cache rejected {_name}: {ex.GetType().Name}; rebuilding");
                     }
                 }
-
-                System.IO.File.Move(partPath, cachePath, true);
-
-                Logger.Info?.Print(LogClass.Loader, $"[NEOV2-NCZ1] Solid NCZ cached: {_name}");
+                if (!reused)
+                {
+                    string part = path + "." + Guid.NewGuid().ToString("N") + ".part";
+                    string digestPart = part + ".sha256";
+                    try
+                    {
+                        long total = NcaSize - UncompressableHeaderSize;
+                        const int blockSize = 1 << 20;
+                        int count = checked((int)((total + blockSize - 1) / blockSize));
+                        byte[] header = new byte[0x18];
+                        Encoding.ASCII.GetBytes("NCZBLOCK").CopyTo(header, 0);
+                        header[8] = 2;
+                        header[9] = 1;
+                        header[11] = 20;
+                        BinaryPrimitives.WriteInt32LittleEndian(header.AsSpan(12), count);
+                        BinaryPrimitives.WriteInt64LittleEndian(header.AsSpan(16), total);
+                        byte[] sizes = new byte[checked(count * 4)];
+                        Logger.Notice.Print(LogClass.Loader, $"[NEOV2-NCZ3] Solid conversion begin {_name}: bytes={total} blockBytes={blockSize} diskBudget={SolidCacheBudget}");
+                        using (System.IO.FileStream output = new(part, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None))
+                        using (IFileReadStream input = new(_base, _dataOffset, _baseSize))
+                        using (DecompressionStream zstd = new(input))
+                        using (Compressor compressor = new(3))
+                        {
+                            output.Write(header);
+                            output.Write(sizes);
+                            byte[] raw = new byte[blockSize];
+                            byte[] packed = new byte[Compressor.GetCompressBound(blockSize)];
+                            long done = 0;
+                            int rawBlocks = 0;
+                            for (int i = 0; i < count; i++)
+                            {
+                                int length = (int)Math.Min(blockSize, total - done);
+                                zstd.ReadExactly(raw.AsSpan(0, length));
+                                int written = compressor.Wrap(raw.AsSpan(0, length), packed.AsSpan());
+                                bool compressed = written > 0 && written < length;
+                                int stored = compressed ? written : length;
+                                output.Write(compressed ? packed.AsSpan(0, stored) : raw.AsSpan(0, stored));
+                                BinaryPrimitives.WriteInt32LittleEndian(sizes.AsSpan(i * 4), stored);
+                                if (!compressed) rawBlocks++;
+                                done += length;
+                                if ((i & 255) == 0)
+                                    Logger.Notice.Print(LogClass.Loader, $"[NEOV2-NCZ3] Solid conversion {_name}: processed={done}/{total} stored={output.Length}");
+                            }
+                            if (zstd.ReadByte() != -1) throw new InvalidDataException("Solid NCZ contains extra decompressed data");
+                            output.Position = 0x18;
+                            output.Write(sizes);
+                            output.Flush(true);
+                            output.Position = 0;
+                            string digest = Convert.ToHexString(SHA256.HashData(output));
+                            System.IO.File.WriteAllText(digestPart, digest);
+                            Logger.Notice.Print(LogClass.Loader, $"[NEOV2-NCZ3] Solid conversion complete {_name}: body={total} stored={output.Length} rawBlocks={rawBlocks}/{count}");
+                        }
+                        System.IO.File.Move(part, path, true);
+                        System.IO.File.Move(digestPart, digestPath, true);
+                    }
+                    finally
+                    {
+                        System.IO.File.Delete(part);
+                        System.IO.File.Delete(digestPart);
+                    }
+                }
+                _solidCache = new System.IO.FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+                try { LoadSolidBlockTable(_solidCache); }
+                catch { _solidCache.Dispose(); _solidCache = null; throw; }
+                _solidCachePath = path;
+                ActiveSolidCaches.TryGetValue(path, out int users);
+                ActiveSolidCaches[path] = users + 1;
+                System.IO.File.SetLastWriteTimeUtc(path, DateTime.UtcNow);
+                Logger.Notice.Print(LogClass.Loader, $"[NEOV2-NCZ3] Solid cache {_name}: reused={reused} stored={_solidCache.Length} residentLimit={BlockCacheCapacity * (long)_blockSize}");
+                Logger.Notice.Print(LogClass.Loader, $"[NEOV2-NCZ3] Solid preparation {_name}: elapsedMs={watch.ElapsedMilliseconds}");
+                // Remove only this source's legacy materialized cache, after a verified replacement exists.
+                string legacy = Path.Combine(cacheDir, $"{_name}_{_baseSize}.bin");
+                TryDeleteCache(legacy);
+                TryDeleteCache(legacy + ".part");
+                PruneSolidCache(cacheDir, path);
             }
+        }
 
-            _solidCache = new System.IO.FileStream(cachePath, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read, 1 << 16);
+        private void LoadSolidBlockTable(System.IO.FileStream file)
+        {
+            file.Position = 0;
+            byte[] header = new byte[0x18];
+            file.ReadExactly(header);
+            long total = NcaSize - UncompressableHeaderSize;
+            int count = checked((int)((total + (1 << 20) - 1) / (1 << 20)));
+            if (Encoding.ASCII.GetString(header, 0, 8) != "NCZBLOCK" || header[8] != 2 || header[9] != 1 || header[11] != 20 ||
+                BinaryPrimitives.ReadInt32LittleEndian(header.AsSpan(12)) != count ||
+                BinaryPrimitives.ReadInt64LittleEndian(header.AsSpan(16)) != total)
+                throw new InvalidDataException("Invalid solid block cache header");
+            byte[] sizes = new byte[checked(count * 4)];
+            file.ReadExactly(sizes);
+            int[] lengths = new int[count];
+            long[] offsets = new long[count];
+            long cursor = file.Position;
+            for (int i = 0; i < count; i++)
+            {
+                int size = BinaryPrimitives.ReadInt32LittleEndian(sizes.AsSpan(i * 4));
+                long expected = Math.Min(1 << 20, total - ((long)i << 20));
+                if (size <= 0 || size > expected || size > file.Length - cursor)
+                    throw new InvalidDataException("Invalid solid block cache size");
+                lengths[i] = size;
+                offsets[i] = cursor;
+                cursor += size;
+            }
+            if (cursor != file.Length) throw new InvalidDataException("Invalid solid block cache length");
+            _blockSize = 1 << 20;
+            _blockOffsets = offsets;
+            _blockCompressedSizes = lengths;
+        }
+
+        private static void TryDeleteCache(string path)
+        {
+            try { System.IO.File.Delete(path); }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+        }
+
+        private static void PruneSolidCache(string directory, string current)
+        {
+            var files = new System.IO.DirectoryInfo(directory).GetFiles("*.ncb");
+            Array.Sort(files, (a, b) => a.LastWriteTimeUtc.CompareTo(b.LastWriteTimeUtc));
+            long total = 0;
+            foreach (var file in files) total += file.Length;
+            // A single active title may exceed the budget; never prevent it from loading.
+            long budget = Math.Max(SolidCacheBudget, new System.IO.FileInfo(current).Length);
+            foreach (var file in files)
+            {
+                if (total <= budget) break;
+                if (file.FullName == current || ActiveSolidCaches.ContainsKey(file.FullName)) continue;
+                long size = file.Length;
+                TryDeleteCache(file.FullName);
+                if (!System.IO.File.Exists(file.FullName))
+                {
+                    total -= size;
+                    TryDeleteCache(file.FullName + ".sha256");
+                }
+            }
+            Logger.Notice.Print(LogClass.Loader, $"[NEOV2-NCZ3] Disk cache bytes={total} budget={budget} defaultBudget={SolidCacheBudget}");
+        }
+
+        public override void Dispose()
+        {
+            lock (_lock)
+            {
+                if (_disposed) return;
+                _disposed = true;
+                Logger.Notice.Print(LogClass.Loader, $"[NEOV2-NCZ3] Close {_name}: hits={_cacheHits} misses={_cacheMisses} residentBlocks={_blockCache.Count}");
+                _solidCache?.Dispose();
+                _solidCache = null;
+                _decompressor?.Dispose();
+                foreach (Aes aes in _aes) aes?.Dispose();
+                _blockCache.Clear();
+                _blockOrder.Clear();
+                _base.Dispose();
+                lock (SolidCacheLock)
+                {
+                    if (_solidCachePath != null && ActiveSolidCaches.TryGetValue(_solidCachePath, out int users))
+                    {
+                        if (users <= 1) ActiveSolidCaches.Remove(_solidCachePath);
+                        else ActiveSolidCaches[_solidCachePath] = users - 1;
+                    }
+                }
+            }
+            base.Dispose();
         }
 
         private void Encrypt(long ncaOffset, Span<byte> data)

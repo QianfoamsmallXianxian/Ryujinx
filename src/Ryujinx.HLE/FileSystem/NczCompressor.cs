@@ -32,6 +32,7 @@ namespace Ryujinx.HLE.FileSystem
         public const int ResultOk = 0;
         public const int ResultError = 1;
         public const int ResultCanceled = 2;
+        public const int ResultNoSavings = 3;
 
         public const int PhaseIdle = 0;
         public const int PhaseCompressing = 1;
@@ -100,6 +101,7 @@ namespace Ryujinx.HLE.FileSystem
 
                 List<PlanEntry> plan = [];
                 long totalBytes = 0;
+                long originalSize = input.Length;
 
                 foreach (DirectoryEntryEx entry in source.EnumerateEntries("/", "*"))
                 {
@@ -136,7 +138,7 @@ namespace Ryujinx.HLE.FileSystem
                 // Compressao + verificacao (le cada arquivo de novo).
                 Interlocked.Exchange(ref _total, totalBytes * 2);
 
-                Logger.Info?.Print(LogClass.Loader, $"[NEOV2-NCZ2] Compressing NSP: {plan.Count} files, {totalBytes / (1024 * 1024)} MiB, zstd level {level}");
+                Logger.Notice.Print(LogClass.Loader, $"[NEOV2-NCZ3] Compressing NSP: files={plan.Count} bytes={originalSize} zstdLevel={level}");
 
                 int headerSize = GetPfs0HeaderSize(plan);
 
@@ -159,6 +161,7 @@ namespace Ryujinx.HLE.FileSystem
                         : CopyFile(fileRef.Get, item.SourceSize, output);
 
                     item.OutputSize = output.Position - start;
+                    Logger.Notice.Print(LogClass.Loader, $"[NEOV2-NCZ3] Entry {item.SourceName}: input={item.SourceSize} output={item.OutputSize} mode={(item.Compress ? "NCZBLOCK" : "copy")}");
                 }
 
                 output.Position = 0;
@@ -171,7 +174,13 @@ namespace Ryujinx.HLE.FileSystem
 
                 long outputSize = output.Length;
 
-                Logger.Info?.Print(LogClass.Loader, $"[NEOV2-NCZ2] NSZ verified: {totalBytes / (1024 * 1024)} MiB -> {outputSize / (1024 * 1024)} MiB");
+                if (outputSize >= originalSize)
+                {
+                    Logger.Notice.Print(LogClass.Loader, $"[NEOV2-NCZ3] No savings: input={originalSize} output={outputSize}; original must be preserved");
+                    return ResultNoSavings;
+                }
+
+                Logger.Notice.Print(LogClass.Loader, $"[NEOV2-NCZ3] NSZ verified: input={originalSize} output={outputSize} saved={originalSize - outputSize}");
 
                 return ResultOk;
             }
@@ -183,7 +192,7 @@ namespace Ryujinx.HLE.FileSystem
             }
             catch (Exception ex)
             {
-                Logger.Error?.Print(LogClass.Loader, $"[NEOV2-NCZ2] Compression failed: {ex}");
+                Logger.Notice.Print(LogClass.Loader, $"[NEOV2-NCZ3] Compression failed: phase={_phase} failure={ex.GetType().Name} message={ex.Message}; original preserved");
 
                 return ResultError;
             }
@@ -269,13 +278,27 @@ namespace Ryujinx.HLE.FileSystem
                 LibHac.Tools.FsSystem.NcaUtils.NcaFsHeader fsHeader = nca.GetFsHeader(i);
                 NcaEncryptionType encryption = fsHeader.EncryptionType;
 
+                // CTR-Ex uses subsection-specific counters. A single CTR transform is not sufficient.
+                // Preserve ciphertext as type 1 until those subsection tables are supported.
+                if (encryption == NcaEncryptionType.AesCtrEx)
+                {
+                    Logger.Notice.Print(LogClass.Loader, $"[NEOV2-NCZ3] Section file={name} index={i} bytes={section.Size}: CTR-Ex preserved encrypted (unsupported subsection counters)");
+                    real.Add(section);
+                    continue;
+                }
+
                 if (encryption == NcaEncryptionType.AesCtr || encryption == NcaEncryptionType.AesCtrEx)
                 {
                     try
                     {
                         byte[] key = nca.Header.HasRightsId ? nca.GetDecryptedTitleKey() : nca.GetDecryptedKey(2);
 
-                        if (key != null && key.Length == 16)
+                        if (key == null || key.Length != 16)
+                        {
+                            throw new InvalidDataException($"Invalid content key for section {i}");
+                        }
+
+                        if (key.Length == 16)
                         {
                             key.CopyTo(section.Key, 0);
                             BinaryPrimitives.WriteUInt64BigEndian(section.Counter, fsHeader.Counter);
@@ -287,25 +310,20 @@ namespace Ryujinx.HLE.FileSystem
                             // Confere chave e contador com a decriptacao do proprio LibHac (somente AES-CTR simples).
                             if (section.CryptoType == 3 && !CheckSectionDecryption(nca, i, file, section))
                             {
-                                Logger.Warning?.Print(LogClass.Loader, $"[NEOV2-NCZ2] Key/counter mismatch on {name} section {i}; storing it without decryption");
-
-                                section.CryptoType = 1;
-                                section.Aes = null;
-                                Array.Clear(section.Key);
-                                Array.Clear(section.Counter);
+                                throw new InvalidDataException($"CTR validation mismatch for {name} section {i}");
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        Logger.Warning?.Print(LogClass.Loader, $"[NEOV2-NCZ2] No key for {name} section {i} ({ex.Message}); storing it without decryption");
-
-                        section.CryptoType = 1;
-                        section.Aes = null;
+                        section.Aes?.Dispose();
+                        Logger.Notice.Print(LogClass.Loader, $"[NEOV2-NCZ3] Decryption rejected: file={name} section={i} encryption={encryption} failure={ex.GetType().Name}; original preserved");
+                        throw new InvalidDataException($"Cannot safely compress {name} section {i}; decryption validation failed.");
                     }
                 }
 
                 real.Add(section);
+                Logger.Notice.Print(LogClass.Loader, $"[NEOV2-NCZ3] Section file={name} index={i} offset={section.Offset} bytes={section.Size} encryption={encryption} transform={(section.Aes != null ? "CTR" : "none")}");
             }
 
             real.Sort((a, b) => a.Offset.CompareTo(b.Offset));
@@ -361,9 +379,9 @@ namespace Ryujinx.HLE.FileSystem
 
                 return mine.AsSpan().SequenceEqual(reference);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return false;
+                throw new InvalidDataException($"LibHac reference read failed for section {index} ({ex.GetType().Name})");
             }
         }
 
@@ -455,6 +473,7 @@ namespace Ryujinx.HLE.FileSystem
             }
 
             using ThreadLocal<Compressor> compressors = new(() => new Compressor(level), true);
+            int rawBlocks = 0;
 
             try
             {
@@ -497,6 +516,7 @@ namespace Ryujinx.HLE.FileSystem
                         }
                         else
                         {
+                            rawBlocks++;
                             // Bloco que nao comprime: guardado cru (o leitor reconhece pelo tamanho).
                             output.Write(raw[b], 0, rawLength[b]);
                             BinaryPrimitives.WriteInt32LittleEndian(sizes.AsSpan(blockIndex * 4), rawLength[b]);
@@ -512,6 +532,7 @@ namespace Ryujinx.HLE.FileSystem
                 {
                     compressor.Dispose();
                 }
+                foreach (Section section in sections) section.Aes?.Dispose();
             }
 
             long end = output.Position;
@@ -519,6 +540,8 @@ namespace Ryujinx.HLE.FileSystem
             output.Position = sizesPosition;
             output.Write(sizes);
             output.Position = end;
+
+            Logger.Notice.Print(LogClass.Loader, $"[NEOV2-NCZ3] Blocks file={item.SourceName} total={blockCount} raw={rawBlocks} zstd={blockCount - rawBlocks}");
 
             return hash.GetHashAndReset();
         }
