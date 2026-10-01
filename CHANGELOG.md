@@ -29,8 +29,6 @@ Este texto cobre **somente a linha Ryujinx Neo Current em `neo-v2-nce2`**. A lin
 
 ### 28 de setembro — mudanças funcionais publicadas no GitHub em 29/09
 
-As alterações abaixo foram feitas em 28/09 e publicadas no GitHub em 29/09 na branch `neo-v2-nce2`. O build Android `MainlineArmv8Release` terminou com **BUILD SUCCESSFUL** às 21:09 e 21:36. As mudanças foram validadas no Experimental antes da promoção ao Current; esta revisão não repetiu os testes.
-
 - **Configurações por jogo em página própria:** o antigo diálogo virou uma página navegável, com seções de sistema/CPU, gráficos, controles, compatibilidade e sincronização, além de ações de salvar, restaurar e voltar sem salvar. A biblioteca abre essa página pelo menu do jogo. `MainView.kt`, `HomeViews.kt` e `GameSettingsDialog.kt`. [Commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/e39e26833225516be048a725d42927269b434d86)
 - **Interface para telas estreitas:** grade NEO passa a usar três ou quatro colunas em retrato, mantendo sete em paisagem; cabeçalho, busca e atalhos ficam mais compactos. O card de ações usa uma coluna no celular e aproveita o ícone embutido do jogo quando não há capa em arquivo. `HomeViews.kt` e `GameActionsDialog.kt`. [Commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/e39e26833225516be048a725d42927269b434d86)
 - **DLC e atualizações:** as telas deixam de recarregar o estado salvo a cada recomposição, preservando seleções feitas antes de salvar; o recarregamento da lista de DLC também mantém escolhas pendentes. `DlcViews.kt`, `DlcViewModel.kt` e `TitleUpdateViews.kt`. [Commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/e39e26833225516be048a725d42927269b434d86)
