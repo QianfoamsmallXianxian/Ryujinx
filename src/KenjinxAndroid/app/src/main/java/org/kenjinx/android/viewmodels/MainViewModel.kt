@@ -248,6 +248,16 @@ class MainViewModel(val activity: MainActivity) {
             KenjinxNative.deviceSetRelaxedDmaCopy(settings.enableRelaxedDmaCopy)
         } catch (_: Throwable) {
         }
+        // NEOV2-VP9EDEN1: VP9 pelo FFmpeg (chave geral).
+        try {
+            KenjinxNative.deviceSetVp9FFmpeg(settings.enableVp9FFmpeg)
+        } catch (_: Throwable) {
+        }
+        // NEOV2-AUDIO1: amplificacao do audio (100% a 200%).
+        try {
+            KenjinxNative.deviceSetAudioBoost(settings.audioBoost)
+        } catch (_: Throwable) {
+        }
         try {
             KenjinxNative.deviceSetRejectUnmappedDescriptors(settings.enableRejectUnmappedDescriptors)
         } catch (_: Throwable) {
@@ -412,6 +422,16 @@ class MainViewModel(val activity: MainActivity) {
         // NEOV2 DMA-RELAX1: sem perfil de jogo, vale a configuracao global.
         try {
             KenjinxNative.deviceSetRelaxedDmaCopy(settings.enableRelaxedDmaCopy)
+        } catch (_: Throwable) {
+        }
+        // NEOV2-VP9EDEN1: VP9 pelo FFmpeg (chave geral).
+        try {
+            KenjinxNative.deviceSetVp9FFmpeg(settings.enableVp9FFmpeg)
+        } catch (_: Throwable) {
+        }
+        // NEOV2-AUDIO1: amplificacao do audio (100% a 200%).
+        try {
+            KenjinxNative.deviceSetAudioBoost(settings.audioBoost)
         } catch (_: Throwable) {
         }
         try {

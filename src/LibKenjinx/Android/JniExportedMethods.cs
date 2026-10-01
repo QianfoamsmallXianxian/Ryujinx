@@ -1069,6 +1069,21 @@ namespace LibKenjinx
             Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-DMA-RELAX1] Relaxed DMA copy: {(enable ? "enabled" : "disabled")}");
         }
 
+        // NEOV2-VP9EDEN1: chave geral "VP9 pelo FFmpeg (Eden)", definida antes de carregar o jogo.
+        [UnmanagedCallersOnly(EntryPoint = "deviceSetVp9FFmpeg")]
+        public static void JniDeviceSetVp9FFmpeg(bool enable)
+        {
+            Ryujinx.Common.Diagnostics.NeoGraphicsSettings.Vp9FFmpegEnabled = enable;
+            Logger.Info?.Print(LogClass.Nvdec, $"[NEOV2-VP9EDEN1] VP9 pelo FFmpeg: {(enable ? "ligado" : "desligado")}");
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "deviceSetAudioBoost")]
+        public static void JniDeviceSetAudioBoost(float gain)
+        {
+            Ryujinx.Audio.Backends.OpenAL.OpenALHardwareDeviceDriver.OutputBoost = Math.Clamp(gain, 1f, 2f);
+            Logger.Info?.Print(LogClass.Audio, $"[NEOV2-AUDIO1] Amplificacao do audio: {Math.Clamp(gain, 1f, 2f) * 100:F0}%");
+        }
+
         [UnmanagedCallersOnly(EntryPoint = "deviceSetRejectUnmappedDescriptors")]
         public static void JniDeviceSetRejectUnmappedDescriptors(bool enable)
         {

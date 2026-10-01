@@ -23,6 +23,14 @@ namespace Ryujinx.Audio.Backends.OpenAL
 
         private float _volume;
 
+        /// <summary>
+        /// NEOV2-AUDIO1: amplificacao do audio (1.0 = 100%, 2.0 = 200%). O ganho da fonte do OpenAL e limitado
+        /// a 1.0 (AL_MAX_GAIN), entao a amplificacao vai no ganho do ouvinte, que nao tem esse limite.
+        /// </summary>
+        public static float OutputBoost { get; set; } = 1f;
+
+        private float _appliedBoost = -1f;
+
         public float Volume
         {
             get
@@ -123,6 +131,14 @@ namespace Ryujinx.Audio.Backends.OpenAL
 
             while (_stillRunning)
             {
+                float boost = Math.Clamp(OutputBoost, 1f, 2f);
+
+                if (boost != _appliedBoost)
+                {
+                    AL.Listener(ALListenerf.Gain, boost);
+                    _appliedBoost = boost;
+                }
+
                 bool updateRequired = false;
 
                 foreach (OpenALHardwareDeviceSession session in _sessions.Keys)

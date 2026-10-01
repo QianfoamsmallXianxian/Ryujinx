@@ -356,6 +356,9 @@ class MainActivity : BaseActivity() {
 
     @SuppressLint("RestrictedApi")
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        // NEOV2-HOTKEY2: atalho do usuario para fechar o emulador (e captura do atalho nas configuracoes).
+        if (ExitHotkey.onKeyEvent(this, event)) return true
+
         // Fora da emulação, os botões físicos pertencem à navegação da UI
         // (biblioteca, diálogos e configurações). Só encaminhe ao backend
         // quando houver um jogo efetivamente em execução.

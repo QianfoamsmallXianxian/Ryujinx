@@ -73,6 +73,12 @@ class QuickSettings(val activity: Activity) {
     // NEOV2 DMA-RELAX1: copia DMA relaxada (como o Eden). Desligada por padrao.
         var enableRelaxedDmaCopy: Boolean
 
+    // NEOV2-VP9EDEN1: VP9 pelo FFmpeg (como o Eden). Ligado por padrao na Current (Zelda LA); pode ser desligado por jogo.
+    var enableVp9FFmpeg: Boolean
+
+    // NEOV2-AUDIO1: amplificacao do audio (1.0 = 100%, 2.0 = 200%).
+    var audioBoost: Float
+
     var enableRejectUnmappedDescriptors: Boolean
     var enableAsyncLarge3DUpload: Boolean
 
@@ -94,6 +100,7 @@ class QuickSettings(val activity: Activity) {
     var isGrid: Boolean
     var useSwitchLayout: Boolean
     var enableMotion: Boolean
+
     var enablePerformanceMode: Boolean
     var showPerformanceOverlay: Boolean
     var controllerStickSensitivity: Float
@@ -171,6 +178,8 @@ class QuickSettings(val activity: Activity) {
         enableVtgViaCompute = sharedPref.getBoolean("enableVtgViaCompute", true)
         enableNceTrackingProtection = sharedPref.getBoolean("enableNceTrackingProtection", false)
         enableRelaxedDmaCopy = sharedPref.getBoolean("enableRelaxedDmaCopy", false)
+        enableVp9FFmpeg = sharedPref.getBoolean("enableVp9FFmpeg", true)
+        audioBoost = sharedPref.getFloat("audioBoost", 1f).coerceIn(1f, 2f)
         drawFlushMode = sharedPref.getInt("drawFlushMode", 0)
         bufferReadbackMode = sharedPref.getInt("bufferReadbackMode", 0)
         strictSyncMode = sharedPref.getInt("strictSyncMode", 0)
@@ -265,6 +274,8 @@ class QuickSettings(val activity: Activity) {
             putBoolean("enableVtgViaCompute", enableVtgViaCompute)
             putBoolean("enableNceTrackingProtection", enableNceTrackingProtection)
             putBoolean("enableRelaxedDmaCopy", enableRelaxedDmaCopy)
+            putBoolean("enableVp9FFmpeg", enableVp9FFmpeg)
+            putFloat("audioBoost", audioBoost)
             putBoolean("enableRejectUnmappedDescriptors", enableRejectUnmappedDescriptors)
             putBoolean("enableAsyncLarge3DUpload", enableAsyncLarge3DUpload)
             putBoolean("enableGpuOptimizations", enableGpuOptimizations)

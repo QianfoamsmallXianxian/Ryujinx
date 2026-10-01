@@ -20,8 +20,10 @@ namespace Ryujinx.Graphics.Nvdec
         {
             PictureInfo pictureInfo = rm.MemoryManager.DeviceRead<PictureInfo>(state.SetDrvPicSetupOffset);
 
-            // VP9 pelo FFmpeg (esquema do Eden). Em qualquer falha, segue no decodificador em C#.
-            if (context != null && context.Vp9FFmpegDecoder.TryDecode(rm, ref state, in pictureInfo))
+            // NEOV2-VP9EDEN1: com a chave ligada, tenta o FFmpeg (esquema do Eden); se nao der, segue em C#.
+            if (Ryujinx.Common.Diagnostics.NeoGraphicsSettings.Vp9FFmpegEnabled &&
+                context != null &&
+                context.Vp9FFmpegDecoder.TryDecode(rm, ref state, in pictureInfo))
             {
                 return;
             }

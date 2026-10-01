@@ -95,6 +95,7 @@ fun GameSettingsPage(
     var nceTrackingProtectionMode by remember(titleId) { mutableStateOf(store.nceTrackingProtectionMode) }
     var drawFlushMode by remember(titleId) { mutableStateOf(store.drawFlushMode) }
     var bufferReadbackMode by remember(titleId) { mutableStateOf(store.bufferReadbackMode) }
+    var vp9FFmpegMode by remember(titleId) { mutableStateOf(store.vp9FFmpegMode) }
     var relaxedDmaCopyMode by remember(titleId) { mutableStateOf(store.relaxedDmaCopyMode) }
     var rejectUnmappedDescriptorsMode by remember(titleId) { mutableStateOf(store.rejectUnmappedDescriptorsMode) }
     var asyncLarge3DUploadMode by remember(titleId) { mutableStateOf(store.asyncLarge3DUploadMode) }
@@ -122,6 +123,7 @@ fun GameSettingsPage(
             store.nceTrackingProtectionMode = nceTrackingProtectionMode
             store.drawFlushMode = drawFlushMode
             store.bufferReadbackMode = bufferReadbackMode
+            store.vp9FFmpegMode = vp9FFmpegMode
             store.relaxedDmaCopyMode = relaxedDmaCopyMode
             store.rejectUnmappedDescriptorsMode = rejectUnmappedDescriptorsMode
             store.asyncLarge3DUploadMode = asyncLarge3DUploadMode
@@ -179,6 +181,7 @@ fun GameSettingsPage(
         nceTrackingProtectionMode = 0
         drawFlushMode = 0
         bufferReadbackMode = 0
+        vp9FFmpegMode = 0
         relaxedDmaCopyMode = 0
         rejectUnmappedDescriptorsMode = 0
         asyncLarge3DUploadMode = 0
@@ -276,6 +279,7 @@ fun GameSettingsPage(
             ChoiceSetting("Proteção de memória NCE", "Corrige tela preta em alguns jogos (ex.: MUA3).", globalOnOff, nceTrackingProtectionMode, custom) { nceTrackingProtectionMode = it }
             ChoiceSetting("Otimizações de GPU", null, globalOnOff, gpuOptimizationsMode, custom) { gpuOptimizationsMode = it }
             ChoiceSetting("VTG via Compute", null, globalOnOff, vtgViaComputeMode, custom) { vtgViaComputeMode = it }
+            ChoiceSetting("VP9 pelo FFmpeg", "Desligue se o vídeo do jogo ficar com erros (ex.: GRID Autosport).", globalOnOff, vp9FFmpegMode, custom) { vp9FFmpegMode = it }
             ChoiceSetting("Cópia DMA relaxada", "Mais desempenho em alguns jogos (ex.: Diablo II); pode causar erros gráficos.", globalOnOff, relaxedDmaCopyMode, custom) { relaxedDmaCopyMode = it }
             ChoiceSetting("Rejeitar descritores não mapeados", null, globalOnOff, rejectUnmappedDescriptorsMode, custom) { rejectUnmappedDescriptorsMode = it }
             ChoiceSetting("Upload assíncrono de texturas 3D (Eden)", null, globalOnOff, asyncLarge3DUploadMode, custom) { asyncLarge3DUploadMode = it }

@@ -19,6 +19,7 @@ import androidx.compose.ui.window.DialogProperties
 
 import org.kenjinx.android.widgets.SimpleAlertDialog
 
+import org.kenjinx.android.KenjinxNative
 import org.kenjinx.android.RegionCode
 
 import org.kenjinx.android.SystemLanguage
@@ -372,6 +373,8 @@ class SettingViews {
             val enableVtgViaCompute = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableVtgViaCompute) }
             val enableNceTrackingProtection = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableNceTrackingProtection) }
             val enableRelaxedDmaCopy = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableRelaxedDmaCopy) }
+            val enableVp9FFmpeg = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableVp9FFmpeg) }
+            val audioBoost = remember { mutableFloatStateOf(QuickSettings(mainViewModel.activity).audioBoost) }
             val enableRejectUnmappedDescriptors = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableRejectUnmappedDescriptors) }
             val enableAsyncLarge3DUpload = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableAsyncLarge3DUpload) }
 
@@ -685,6 +688,8 @@ class SettingViews {
                 qs.enableVtgViaCompute = enableVtgViaCompute.value
                 qs.enableNceTrackingProtection = enableNceTrackingProtection.value
                 qs.enableRelaxedDmaCopy = enableRelaxedDmaCopy.value
+                qs.enableVp9FFmpeg = enableVp9FFmpeg.value
+                qs.audioBoost = audioBoost.floatValue
                 qs.enableRejectUnmappedDescriptors = enableRejectUnmappedDescriptors.value
                 qs.enableAsyncLarge3DUpload = enableAsyncLarge3DUpload.value
                 qs.drawFlushMode = drawFlushMode.value
@@ -1440,6 +1445,17 @@ class SettingViews {
                                             }
                                         )
                                         HighContrastToggle(
+                                            title = "VP9 pelo FFmpeg (Eden)",
+                                            description = "Vídeos VP9 dos jogos (ex.: abertura do Zelda: Link's Awakening) passam a ser decodificados pelo FFmpeg, como no Eden, em vez do decodificador interno. Ligado por padrão. Se o vídeo de algum jogo ficar com erros (ex.: GRID Autosport), desligue nas configurações daquele jogo. (Requer reiniciar o jogo)",
+                                            checked = enableVp9FFmpeg.value,
+                                            onCheckedChange = {
+                                                enableVp9FFmpeg.value = it
+                                                val qsVp9 = QuickSettings(mainViewModel.activity)
+                                                qsVp9.enableVp9FFmpeg = it
+                                                qsVp9.save()
+                                            }
+                                        )
+                                        HighContrastToggle(
                                             title = "Rejeitar descritores não mapeados",
                                             description = "Descritores de textura com endereço não mapeado são descartados antes de ler o formato. Desligado por padrão global. Pode ser ajustado por jogo. (Requer reiniciar o jogo)",
                                             checked = enableRejectUnmappedDescriptors.value,
@@ -1610,6 +1626,89 @@ class SettingViews {
 
                                         )
 
+                                        // NEOV2-HOTKEY2: o proprio usuario define o botao ou a combinacao que fecha o emulador.
+                                        SectionTitle("Atalho para fechar o emulador")
+
+                                        val exitHotkeyKeys = remember { mutableStateOf(org.kenjinx.android.ExitHotkey.load(mainViewModel.activity)) }
+                                        val capturingExitHotkey = remember { mutableStateOf(false) }
+
+                                        Text(
+                                            text = "Atual: " + org.kenjinx.android.ExitHotkey.describe(exitHotkeyKeys.value),
+                                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                                        )
+
+                                        if (capturingExitHotkey.value) {
+                                            val heldKeys = remember { HashSet<Int>() }
+                                            val capturedKeys = remember { mutableStateOf(listOf<Int>()) }
+
+                                            androidx.compose.runtime.DisposableEffect(Unit) {
+                                                org.kenjinx.android.ExitHotkey.captureListener = { event ->
+                                                    val code = event.keyCode
+
+                                                    if (!org.kenjinx.android.ExitHotkey.isCapturable(code)) {
+                                                        false
+                                                    } else {
+                                                        if (event.action == android.view.KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+                                                            heldKeys.add(code)
+                                                            if (!capturedKeys.value.contains(code) &&
+                                                                capturedKeys.value.size < org.kenjinx.android.ExitHotkey.MAX_KEYS
+                                                            ) {
+                                                                capturedKeys.value = capturedKeys.value + code
+                                                            }
+                                                        } else if (event.action == android.view.KeyEvent.ACTION_UP) {
+                                                            heldKeys.remove(code)
+
+                                                            if (heldKeys.isEmpty() && capturedKeys.value.isNotEmpty()) {
+                                                                org.kenjinx.android.ExitHotkey.save(mainViewModel.activity, capturedKeys.value)
+                                                                exitHotkeyKeys.value = capturedKeys.value
+                                                                org.kenjinx.android.ExitHotkey.captureListener = null
+                                                                capturingExitHotkey.value = false
+                                                            }
+                                                        }
+
+                                                        true
+                                                    }
+                                                }
+
+                                                onDispose {
+                                                    org.kenjinx.android.ExitHotkey.captureListener = null
+                                                }
+                                            }
+
+                                            Text(
+                                                text = "Aperte e segure no controle o botão ou a combinação (até 4 botões) e depois solte. " +
+                                                    "Capturado: " + org.kenjinx.android.ExitHotkey.describe(capturedKeys.value),
+                                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                                            )
+
+                                            TextButton(
+                                                onClick = { capturingExitHotkey.value = false },
+                                                modifier = Modifier.padding(horizontal = 8.dp)
+                                            ) {
+                                                Text("Cancelar")
+                                            }
+                                        } else {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                Button(onClick = { capturingExitHotkey.value = true }) {
+                                                    Text("Definir atalho")
+                                                }
+
+                                                OutlinedButton(
+                                                    onClick = {
+                                                        org.kenjinx.android.ExitHotkey.clear(mainViewModel.activity)
+                                                        exitHotkeyKeys.value = emptyList()
+                                                    }
+                                                ) {
+                                                    Text("Remover")
+                                                }
+                                            }
+                                        }
+
 
 
                                         SectionTitle("Sensibilidade dos Analógicos: %.2fx".format(controllerStickSensitivity.floatValue))
@@ -1657,6 +1756,26 @@ class SettingViews {
 
 
                                     SettingsCategory.Sistema -> {
+
+                                        // NEOV2-AUDIO1: amplificacao do audio (na aba Sistema).
+                                        SectionTitle("Volume do áudio: %d%%".format((audioBoost.floatValue * 100).toInt()))
+                                        Slider(
+                                            value = audioBoost.floatValue,
+                                            onValueChange = {
+                                                audioBoost.floatValue = it
+                                                val qsAudio = QuickSettings(mainViewModel.activity)
+                                                qsAudio.audioBoost = it
+                                                qsAudio.save()
+                                                try {
+                                                    KenjinxNative.deviceSetAudioBoost(it)
+                                                } catch (_: Throwable) {
+                                                }
+                                            },
+                                            valueRange = 1.0f..2.0f,
+                                            steps = 9,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+
 
                                         SectionTitle("Idioma do Sistema")
 

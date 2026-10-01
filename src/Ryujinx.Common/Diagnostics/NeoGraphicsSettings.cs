@@ -106,5 +106,11 @@
 
         /// <summary>TexturePool mantem invalido o slot com endereco 0 ao ser modificado.</summary>
         public static bool TexturePoolKeepInvalidEnabled { get; set; } = true;
+
+        /// <summary>
+        /// NEOV2-VP9EDEN1: chave geral "VP9 pelo FFmpeg (Eden)". Decodifica os videos VP9 com o FFmpeg,
+        /// recompondo os cabecalhos como o Eden. Desligada por padrao; desligada, usa o decodificador em C#.
+        /// </summary>
+        public static bool Vp9FFmpegEnabled { get; set; }
     }
 }

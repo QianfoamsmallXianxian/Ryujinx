@@ -71,6 +71,8 @@ interface KenjinxNativeJna : Library {
     fun graphicsSetFullscreenStretch(enable: Boolean)
     fun deviceSetNceTrackingProtection(enable: Boolean)
     fun deviceSetRelaxedDmaCopy(enable: Boolean)
+    fun deviceSetVp9FFmpeg(enable: Boolean)
+    fun deviceSetAudioBoost(gain: Float)
     fun deviceSetExperimentalGameFixes(enable: Boolean)
     fun deviceSetNifmOffline(enable: Boolean)
     fun deviceSetRejectUnmappedDescriptors(enable: Boolean)

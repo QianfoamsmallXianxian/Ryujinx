@@ -42,6 +42,13 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             if (isValid) preferences.edit { putInt(key("nceTrackingProtectionMode"), value) }
         }
 
+    /** NEOV2-VP9EDEN1: VP9 pelo FFmpeg por jogo. 0: Use Global, 1: Enabled, 2: Disabled */
+    var vp9FFmpegMode: Int
+        get() = if (!isValid) 0 else preferences.getInt(key("vp9FFmpegMode"), 0)
+        set(value) {
+            if (isValid) preferences.edit { putInt(key("vp9FFmpegMode"), value) }
+        }
+
     /** NEOV2 DMA-RELAX1: 0: Use Global, 1: Enabled, 2: Disabled */
     var relaxedDmaCopyMode: Int
         get() = if (!isValid) 0 else preferences.getInt(key("relaxedDmaCopyMode"), 0)
@@ -134,6 +141,10 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             1 -> settings.enableNceTrackingProtection = true
             2 -> settings.enableNceTrackingProtection = false
         }
+        when (safeInt(key("vp9FFmpegMode"), 0)) {
+            1 -> settings.enableVp9FFmpeg = true
+            2 -> settings.enableVp9FFmpeg = false
+        }
         when (safeInt(key("relaxedDmaCopyMode"), 0)) {
             1 -> settings.enableRelaxedDmaCopy = true
             2 -> settings.enableRelaxedDmaCopy = false
@@ -192,6 +203,7 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             putBoolean(key("enableTextureRecompression"), settings.enableTextureRecompression)
             putInt(key("vtgViaComputeMode"), vtgViaComputeMode)
             putInt(key("nceTrackingProtectionMode"), nceTrackingProtectionMode)
+            putInt(key("vp9FFmpegMode"), vp9FFmpegMode)
             putInt(key("relaxedDmaCopyMode"), relaxedDmaCopyMode)
             putInt(key("rejectUnmappedDescriptorsMode"), rejectUnmappedDescriptorsMode)
             putInt(key("asyncLarge3DUploadMode"), asyncLarge3DUploadMode)

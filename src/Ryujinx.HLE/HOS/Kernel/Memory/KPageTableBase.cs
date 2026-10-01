@@ -273,6 +273,30 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
                                 aliasRegion.Size = 0x1000000000;
                             }
                         }
+
+                        // NEOV2-STACK1: the rule above also shrinks the stack region to 1/256 of the reserved width
+                        // (256 MiB for the 120 GiB Android reserve), while the console (and Eden) use 2 GiB for 39-bit
+                        // processes. nn::os maps every thread stack into this region with svcMapMemory, so games that
+                        // create many threads (GRID Autosport) run out of room and abort inside nn::os::CreateThread.
+                        // Keep the console size whenever everything still fits in the reserved address space.
+                        if (stackRegion.Size < 0x80000000)
+                        {
+                            ulong codeEnd = CodeRegionStart + codeRegionSize;
+                            ulong spaceBefore = CodeRegionStart > AslrRegionStart ? CodeRegionStart - AslrRegionStart : 0;
+                            ulong spaceAfter = addrSpaceEnd > codeEnd ? addrSpaceEnd - codeEnd : 0;
+                            ulong available = Math.Max(spaceBefore, spaceAfter);
+                            ulong extraSize = flags.HasFlag(ProcessCreationFlags.EnableAliasRegionExtraSize) ? addrSpaceEnd / 8 : 0;
+                            ulong needed = aliasRegion.Size + extraSize + heapRegion.Size + 0x80000000UL + tlsIoRegion.Size;
+                            ulong previousStackSize = stackRegion.Size;
+
+                            if (needed <= available)
+                            {
+                                stackRegion.Size = 0x80000000;
+                            }
+
+                            Ryujinx.Common.Logging.Logger.Info?.Print(Ryujinx.Common.Logging.LogClass.Kernel,
+                                $"[NEOV2-STACK1] Stack region 0x{previousStackSize:X} -> 0x{stackRegion.Size:X} (alias=0x{aliasRegion.Size:X} heap=0x{heapRegion.Size:X} tlsIo=0x{tlsIoRegion.Size:X} needed=0x{needed:X} available=0x{available:X})");
+                        }
                     }
                     else
                     {
