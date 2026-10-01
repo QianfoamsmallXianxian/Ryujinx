@@ -1640,6 +1640,27 @@ class HomeViews {
 
                                 Toast.makeText(viewModel.activity, "Todos os caches excluídos", Toast.LENGTH_SHORT).show()
 
+                            },
+
+                            // NEOV2-NCZ2: fim da conversao para NSZ.
+                            onCompressed = { success, message ->
+
+                                Toast.makeText(viewModel.activity, message, Toast.LENGTH_LONG).show()
+
+                                if (success) {
+
+                                    showAppActions.value = false
+
+                                    viewModel.mainViewModel?.apply { selected = null }
+
+                                    selectedModel.value = null
+
+                                    viewModel.requestReload()
+
+                                    viewModel.ensureReloadIfNecessary()
+
+                                }
+
                             }
 
                         )

@@ -7,6 +7,7 @@ using LibHac.Tools.Fs;
 using LibHac.Tools.FsSystem;
 using LibHac.Tools.FsSystem.NcaUtils;
 using Ryujinx.Common.Logging;
+using Ryujinx.HLE.FileSystem;
 using Ryujinx.HLE.Loaders.Executables;
 using Ryujinx.HLE.Loaders.Processes.Extensions;
 using System;
@@ -67,7 +68,21 @@ namespace Ryujinx.HLE.Loaders.Processes
                 return false;
             }
 
-            (bool success, ProcessResult processResult) = xci.OpenPartition(XciPartitionType.Secure).TryLoad(_device, stream, applicationId, out string errorMessage);
+            XciPartition securePartition = xci.OpenPartition(XciPartitionType.Secure);
+
+            bool success;
+            ProcessResult processResult;
+            string errorMessage;
+
+            // NEOV2-NCZ1: XCZ (particao secure com NCZ) e carregado pelo PFS0 virtual.
+            if (NczSupport.TryWrap(securePartition, out PartitionFileSystem nczPartition))
+            {
+                (success, processResult) = nczPartition.TryLoad(_device, stream, applicationId, out errorMessage);
+            }
+            else
+            {
+                (success, processResult) = securePartition.TryLoad(_device, stream, applicationId, out errorMessage);
+            }
 
             if (!success)
             {
@@ -100,6 +115,12 @@ namespace Ryujinx.HLE.Loaders.Processes
         {
             PartitionFileSystem partitionFileSystem = new();
             partitionFileSystem.Initialize(stream.AsStorage()).ThrowIfFailure();
+
+            // NEOV2-NCZ1: NSZ e carregado pelo PFS0 virtual (NCZ exposto como NCA).
+            if (NczSupport.TryWrap(partitionFileSystem, out PartitionFileSystem nczPartition))
+            {
+                partitionFileSystem = nczPartition;
+            }
 
             (bool success, ProcessResult processResult) = partitionFileSystem.TryLoad(_device, stream, applicationId, out string errorMessage);
 

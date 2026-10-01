@@ -212,7 +212,7 @@ class DlcViews {
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                text = "Adicione arquivos .nsp ou .xci para habilitar novos conteúdos no jogo.",
+                                text = "Adicione arquivos .nsp, .nsz, .xci ou .xcz para habilitar novos conteúdos no jogo.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center,

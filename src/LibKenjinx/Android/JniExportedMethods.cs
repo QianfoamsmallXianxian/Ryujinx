@@ -1077,6 +1077,31 @@ namespace LibKenjinx
             Logger.Info?.Print(LogClass.Nvdec, $"[NEOV2-VP9EDEN1] VP9 pelo FFmpeg: {(enable ? "ligado" : "desligado")}");
         }
 
+        // NEOV2-NCZ2: conversor NSP -> NSZ. Bloqueante: chamar fora da thread de UI.
+        [UnmanagedCallersOnly(EntryPoint = "deviceCompressNsp")]
+        public static int JniDeviceCompressNsp(int inDescriptor, int outDescriptor, int level)
+        {
+            if (SwitchDevice?.VirtualFileSystem == null)
+            {
+                Logger.Error?.Print(LogClass.Loader, "[NEOV2-NCZ2] SwitchDevice is not initialized");
+                return Ryujinx.HLE.FileSystem.NczCompressor.ResultError;
+            }
+
+            using FileStream input = OpenFile(inDescriptor);
+            using FileStream output = OpenFile(outDescriptor);
+
+            return Ryujinx.HLE.FileSystem.NczCompressor.CompressNsp(input, output, SwitchDevice.VirtualFileSystem, level);
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "deviceCompressProgress")]
+        public static int JniDeviceCompressProgress() => Ryujinx.HLE.FileSystem.NczCompressor.Permille;
+
+        [UnmanagedCallersOnly(EntryPoint = "deviceCompressPhase")]
+        public static int JniDeviceCompressPhase() => Ryujinx.HLE.FileSystem.NczCompressor.Phase;
+
+        [UnmanagedCallersOnly(EntryPoint = "deviceCompressCancel")]
+        public static void JniDeviceCompressCancel() => Ryujinx.HLE.FileSystem.NczCompressor.Cancel();
+
         [UnmanagedCallersOnly(EntryPoint = "deviceSetAudioBoost")]
         public static void JniDeviceSetAudioBoost(float gain)
         {

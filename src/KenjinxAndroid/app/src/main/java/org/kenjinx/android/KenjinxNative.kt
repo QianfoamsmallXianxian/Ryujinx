@@ -73,6 +73,11 @@ interface KenjinxNativeJna : Library {
     fun deviceSetRelaxedDmaCopy(enable: Boolean)
     fun deviceSetVp9FFmpeg(enable: Boolean)
     fun deviceSetAudioBoost(gain: Float)
+    // NEOV2-NCZ2: conversor NSP -> NSZ (0 ok, 1 erro, 2 cancelado; progresso em milesimos; fase 1 comprimindo, 2 verificando).
+    fun deviceCompressNsp(inDescriptor: Int, outDescriptor: Int, level: Int): Int
+    fun deviceCompressProgress(): Int
+    fun deviceCompressPhase(): Int
+    fun deviceCompressCancel()
     fun deviceSetExperimentalGameFixes(enable: Boolean)
     fun deviceSetNifmOffline(enable: Boolean)
     fun deviceSetRejectUnmappedDescriptors(enable: Boolean)

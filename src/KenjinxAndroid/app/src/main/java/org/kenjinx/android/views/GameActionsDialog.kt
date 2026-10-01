@@ -22,6 +22,10 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddBox
+import androidx.compose.material.icons.filled.Archive
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Compress
+import androidx.compose.material.icons.filled.KeyboardReturn
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Contactless
@@ -39,6 +43,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -60,6 +65,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
+import org.kenjinx.android.NszConverter
 import org.kenjinx.android.viewmodels.GameModel
 import java.io.File
 import java.util.Locale
@@ -80,9 +86,13 @@ fun GameActionsDialog(
     onCreateShortcut: () -> Unit,
     onClearPptc: () -> Unit,
     onPurgeShader: () -> Unit,
-    onDeleteCache: () -> Unit
+    onDeleteCache: () -> Unit,
+    // NEOV2-NCZ2: chamado ao terminar a conversao para NSZ (sucesso, mensagem).
+    onCompressed: (Boolean, String) -> Unit = { _, _ -> }
 ) {
     var showDeleteCacheConfirm by remember { mutableStateOf(false) }
+    var showCompressChoice by remember { mutableStateOf(false) }
+    val isNsp = game.file.name?.lowercase(Locale.ROOT)?.endsWith(".nsp") == true
     val context = LocalContext.current
 
     val bitmap = remember(game.titleId) {
@@ -100,7 +110,7 @@ fun GameActionsDialog(
         }
     }
 
-    val actions = listOf(
+    val actions = listOfNotNull(
         DialogAction(Icons.Default.PlayArrow, "Jogar", "Iniciar emulação", true, false, onPlay),
         DialogAction(Icons.Default.Settings, "Configurar", "Perfil deste jogo", false, false, onConfigure),
         DialogAction(Icons.Default.SystemUpdate, "Atualizações", "Patches e versões", false, false, onUpdates),
@@ -110,6 +120,8 @@ fun GameActionsDialog(
         DialogAction(Icons.Default.Save, "Saves", "Importar ou exportar", false, false, onSaves),
         DialogAction(Icons.Default.Contactless, "Amiibo", "Configurar slots", false, false, onAmiibo),
         DialogAction(Icons.Default.AddBox, "Criar atalho", "Adicionar à tela inicial", false, false, onCreateShortcut),
+        // NEOV2-NCZ2: so para NSP.
+        if (isNsp) DialogAction(Icons.Default.Archive, "Comprimir", "Converter para NSZ", false, false, { showCompressChoice = true }) else null,
         DialogAction(Icons.Default.Memory, "Limpar cache PPTC", "Descarta compilações PPTC", false, false, onClearPptc),
         DialogAction(Icons.Default.DeleteSweep, "Limpar shaders", "Descarta shaders compilados", false, false, onPurgeShader),
         DialogAction(Icons.Default.Delete, "Excluir todo o cache", "Remove PPTC, shaders e arquivos", false, true, { showDeleteCacheConfirm = true })
@@ -120,7 +132,8 @@ fun GameActionsDialog(
     val compact = config.screenWidthDp < 600
 
     BasicAlertDialog(
-        onDismissRequest = onDismiss,
+        // NEOV2-NCZ2: nao fecha enquanto a conversao estiver em andamento.
+        onDismissRequest = { if (!NszConverter.running.value) onDismiss() },
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
@@ -186,8 +199,10 @@ fun GameActionsDialog(
                             overflow = TextOverflow.Ellipsis
                         )
                         val titleIdText = game.titleId?.uppercase(Locale.ROOT) ?: ""
+                        // NEOV2-NCZ2: o subtitulo acompanha o painel atual.
+                        val panelName = if (showCompressChoice || NszConverter.running.value) "Comprimir para NSZ" else "Ações rápidas"
                         Text(
-                            text = if (titleIdText.isNotBlank()) "$titleIdText • Ações rápidas" else "Ações rápidas",
+                            text = if (titleIdText.isNotBlank()) "$titleIdText • $panelName" else panelName,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
@@ -195,11 +210,127 @@ fun GameActionsDialog(
                         )
                     }
 
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Fechar")
+                    if (!NszConverter.running.value) {
+                        IconButton(onClick = { if (showCompressChoice) showCompressChoice = false else onDismiss() }) {
+                            Icon(Icons.Default.Close, contentDescription = "Fechar")
+                        }
                     }
                 }
 
+                // NEOV2-NCZ2: paineis de compressao no mesmo estilo dos cartoes de acao.
+                if (NszConverter.running.value) {
+                    val fraction = NszConverter.permille.intValue / 1000f
+                    val verifying = NszConverter.phase.intValue == NszConverter.PHASE_VERIFYING
+
+                    Column(
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = if (verifying) Icons.Default.Compress else Icons.Default.Archive,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                    Spacer(Modifier.width(10.dp))
+                                    Text(
+                                        text = if (verifying) "Verificando o arquivo comprimido" else "Comprimindo",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Text(
+                                        text = String.format(Locale.getDefault(), "%.1f%%", fraction * 100f),
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                                Spacer(Modifier.height(12.dp))
+                                LinearProgressIndicator(
+                                    progress = { fraction },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(8.dp)
+                                        .clip(RoundedCornerShape(4.dp))
+                                )
+                                Spacer(Modifier.height(10.dp))
+                                Text(
+                                    text = NszConverter.gameName.value,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+
+                        ActionCard(
+                            icon = Icons.Default.Close,
+                            title = "Cancelar",
+                            subtitle = "O arquivo original é mantido",
+                            isError = true,
+                            onClick = { NszConverter.cancel() }
+                        )
+                    }
+                } else if (showCompressChoice) {
+                    Column(
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "O jogo será convertido para NSZ na mesma pasta. Depois que o arquivo novo for verificado, o NSP original será excluído.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        val startCompression: (Int) -> Unit = { level ->
+                            showCompressChoice = false
+                            NszConverter.start(context, game.file, level) { success, message ->
+                                onCompressed(success, message)
+                            }
+                        }
+
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(if (compact) 1 else 2),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            item {
+                                ActionCard(
+                                    icon = Icons.Default.Bolt,
+                                    title = "Rápido",
+                                    subtitle = "Recomendado",
+                                    isPrimary = true,
+                                    onClick = { startCompression(NszConverter.LEVEL_FAST) }
+                                )
+                            }
+                            item {
+                                ActionCard(
+                                    icon = Icons.Default.Compress,
+                                    title = "Máximo",
+                                    subtitle = "Arquivo menor, bem mais lento",
+                                    onClick = { startCompression(NszConverter.LEVEL_MAX) }
+                                )
+                            }
+                            item {
+                                ActionCard(
+                                    icon = Icons.Default.KeyboardReturn,
+                                    title = "Voltar",
+                                    subtitle = "Ações rápidas",
+                                    onClick = { showCompressChoice = false }
+                                )
+                            }
+                        }
+                    }
+                } else
                 // Landscape 4:3 action area, arranged in two columns for handhelds.
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(if (compact) 1 else 2),
