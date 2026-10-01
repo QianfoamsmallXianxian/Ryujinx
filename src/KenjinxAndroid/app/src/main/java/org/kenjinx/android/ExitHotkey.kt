@@ -1,14 +1,13 @@
 package org.kenjinx.android
 
 import android.content.Context
-import android.os.Handler
-import android.os.Looper
 import android.os.SystemClock
 import android.view.KeyEvent
 import androidx.preference.PreferenceManager
 
-// NEOV2-HOTKEY2: atalho definido pelo proprio usuario (um botao ou uma combinacao de ate 4 botoes)
-// que fecha o emulador inteiro. Configurado em Controles > "Atalho para fechar o emulador".
+// NEOV2-HOTKEY2: atalho definido pelo proprio usuario (um botao ou uma combinacao de ate 4 botoes).
+// NEOV2-HOTKEY3: o atalho fecha o jogo e volta para a lista de jogos (nao encerra mais o emulador).
+// Fora de jogo, o atalho nao faz nada. Configurado em Controles > "Atalho para voltar à lista de jogos".
 object ExitHotkey {
     private const val PREF_KEY = "exitHotkeyKeys"
     const val MAX_KEYS = 4
@@ -22,7 +21,7 @@ object ExitHotkey {
     private var lastTrigger = 0L
 
     @Volatile
-    private var exiting = false
+    private var returning = false
 
     fun isCapturable(keyCode: Int): Boolean = when (keyCode) {
         KeyEvent.KEYCODE_UNKNOWN,
@@ -94,6 +93,12 @@ object ExitHotkey {
         val keyCode = event.keyCode
         if (!isCapturable(keyCode)) return false
 
+        // NEOV2-HOTKEY3: sem jogo rodando, o atalho nao age e a tecla segue o fluxo normal.
+        if (!activity.isGameRunning) {
+            synchronized(pressed) { pressed.clear() }
+            return false
+        }
+
         val keys = load(activity)
 
         synchronized(pressed) {
@@ -114,48 +119,33 @@ object ExitHotkey {
         }
 
         val now = SystemClock.uptimeMillis()
-        if (!exiting && now - lastTrigger > 1000) {
+        if (!returning && now - lastTrigger > 1000) {
             lastTrigger = now
-            exitEmulator(activity)
+            returnToGameList(activity)
         }
 
         return true
     }
 
-    // Fecha o jogo (se houver), espera a emulacao parar e encerra o aplicativo.
-    private fun exitEmulator(activity: MainActivity) {
-        exiting = true
+    // NEOV2-HOTKEY3: mesmo fluxo do botao "Sair do jogo" do diálogo de saida.
+    private fun returnToGameList(activity: MainActivity) {
+        returning = true
 
         activity.runOnUiThread {
-            val viewModel = MainActivity.mainViewModel
-
             try {
-                if (activity.isGameRunning) {
-                    viewModel?.closeGame()
+                val viewModel = MainActivity.mainViewModel
+
+                // NEOV2-CLOSE2: so volta se a tela atual ainda for a do jogo.
+                val nav = viewModel?.navController
+                if (activity.isGameRunning && viewModel != null && nav?.currentDestination?.route == "game") {
+                    viewModel.closeGame()
+                    nav?.popBackStack()
+                    activity.isGameRunning = false
                 }
             } catch (_: Throwable) {
+            } finally {
+                returning = false
             }
-
-            Thread {
-                val deadline = SystemClock.uptimeMillis() + 5000
-                while (viewModel?.emulationRunning == true && SystemClock.uptimeMillis() < deadline) {
-                    try {
-                        Thread.sleep(50)
-                    } catch (_: Throwable) {
-                    }
-                }
-
-                activity.runOnUiThread {
-                    try {
-                        activity.finishAndRemoveTask()
-                    } catch (_: Throwable) {
-                    }
-
-                    Handler(Looper.getMainLooper()).postDelayed({
-                        android.os.Process.killProcess(android.os.Process.myPid())
-                    }, 400)
-                }
-            }.start()
         }
     }
 }

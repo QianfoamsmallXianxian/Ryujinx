@@ -357,9 +357,13 @@ class GameViews {
  confirmText = "Sair do jogo",
  dismissText = "Continuar jogando",
  onConfirm = {
+ // NEOV2-CLOSE2: um segundo toque no mesmo quadro nao pode tirar a tela inicial da pilha (tela branca).
+ val nav = mainViewModel.navController
+ if (nav?.currentDestination?.route == "game") {
  mainViewModel.closeGame()
- mainViewModel.navController?.popBackStack()
+ nav?.popBackStack()
  mainViewModel.activity.isGameRunning = false
+ }
  }
  )
 

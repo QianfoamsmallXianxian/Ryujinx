@@ -91,6 +91,9 @@ class MainViewModel(val activity: MainActivity) {
     }
 
     fun closeGame() {
+        // NEOV2-CLOSE1: ignora um segundo pedido enquanto o fechamento anterior ainda esta em andamento.
+        if (emulationClosing && emulationRunning) return
+
         emulationClosing = true
         KenjinxNative.deviceSignalEmulationClose()
         gameHost?.close()

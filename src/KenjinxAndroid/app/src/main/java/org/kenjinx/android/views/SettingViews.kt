@@ -1627,7 +1627,7 @@ class SettingViews {
                                         )
 
                                         // NEOV2-HOTKEY2: o proprio usuario define o botao ou a combinacao que fecha o emulador.
-                                        SectionTitle("Atalho para fechar o emulador")
+                                        SectionTitle("Atalho para voltar à lista de jogos")
 
                                         val exitHotkeyKeys = remember { mutableStateOf(org.kenjinx.android.ExitHotkey.load(mainViewModel.activity)) }
                                         val capturingExitHotkey = remember { mutableStateOf(false) }
