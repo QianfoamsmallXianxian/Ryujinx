@@ -2,37 +2,39 @@
 
 - **Projeto:** Ryujinx Neo, fork Android derivado do Kenji-NX
 - **Repositório:** [Sunshinin11/Ryujinx_Neo](https://github.com/Sunshinin11/Ryujinx_Neo)
-- **Branch analisada:** `neo-v2-nce2` no GitHub e no checkout `Kenji-NX-Current`
-- **Último código publicado:** [`d24e22d2d`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/d24e22d2d2714fecdae89377f1261ac49d79e3b1) (01/10/2026)
+- **Branch analisada:** `neo-v2-nce2` no GitHub
+- **Último código publicado:** [`783e07fd9`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/783e07fd96587d430b53a97c46c60dd4fb885e65) (03/10/2026)
 - **Código das mudanças de 28/09 publicado:** cinco commits integrados ao GitHub em 29/09/2026
 - **Mudança de 29/09:** caminho VP9 via FFmpeg e otimizações NEON no NVDEC, publicado no GitHub
 - **Mudança de 30/09:** correções VP9, controle do caminho FFmpeg, atalho de saída, áudio, idioma, pilha e teclado, publicada no GitHub
 - **Mudanças de 01/10:** retorno à lista de jogos, leitura de NSZ/XCZ, conversão de NSP para NSZ e correções de segurança e cache comprimido de NCZ sólido, publicadas no GitHub
-- **Data desta revisão:** 01/10/2026
-- **Versão Android no código:** `0.0.1`, `versionCode 20108` ([build.gradle](https://github.com/Sunshinin11/Ryujinx_Neo/blob/neo-v2-nce2/src/KenjinxAndroid/app/build.gradle))
+- **Mudanças de 02/10:** suporte NSZ/XCZ e conversão NCZBLOCK no desktop
+- **Mudanças de 03/10:** promoção NCE e melhorias Android de mods, idioma e arquivos comprimidos
+- **Data desta revisão:** 03/10/2026
+- **Versão Android no código:** `0.0.23`, `versionCode 20130` ([build.gradle](https://github.com/Sunshinin11/Ryujinx_Neo/blob/neo-v2-nce2/src/KenjinxAndroid/app/build.gradle))
 - **Dispositivo histórico de referência:** AYN Thor, Snapdragon 8 Gen 2, Adreno 740
 - **Plataforma em foco:** Android arm64-v8a / Linux Bionic, Vulkan em Turnip/Adreno
 
-> As seções 5–10 e as métricas por jogo preservam o histórico até 20/09. As seções 11–17 registram as mudanças do Current publicadas até 01/10, distinguindo o que os commits relatam das medições históricas. Esta revisão descreve somente o código da Current e não repetiu testes de jogos.
+> As seções 5–10 e as métricas por jogo preservam o histórico até 20/09. As seções 11–17 registram as mudanças do Current publicadas até 03/10, distinguindo o que os commits relatam das medições históricas. Esta revisão descreve somente o código da Current e não repetiu testes de jogos.
 
 ---
 
 ## 1. Resumo executivo
 
-O Ryujinx Neo é um fork Android do Kenji-NX com trabalho próprio no backend Vulkan, NCE, compatibilidade gráfica e interface. A linha **Neo Current** está em `neo-v2-nce2`; o código Android declara versão `0.0.1` (`versionCode 20108`). O [changelog](../CHANGELOG.md) lista as mudanças por período, incluindo o trabalho funcional de 28/09 publicado na branch.
+O Ryujinx Neo é um fork Android do Kenji-NX com trabalho próprio no backend Vulkan, NCE, compatibilidade gráfica e interface. A linha **Neo Current** está em `neo-v2-nce2`; o código Android declara versão `0.0.23` (`versionCode 20130`). O [changelog](../CHANGELOG.md) lista as mudanças por período, incluindo o trabalho funcional de 28/09 publicado na branch.
 
 As frentes implementadas na branch incluem:
 
 1. **GPU/Vulkan:** worker de submissão, ajustes de sincronização, cache de pipelines e texturas, caminho VTG via Compute, offset exato de texture buffer no Turnip, upload 3D assíncrono e chaves de compatibilidade.
-2. **CPU/NCE:** arquitetura NCE Neo 2, proteção opcional de rastreamento da GPU após mudanças de permissão e conversão seletiva de acessos exclusivos.
-3. **Android:** identidade Ryujinx Neo, dois layouts da biblioteca, perfis por Title ID, gerenciador de drivers Vulkan, controles globais/por jogo, atalho configurável para voltar à lista de jogos, ajuste de volume e conversão de NSP para NSZ.
+2. **CPU/NCE:** arquitetura Neo 2, correções de sinais, contexto e transições nativas, patching de módulos dinâmicos e composição de permissões guest/tracking, além da proteção opcional e conversão seletiva de acessos exclusivos.
+3. **Android:** identidade Ryujinx Neo, biblioteca e perfis por Title ID, gerenciador de drivers, controles, mods por pasta, idioma por jogo, atalho para voltar à lista, conversão de NSP para NSZ, descompactação NSZ/NCZ e otimização de NSZ sólido.
 4. **Diagnóstico:** categorias de log configuráveis, com nove chaves desligadas por padrão na linha Current e controles Guest/Debug expostos no aplicativo.
 5. **Vídeo/NVDEC:** decodificação VP9 via FFmpeg com cabeçalhos recompostos, escolha global/por jogo e retorno ao caminho em C# em falhas; correções no decodificador em C# e NEON em etapas do VP9 no ARM64.
-6. **HLE/serviços:** prioridade de idiomas suportados, região de pilha ampliada quando há espaço, diálogo de teclado quando o Android não fornece teclado inline e leitura de conteúdo NSZ/XCZ.
+6. **HLE/serviços:** prioridade de idiomas suportados, região de pilha ampliada quando há espaço, diálogo de teclado e leitura de conteúdo NSZ/XCZ; o caminho desktop também reconhece e converte NSZ sólido para NCZBLOCK.
 
 Os benchmarks e relatos anteriores a 23/09 continuam úteis como contexto, mas não representam uma medição do snapshot analisado. Em especial, a tela preta de *Marvel Ultimate Alliance 3* no NCE era uma observação anterior às mudanças [NCE-PROT1](https://github.com/Sunshinin11/Ryujinx_Neo/commit/b614253ae) e [TEXBUF-ALIGN1](https://github.com/Sunshinin11/Ryujinx_Neo/commit/f0a4f81be). Os commits relatam correções para esse caminho; esta revisão não executou o jogo para confirmar o resultado final.
 
-Em 28/09, a linha Current recebeu nova página de configurações por jogo, interface responsiva, correções de seleção de DLC/atualizações, modo sem internet por jogo, ajustes NCE/memória e envio seletivo de regiões de texturas 2D grandes. Em 29/09, [`d805ae2bf`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/d805ae2bf214f1906183c61861da2f1bbed856f3) acrescentou VP9 via FFmpeg e NEON. Em 30/09, [`6c51417ab`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/6c51417ab065d72271b217f3e150c618861c1498) reuniu correções VP9, controles Android e ajustes HLE. Em 01/10, [`4597726eb`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/4597726ebe979df02831dcc6acfc69ee5a3c3ca3) mudou o atalho para voltar à biblioteca e protegeu o fechamento duplicado; [`abd14ca31`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/abd14ca31b225b55930384744efd884f73efe8f0) acrescentou leitura de NSZ/XCZ e conversão de NSP para NSZ; [`d24e22d2d`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/d24e22d2d2714fecdae89377f1261ac49d79e3b1) reforçou a conversão e substituiu o cache descomprimido de NCZ sólido por blocos comprimidos.
+Em 28/09, a linha Current recebeu nova página de configurações por jogo, interface responsiva, correções de seleção de DLC/atualizações, modo sem internet por jogo, ajustes NCE/memória e envio seletivo de regiões de texturas 2D grandes. Em 29/09, [`d805ae2bf`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/d805ae2bf214f1906183c61861da2f1bbed856f3) acrescentou VP9 via FFmpeg e NEON. Em 30/09, [`6c51417ab`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/6c51417ab065d72271b217f3e150c618861c1498) reuniu correções VP9, controles Android e ajustes HLE. Em 01/10, [`4597726eb`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/4597726ebe979df02831dcc6acfc69ee5a3c3ca3) mudou o atalho para voltar à biblioteca e protegeu o fechamento duplicado; [`abd14ca31`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/abd14ca31b225b55930384744efd884f73efe8f0) acrescentou leitura de NSZ/XCZ e conversão de NSP para NSZ; [`d24e22d2d`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/d24e22d2d2714fecdae89377f1261ac49d79e3b1) reforçou a conversão e substituiu o cache descomprimido de NCZ sólido por blocos comprimidos. Em 02/10, [`06b96f2a7`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/06b96f2a7103bffe44a63bea01e0a774e8ce2d7c) ampliou o caminho desktop de NSZ/XCZ e a conversão de NCZ sólido para NCZBLOCK. Em 03/10, [`783e07fd9`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/783e07fd96587d430b53a97c46c60dd4fb885e65) publicou as correções de NCE e as novas ações Android de mods, idioma e arquivos comprimidos.
 
 ---
 
@@ -76,7 +78,7 @@ Criar uma versão Android do Ryujinx que seja:
 
 ### 3.1 Repositório verificado
 
-A branch consultada no GitHub é `neo-v2-nce2`; o último commit de código examinado é `d24e22d2d`. Na branch **neo-v2-nce2**, cinco commits de código criados em 29/09 registram os 18 arquivos alterados em 28/09, agora devidamente integrados e publicados no GitHub ([`339470edc`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/339470edc8b891c3994a36931027750380fa835e), [`526f03540`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/526f035405a021819b071fa3be19332a1193d506), [`dc519b29b`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/dc519b29b9c885491198f8983b2ef9ecab8df2c3), [`6283a0ca4`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/6283a0ca4fa79d390c53eba70488cbff4ca69d9e), [`e39e26833`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/e39e26833225516be048a725d42927269b434d86)).
+A branch consultada no GitHub é `neo-v2-nce2`; o último commit de código examinado é `783e07fd9`. Na branch **neo-v2-nce2**, cinco commits de código criados em 29/09 registram os 18 arquivos alterados em 28/09, agora devidamente integrados e publicados no GitHub ([`339470edc`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/339470edc8b891c3994a36931027750380fa835e), [`526f03540`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/526f035405a021819b071fa3be19332a1193d506), [`dc519b29b`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/dc519b29b9c885491198f8983b2ef9ecab8df2c3), [`6283a0ca4`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/6283a0ca4fa79d390c53eba70488cbff4ca69d9e), [`e39e26833`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/e39e26833225516be048a725d42927269b434d86)).
 
 ### 3.2 Linhas e tags históricas
 
@@ -365,7 +367,7 @@ O limite artificial muda a semântica do shader. Ele pode impedir um loop realme
 
 ## 10. NCE Neo 2
 
-> As subseções 10.1–10.4 descrevem a implantação inicial. As comparações de 10.5 são históricas; a branch recebeu correções adicionais depois daqueles testes.
+> As subseções 10.1–10.7 descrevem a implantação inicial e as hipóteses anteriores. A subseção 10.8 registra o estado promovido em 03/10; as comparações antigas continuam históricas.
 
 ### 10.1 Motivação
 
@@ -443,6 +445,14 @@ A conversão `LDXR/STXR` para `LDAXR/STLXR` passou a usar [filtro de instruçõe
 - começar pelo custo e frequência de cache maintenance, page protection e signal recovery;
 - comparar o NCE atual com implementações conhecidas do Eden/Strato sem copiar mudanças em massa;
 - manter cada tentativa reversível e protegida por tag.
+
+---
+
+### 10.8 Correções promovidas em 03/10
+
+O commit [`783e07fd9`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/783e07fd96587d430b53a97c46c60dd4fb885e65) incorpora ao Current as correções funcionais das rodadas Experimental aprovadas. O patcher trata XZR, alcance dos desvios e publicação dos trampolins, inclusive em módulos NRO carregados dinamicamente. O caminho Android de sinais passou por ajustes de ABI, encadeamento com handlers anteriores, associação do contexto à thread, preservação de registradores e transições entre execução guest, sinal e código gerenciado. O encerramento solicitado durante o tratamento de sinal tem caminho de saída nativa.
+
+A proteção de memória NCE separa o contrato de permissões do jogo do rastreamento de escrita/leitura e compõe ambos antes de aplicar a proteção efetiva. Em falhas de tracking, o R14-FIX permite repetir um acesso ainda autorizado pelo jogo quando outra thread rearma a proteção; se o contrato foi revogado ou a região desmapeada, não o aceita. A R14-OPT troca a lista única de intervalos por folhas de até 128 entradas, reduzindo o deslocamento de itens em mudanças frequentes de proteção, sem retirar o monitor que serializa a tabela. O Current mantém essas regras funcionais sem os contadores e timers de investigação do Experimental. [Escopo da promoção](CURRENT_PROMOTION_2026_10_03.md).
 
 ---
 
@@ -539,11 +549,11 @@ A reforma visual de base está commitada em [`54b072361`](https://github.com/Sun
 
 ---
 
-## 12. Estado do Current até 01/10/2026
+## 12. Estado do Current até 03/10/2026
 
 ### 12.1 Código publicado na branch GitHub
 
-Na branch GitHub, a última alteração de código publicada nesta revisão é [`d24e22d2d`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/d24e22d2d2714fecdae89377f1261ac49d79e3b1). Estão publicados NCE Neo 2, NCE-PROT1 opcional, Shader Loop Safety selecionável, VTG via Compute, upload 3D assíncrono, compatibilidade gráfica 2D por jogo, perfis por Title ID, dois layouts de biblioteca, gerenciador de drivers, opções de sincronização/GPU e as mudanças de VP9, áudio, entrada, idioma, pilha, teclado, atalho e NSZ/XCZ descritas no [changelog](../CHANGELOG.md).
+Na branch GitHub, a última alteração de código publicada nesta revisão é [`783e07fd9`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/783e07fd96587d430b53a97c46c60dd4fb885e65). Estão publicados NCE Neo 2, NCE-PROT1 opcional, Shader Loop Safety selecionável, VTG via Compute, upload 3D assíncrono, compatibilidade gráfica 2D por jogo, perfis por Title ID, dois layouts de biblioteca, gerenciador de drivers, opções de sincronização/GPU e as mudanças de VP9, áudio, entrada, idioma, pilha, teclado, atalho, NSZ/XCZ, NCE e interface de 03/10 descritas no [changelog](../CHANGELOG.md).
 
 ### 12.2 Mudanças funcionais de 28/09 publicadas no GitHub
 
@@ -613,6 +623,18 @@ Para NCZ sólido, o leitor deixa de manter uma cópia integral descomprimida `.b
 
 ---
 
+### 12.8 Interface e arquivos comprimidos promovidos em 03/10
+
+O commit [`783e07fd9`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/783e07fd96587d430b53a97c46c60dd4fb885e65) acrescenta importação de mods e traduções por pasta selecionada no Android, mantendo a opção ZIP. O conteúdo reconhecido é copiado para o diretório do título com validação de nomes e estrutura; um mod de mesmo nome já instalado não é sobrescrito. O perfil por jogo oferece idioma do sistema emulado próprio ou herança do valor global; a escolha é aplicada quando o jogo inicia. O botão de fechar desaparece após o primeiro toque para evitar pedidos duplicados.
+
+O Android ganha descompactação NSZ→NSP e NCZ avulso→NCA. As conversões usam arquivo temporário, verificam a saída antes de publicá-la e só então tentam excluir a origem; se a exclusão falhar, preservam a saída e informam que ambos permaneceram. O compactador NSP→NSZ produz entradas NCZBLOCK, e a ação **Otimizar NSZ para blocos** converte NCZ sólido em blocos, mantendo entradas já blocadas e demais arquivos. O cache de leitura Android aprovado em 01/10 permanece separado do conversor desktop. [Detalhes das ações Android](QUALITY_OF_LIFE_QOL1.md) · [otimização de blocos](QUALITY_OF_LIFE_QOL4.md).
+
+### 12.9 Caminho desktop de NSZ/XCZ publicado em 02/10
+
+O commit [`06b96f2a7`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/06b96f2a7103bffe44a63bea01e0a774e8ce2d7c) estende o seletor de arquivos, a biblioteca, o carregamento e a leitura de Build ID para NSZ/XCZ. Antes de iniciar um NSZ com NCZ sólido, a interface desktop chama o conversor para gerar e verificar NCZBLOCK em arquivo temporário e, depois, substituir o arquivo de origem. Um NSZ já em blocos segue sem essa conversão. O código desktop foi preservado na promoção de 03/10 em caminho separado do leitor Android; esta revisão descreve a implementação publicada, sem atribuir a ela validação em todas as plataformas.
+
+---
+
 ## 13. Resultados por jogo e estado da evidência
 
 As métricas abaixo pertencem aos testes históricos da consolidação de 20/09. Os commits posteriores introduzem correções ou opções validadas no Experimental antes da promoção ao Current; esta revisão não repetiu os testes. As observações de VP9 e *GRID Autosport* são atribuídas aos commits de 29 e 30/09.
@@ -642,6 +664,8 @@ O envio seletivo de texturas 2D grandes foi validado no Experimental antes da pr
 O Current publicado desliga nove chaves de log por padrão e migra preferências antigas ([commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/bfeab8f9c)). A interface local de 28/09 acrescenta controles visíveis para **Logs do jogo (Guest)** e **Logs de Debug**. Debug avisa sobre custo de diagnóstico. Ativar a chave não garante uma mensagem específica: o caminho precisa executar e a categoria correspondente deve estar habilitada.
 
 Os marcadores `[NEOV2-NCE2-R3]`, `[NEOV2-V29]`, `[NEOV2-LOOP-GUARD]` e `[NEOV2-MEMLIMIT]` aparecem no histórico técnico. Sua ausência em uma sessão só é conclusiva quando o caminho executado e a categoria de log são conhecidos.
+
+A promoção de 03/10 não inclui `NceTelemetry`, timers, sessões e contadores temporários das rodadas Experimental; os logs normais e o contador de FPS continuam disponíveis. [Commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/783e07fd96587d430b53a97c46c60dd4fb885e65)
 
 ### 14.2 Marcadores históricos/removidos
 
@@ -712,16 +736,19 @@ Para transformar o histórico em evidência de release:
 | Amplificação de áudio até 200% | Distorção em conteúdo com volume alto | Comparar 100% e valores maiores em aparelhos e jogos diferentes |
 | Conversão NSP para NSZ | Falha de descriptografia, pouca economia de espaço, cancelamento ou falha de verificação podem impedir a conversão | Validar AES-CTR e SHA-256, comparar tamanhos, descartar `.part` sem ganho e manter o NSP quando a conversão não for concluída |
 | Cache de NCZ sólido | Cache corrompido ou pressão de disco pode afetar a leitura | Validar origem e blocos, reconstruir cache inválido e preservar caches de títulos ativos |
+| Permissões NCE compostas | Corrida entre tracking e mudança de permissão pode causar falha guest ou acesso indevido | Distinguir contrato guest da proteção efetiva; manter retry apenas para acesso autorizado e testar cenas com muita reproteção |
+| NSZ/XCZ em atualizações e DLC | Catalogação ainda pode falhar em alguns arquivos NSZ | Manter a investigação aberta; não declarar suporte a esse fluxo como completamente resolvido |
+| Conversões de arquivos | Provedor pode negar rename ou exclusão; operação interrompida pode deixar temporário | Verificar a saída antes de publicá-la e preservar a origem quando a publicação não terminar |
 
 ---
 
 ## 17. Próximos passos recomendados
 
-### Prioridade 1: acompanhar o código publicado em 01/10
+### Prioridade 1: acompanhar o código publicado até 03/10
 
-1. Identificar os commits [`4597726eb`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/4597726ebe979df02831dcc6acfc69ee5a3c3ca3), [`abd14ca31`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/abd14ca31b225b55930384744efd884f73efe8f0) e [`d24e22d2d`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/d24e22d2d2714fecdae89377f1261ac49d79e3b1) nos testes futuros de atalho, carregamento NSZ/XCZ, conversão NSP para NSZ e cache de NCZ sólido.
+1. Identificar [`06b96f2a7`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/06b96f2a7103bffe44a63bea01e0a774e8ce2d7c) e [`783e07fd9`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/783e07fd96587d430b53a97c46c60dd4fb885e65) nas regressões de NCE, mods, idioma, conversões Android e abertura de NSZ/XCZ no desktop; manter os commits de 01/10 como base dos formatos comprimidos.
 2. Comparar o vídeo de abertura de *GRID Autosport* com VP9 pelo FFmpeg ligado e desligado por jogo; observar imagem, áudio, retorno ao C# e conclusão da abertura. Manter a comparação de *Link's Awakening* com os mesmos parâmetros.
-3. Verificar que o atalho retorna à biblioteca sem fechamento duplicado; testar leitura de NSZ/XCZ em jogos, atualizações e DLCs; verificar conversão NSP para NSZ com sucesso, cancelamento, falha de verificação e ausência de ganho; verificar reconstrução de cache NCZ inválido.
+3. Verificar o retorno à biblioteca sem fechamento duplicado; testar conversão NSP↔NSZ, NCZ→NCA e otimização de NSZ sólido com erro, cancelamento e exclusão negada; isolar a falha ainda pendente ao catalogar atualizações/DLCs em NSZ.
 
 ### Prioridades 2 e 3: manutenção da matriz de regressão
 
@@ -839,6 +866,8 @@ Preservar a metodologia da seção 15: mesmo save e driver, cache frio/quente se
 | [`4597726eb`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/4597726ebe979df02831dcc6acfc69ee5a3c3ca3) | Atalho retorna à biblioteca e fechamento duplicado protegido; publicado em 01/10 |
 | [`abd14ca31`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/abd14ca31b225b55930384744efd884f73efe8f0) | Leitura de NSZ/XCZ e conversão NSP para NSZ; publicado em 01/10 |
 | [`d24e22d2d`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/d24e22d2d2714fecdae89377f1261ac49d79e3b1) | Validação da conversão NSZ, preservação do NSP sem ganho e cache comprimido de NCZ sólido; publicado em 01/10 |
+| [`06b96f2a7`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/06b96f2a7103bffe44a63bea01e0a774e8ce2d7c) | Biblioteca desktop NSZ/XCZ e conversão de NCZ sólido para NCZBLOCK; publicado em 02/10 |
+| [`783e07fd9`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/783e07fd96587d430b53a97c46c60dd4fb885e65) | NCE promovido e melhorias Android de mods, idioma e arquivos comprimidos; publicado em 03/10 |
 
 ---
 
@@ -882,4 +911,4 @@ Preservar a metodologia da seção 15: mesmo save e driver, cache frio/quente se
 
 O Ryujinx Neo Current não parou nas alterações de 27/09. Em 28/09, o checkout Current recebeu mudanças funcionais em interface Android, DLC/atualizações, NIFM por jogo, NCE, limite de memória, logs e envio seletivo de texturas 2D grandes. O código foi organizado e publicado em cinco commits na branch GitHub em 29/09 (`339470edc`, `526f03540`, `dc519b29b`, `6283a0ca4` e `e39e26833`).
 
-Em 29/09, o commit [`d805ae2bf`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/d805ae2bf214f1906183c61861da2f1bbed856f3) acrescentou VP9 via FFmpeg e otimizações NEON no ARM64. Em 30/09, [`6c51417ab`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/6c51417ab065d72271b217f3e150c618861c1498) corrigiu o decodificador VP9 em C#, expôs a escolha global/por jogo e acrescentou atalho de saída, volume, prioridade de idioma, ajuste de pilha e fallback de teclado. Em 01/10, [`4597726eb`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/4597726ebe979df02831dcc6acfc69ee5a3c3ca3) passou o atalho para retorno à biblioteca e protegeu o fechamento duplicado, enquanto [`abd14ca31`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/abd14ca31b225b55930384744efd884f73efe8f0) adicionou NSZ/XCZ e a conversão NSP para NSZ. Ainda em 01/10, [`d24e22d2d`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/d24e22d2d2714fecdae89377f1261ac49d79e3b1) reforçou a validação da conversão, preservou o NSP quando não há economia e introduziu cache comprimido em blocos para NCZ sólido. A matriz de regressão permanece como rotina das futuras promoções.
+Em 29/09, o commit [`d805ae2bf`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/d805ae2bf214f1906183c61861da2f1bbed856f3) acrescentou VP9 via FFmpeg e otimizações NEON no ARM64. Em 30/09, [`6c51417ab`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/6c51417ab065d72271b217f3e150c618861c1498) corrigiu o decodificador VP9 em C#, expôs a escolha global/por jogo e acrescentou atalho de saída, volume, prioridade de idioma, ajuste de pilha e fallback de teclado. Em 01/10, [`4597726eb`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/4597726ebe979df02831dcc6acfc69ee5a3c3ca3) passou o atalho para retorno à biblioteca e protegeu o fechamento duplicado, enquanto [`abd14ca31`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/abd14ca31b225b55930384744efd884f73efe8f0) adicionou NSZ/XCZ e a conversão NSP para NSZ. Ainda em 01/10, [`d24e22d2d`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/d24e22d2d2714fecdae89377f1261ac49d79e3b1) reforçou a validação da conversão, preservou o NSP quando não há economia e introduziu cache comprimido em blocos para NCZ sólido. Em 02/10, [`06b96f2a7`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/06b96f2a7103bffe44a63bea01e0a774e8ce2d7c) acrescentou o caminho desktop de NSZ/XCZ e NCZBLOCK. Em 03/10, [`783e07fd9`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/783e07fd96587d430b53a97c46c60dd4fb885e65) publicou a promoção das correções de NCE e das novas ações Android de mods, idioma e arquivos comprimidos. A falha de catalogação de atualizações/DLCs em NSZ permanece pendente. A matriz de regressão permanece como rotina das futuras promoções.
