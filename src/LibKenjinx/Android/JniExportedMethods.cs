@@ -1102,6 +1102,89 @@ namespace LibKenjinx
         [UnmanagedCallersOnly(EntryPoint = "deviceCompressCancel")]
         public static void JniDeviceCompressCancel() => Ryujinx.HLE.FileSystem.NczCompressor.Cancel();
 
+        [UnmanagedCallersOnly(EntryPoint = "deviceDecompressSize")]
+        public static long JniDeviceDecompressSize(int descriptor, int standalone)
+        {
+            try
+            {
+                using FileStream input = new(new Microsoft.Win32.SafeHandles.SafeFileHandle(descriptor, false), FileAccess.Read);
+                return Ryujinx.HLE.FileSystem.NczDecompressor.GetExpectedSize(input, standalone != 0);
+            }
+            catch (Exception exception)
+            {
+                Logger.Error?.Print(LogClass.Loader, $"[NEO-QOL1-DECOMPRESS] Descriptor inspection failed: {exception.Message}");
+                return -1;
+            }
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "deviceDecompress")]
+        public static int JniDeviceDecompress(int inputDescriptor, int outputDescriptor, int standalone, nint sourceName)
+        {
+            if (inputDescriptor == outputDescriptor) return Ryujinx.HLE.FileSystem.NczCompressor.ResultError;
+            try
+            {
+                using FileStream input = new(new Microsoft.Win32.SafeHandles.SafeFileHandle(inputDescriptor, false), FileAccess.Read);
+                using FileStream output = new(new Microsoft.Win32.SafeHandles.SafeFileHandle(outputDescriptor, false), FileAccess.ReadWrite);
+                return Ryujinx.HLE.FileSystem.NczDecompressor.Decompress(input, output, standalone != 0,
+                    Marshal.PtrToStringUTF8(sourceName) ?? "standalone.ncz");
+            }
+            catch (Exception exception)
+            {
+                Logger.Error?.Print(LogClass.Loader, $"[NEO-QOL1-DECOMPRESS] Descriptor conversion failed: {exception.Message}");
+                return Ryujinx.HLE.FileSystem.NczCompressor.ResultError;
+            }
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "deviceDecompressProgress")]
+        public static int JniDeviceDecompressProgress() => Ryujinx.HLE.FileSystem.NczDecompressor.Permille;
+
+        [UnmanagedCallersOnly(EntryPoint = "deviceDecompressPhase")]
+        public static int JniDeviceDecompressPhase() => Ryujinx.HLE.FileSystem.NczDecompressor.Phase;
+
+        [UnmanagedCallersOnly(EntryPoint = "deviceDecompressCancel")]
+        public static void JniDeviceDecompressCancel() => Ryujinx.HLE.FileSystem.NczDecompressor.Cancel();
+
+        [UnmanagedCallersOnly(EntryPoint = "deviceOptimizeNszSize")]
+        public static long JniDeviceOptimizeNszSize(int descriptor)
+        {
+            try
+            {
+                using FileStream input = new(new Microsoft.Win32.SafeHandles.SafeFileHandle(descriptor, false), FileAccess.Read);
+                return Ryujinx.HLE.FileSystem.NszBlockOptimizer.GetRequiredSize(input);
+            }
+            catch (Exception exception)
+            {
+                Logger.Error?.Print(LogClass.Loader, $"[NEO-QOL4-NSZBLOCK] Descriptor inspection failed: {exception.Message}");
+                return -1;
+            }
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "deviceOptimizeNsz")]
+        public static int JniDeviceOptimizeNsz(int inputDescriptor, int outputDescriptor)
+        {
+            if (inputDescriptor == outputDescriptor) return Ryujinx.HLE.FileSystem.NczCompressor.ResultError;
+            try
+            {
+                using FileStream input = new(new Microsoft.Win32.SafeHandles.SafeFileHandle(inputDescriptor, false), FileAccess.Read);
+                using FileStream output = new(new Microsoft.Win32.SafeHandles.SafeFileHandle(outputDescriptor, false), FileAccess.ReadWrite);
+                return Ryujinx.HLE.FileSystem.NszBlockOptimizer.Optimize(input, output);
+            }
+            catch (Exception exception)
+            {
+                Logger.Error?.Print(LogClass.Loader, $"[NEO-QOL4-NSZBLOCK] Descriptor conversion failed: {exception.Message}");
+                return Ryujinx.HLE.FileSystem.NczCompressor.ResultError;
+            }
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "deviceOptimizeNszProgress")]
+        public static int JniDeviceOptimizeNszProgress() => Ryujinx.HLE.FileSystem.NszBlockOptimizer.Permille;
+
+        [UnmanagedCallersOnly(EntryPoint = "deviceOptimizeNszPhase")]
+        public static int JniDeviceOptimizeNszPhase() => Ryujinx.HLE.FileSystem.NszBlockOptimizer.Phase;
+
+        [UnmanagedCallersOnly(EntryPoint = "deviceOptimizeNszCancel")]
+        public static void JniDeviceOptimizeNszCancel() => Ryujinx.HLE.FileSystem.NszBlockOptimizer.Cancel();
+
         [UnmanagedCallersOnly(EntryPoint = "deviceSetAudioBoost")]
         public static void JniDeviceSetAudioBoost(float gain)
         {

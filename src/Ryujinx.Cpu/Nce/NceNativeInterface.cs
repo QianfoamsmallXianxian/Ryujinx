@@ -40,7 +40,8 @@ namespace Ryujinx.Cpu.Nce
 
         public static ulong GetTickCounter()
         {
-            return _tickSource?.Counter ?? 0UL;
+            ulong value = _tickSource?.Counter ?? 0UL;
+            return value;
         }
 
         public static bool SuspendThreadHandler()

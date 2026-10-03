@@ -405,6 +405,17 @@ class SettingViews {
             val firmwareVersion = remember { mutableStateOf(mainViewModel.firmwareVersion) }
 
             val showDataResetDialog = remember { mutableStateOf(false) }
+            val showDecompressionDialog = remember { mutableStateOf(false) }
+
+            if (showDecompressionDialog.value) {
+                DecompressionDialog(
+                    onDismiss = { showDecompressionDialog.value = false },
+                    onFinished = { success, message ->
+                        android.widget.Toast.makeText(mainViewModel.activity, message, android.widget.Toast.LENGTH_LONG).show()
+                        if (success) mainViewModel.homeViewModel.requestReload()
+                    }
+                )
+            }
 
             val showDataImportDialog = remember { mutableStateOf(false) }
 
@@ -1880,6 +1891,12 @@ class SettingViews {
 
 
                                     SettingsCategory.Jogos -> {
+                                        SectionTitle("Conversão de arquivos")
+                                        ActionButtonRow(
+                                            title = "Descompactar NSZ ou NCZ",
+                                            description = "Gerar NSP ou NCA e excluir o original após verificação",
+                                            buttonText = "Descompactar"
+                                        ) { showDecompressionDialog.value = true }
 
                                         SectionTitle("Diretórios de Jogos")
 

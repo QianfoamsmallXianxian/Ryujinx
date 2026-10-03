@@ -323,6 +323,8 @@ import org.kenjinx.android.cheats.listMods
 import org.kenjinx.android.cheats.deleteMod
 
 import org.kenjinx.android.cheats.importModsZip
+import org.kenjinx.android.cheats.importModsFolder
+import androidx.compose.material.icons.filled.FolderOpen
 
 
 
@@ -730,6 +732,33 @@ class HomeViews {
 
                 }
 
+            }
+
+            val pickModFolderLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.OpenDocumentTree()
+            ) { uri: Uri? ->
+                val act = viewModel.activity
+                val titleId = viewModel.mainViewModel?.selected?.titleId.orEmpty()
+                if (uri != null && act != null && titleId.isNotEmpty() && !modsImportBusy.value) {
+                    modsImportBusy.value = true
+                    modsImportProgress.floatValue = -1f
+                    modsImportStatusText.value = "Preparando a pasta…"
+                    thread(name = "ModFolderImport") {
+                        val result = importModsFolder(act, titleId, uri) { progress ->
+                            launchOnUiThread {
+                                modsImportProgress.floatValue = if (progress.totalBytes > 0) progress.fraction else -1f
+                                modsImportStatusText.value = "Copiando: ${progress.currentEntry}"
+                            }
+                        }
+                        val installed = listMods(act, titleId)
+                        launchOnUiThread {
+                            modsForSelected.value = installed
+                            modsImportBusy.value = false
+                            Toast.makeText(act, if (result.ok) "Importado: ${result.imported.joinToString(", ")}"
+                                else result.error ?: "Falha ao importar a pasta", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
             }
 
             // Launcher for Mods
@@ -2101,7 +2130,7 @@ class HomeViews {
 
                     BasicAlertDialog(
 
-                        onDismissRequest = { openModsDialog.value = false }
+                        onDismissRequest = { if (!modsImportBusy.value) openModsDialog.value = false }
 
                     ) {
 
@@ -2217,7 +2246,7 @@ class HomeViews {
 
                                     }
 
-                                    IconButton(onClick = { openModsDialog.value = false }) {
+                                    IconButton(enabled = !modsImportBusy.value, onClick = { openModsDialog.value = false }) {
 
                                         Icon(Icons.Default.Close, contentDescription = "Fechar")
 
@@ -2228,6 +2257,10 @@ class HomeViews {
 
 
                                 if (modsImportBusy.value) {
+
+                                    if (modsImportProgress.value < 0f) LinearProgressIndicator(
+                                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                                    ) else
 
                                     LinearProgressIndicator(
 
@@ -2267,7 +2300,7 @@ class HomeViews {
 
                                             .fillMaxWidth()
 
-                                            .height(200.dp),
+                                            .weight(1f, fill = false).heightIn(max = 200.dp),
 
                                         shape = RoundedCornerShape(16.dp),
 
@@ -2317,7 +2350,7 @@ class HomeViews {
 
                                             Text(
 
-                                                text = "Importe arquivos .zip contendo mods para este jogo.",
+                                                text = "Selecione a pasta do mod que contém romfs, exefs ou cheats, ou importe um arquivo .zip.",
 
                                                 style = MaterialTheme.typography.bodySmall,
 
@@ -2465,20 +2498,30 @@ class HomeViews {
 
                                 // Bottom Action Buttons
 
-                                Row(
+                                Column(
 
                                     modifier = Modifier.fillMaxWidth(),
 
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    verticalArrangement = Arrangement.spacedBy(10.dp),
 
-                                    verticalAlignment = Alignment.CenterVertically
+                                    horizontalAlignment = Alignment.CenterHorizontally
 
                                 ) {
 
                                     OutlinedButton(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        enabled = !modsImportBusy.value,
+                                        onClick = { pickModFolderLauncher.launch(null) }
+                                    ) {
+                                        Icon(Icons.Default.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                                        Spacer(Modifier.width(6.dp))
+                                        Text("Importar pasta")
+                                    }
+                                    OutlinedButton(
 
                                         enabled = !modsImportBusy.value,
 
+                                        modifier = Modifier.fillMaxWidth(),
                                         onClick = { pickModZipLauncher.launch(arrayOf("application/zip", "application/octet-stream", "*/*")) }
 
                                     ) {
@@ -2493,11 +2536,11 @@ class HomeViews {
 
 
 
-                                    Spacer(modifier = Modifier.weight(1f))
 
 
 
-                                    OutlinedButton(onClick = { openModsDialog.value = false }) {
+
+                                    OutlinedButton(modifier = Modifier.fillMaxWidth(), enabled = !modsImportBusy.value, onClick = { openModsDialog.value = false }) {
 
                                         Text("Fechar")
 

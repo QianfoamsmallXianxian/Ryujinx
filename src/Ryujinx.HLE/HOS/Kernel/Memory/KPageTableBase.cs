@@ -662,6 +662,30 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
             }
         }
 
+        // An emulator-owned NCE island keeps its physical page list for exact release.
+        // Resource-limit accounting belongs to the process-specific caller.
+        internal Result MapNceCodePatch(ulong address, ulong size, out KPageList pages)
+        {
+            pages = null;
+            if (size == 0 || ((address | size) & (PageSize - 1)) != 0 ||
+                !CanContain(address, size, MemoryState.CodeStatic))
+                return KernelResult.InvalidMemState;
+
+            Result result = GetMemoryRegionManager().AllocatePages(out KPageList allocated, size / PageSize);
+            if (result != Result.Success) return result;
+            try
+            {
+                result = MapPages(address, allocated, MemoryState.CodeStatic, KMemoryPermission.None);
+                if (result == Result.Success) pages = allocated;
+                return result;
+            }
+            finally
+            {
+                // A successful MapPages owns its own reference; failure retains none.
+                allocated.DecrementPagesReferenceCount(Context.MemoryManager);
+            }
+        }
+
         private Result AllocateAndMapPages(ulong address, ulong pagesCount, KMemoryPermission permission)
         {
             KMemoryRegionManager region = GetMemoryRegionManager();

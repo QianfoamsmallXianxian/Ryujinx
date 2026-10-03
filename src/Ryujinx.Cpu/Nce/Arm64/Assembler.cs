@@ -590,6 +590,12 @@ namespace Ryujinx.Cpu.Nce.Arm64
 
         public void Stlxr(Operand rt, Operand rn, Operand rs)
         {
+            int status = rs.GetRegister().Index;
+            if (status == rt.GetRegister().Index || (status == rn.GetRegister().Index && status != SpRegister))
+            {
+                throw new ArgumentException("STLXR status must differ from its value and non-SP base registers.");
+            }
+
             WriteInstructionRm16(0x0800fc00u | ((rt.Type == OperandType.I64 ? 3u : 2u) << 30), rt, rn, rs);
         }
 

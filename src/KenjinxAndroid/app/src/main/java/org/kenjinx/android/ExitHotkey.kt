@@ -138,9 +138,7 @@ object ExitHotkey {
                 // NEOV2-CLOSE2: so volta se a tela atual ainda for a do jogo.
                 val nav = viewModel?.navController
                 if (activity.isGameRunning && viewModel != null && nav?.currentDestination?.route == "game") {
-                    viewModel.closeGame()
-                    nav?.popBackStack()
-                    activity.isGameRunning = false
+                    viewModel.requestGameExit()
                 }
             } catch (_: Throwable) {
             } finally {

@@ -7,12 +7,14 @@ using System.Threading;
 
 namespace Ryujinx.Cpu.Nce
 {
-    class NceExecutionContext : IExecutionContext
+    class NceExecutionContext : IExecutionContext, IThreadContextProvider
     {
         private const ulong AlternateStackSize = 0x20000;
         private const uint FpStateNzcvMask = 0xf0000000u;
 
         private readonly NceNativeContext _context;
+        private readonly MemoryManagerNative _snapshotMemory;
+        public bool SupportsThreadContext => _snapshotMemory != null;
         private readonly ExceptionCallbacks _exceptionCallbacks;
 
         internal nint NativeContextPtr => _context.BasePtr;
@@ -78,7 +80,24 @@ namespace Ryujinx.Cpu.Nce
         private SupervisorCallHandler _svcHandler;
 
         public NceExecutionContext(ExceptionCallbacks exceptionCallbacks)
+            : this(exceptionCallbacks, 0, 0)
         {
+        }
+
+        internal NceExecutionContext(ExceptionCallbacks exceptionCallbacks, ulong guestAddressStart, ulong guestAddressEnd)
+            : this(exceptionCallbacks, guestAddressStart, guestAddressEnd, nint.Zero)
+        {
+        }
+
+        internal NceExecutionContext(ExceptionCallbacks exceptionCallbacks, ulong guestAddressStart, ulong guestAddressEnd, nint signalExitPc)
+            : this(exceptionCallbacks, guestAddressStart, guestAddressEnd, signalExitPc, null)
+        {
+        }
+
+        internal NceExecutionContext(ExceptionCallbacks exceptionCallbacks, ulong guestAddressStart, ulong guestAddressEnd,
+            nint signalExitPc, MemoryManagerNative snapshotMemory)
+        {
+            _snapshotMemory = snapshotMemory;
             _svcHandler = OnSupervisorCall;
             nint svcHandlerPtr = Marshal.GetFunctionPointerForDelegate(_svcHandler);
 
@@ -88,10 +107,50 @@ namespace Ryujinx.Cpu.Nce
             ref NceNativeContext.NativeCtxStorage storage = ref _context.GetStorage();
             storage.SvcCallHandler = svcHandlerPtr;
             storage.InManaged = 1u;
+            storage.GuestAddressStart = guestAddressStart;
+            storage.GuestAddressEnd = guestAddressEnd;
+            storage.SignalExitPc = signalExitPc;
             storage.CtrEl0 = 0x8444c004; // TODO: Get value from host CPU instead of using guest one?
 
             _running = true;
             _exceptionCallbacks = exceptionCallbacks;
+        }
+
+        public void InitializeThreadEntry(ulong entrypoint)
+        {
+            if (SupportsThreadContext) _context.GetStorage().Pc = entrypoint;
+        }
+
+        public bool TryGetThreadContext(out CpuThreadContext context)
+        {
+            // The HLE caller holds its activity lock + kernel critical section and has
+            // confirmed the target is stopped. This lock only protects a query against Dispose.
+            lock (_neoDisposeLock)
+            {
+                context = default;
+                if (_neoDisposed || !SupportsThreadContext) return false;
+                // Pair the already existing scheduler Unlock fence with the HLE stopped-core
+                // observation. Publication is completed before the target leaves its core.
+                Thread.MemoryBarrier();
+                return NceThreadContextReader.Capture(ref _context.GetStorage(), NceSnapshotCodeMap.ForMemory(_snapshotMemory),
+                    ReadSignalFrame, ReadSnapshotStack, out context);
+            }
+        }
+
+        private unsafe byte[] ReadSignalFrame(ulong address, int size)
+        {
+            ulong start = (ulong)_alternateStackMemory.Pointer;
+            if (size < 0 || address < start || (ulong)size > AlternateStackSize || address - start > AlternateStackSize - (ulong)size) return null;
+            return new ReadOnlySpan<byte>((void*)address, size).ToArray();
+        }
+
+        private byte[] ReadSnapshotStack(ulong address, int size)
+        {
+            address &= 0x00ffffffffffffffUL; // TBI: retain the architectural tag in the reported SP.
+            if (!_snapshotMemory.IsRangeMapped(address, (ulong)size)) return null;
+            byte[] bytes = new byte[size];
+            _snapshotMemory.Read(address, bytes); // backing-memory read, without tracking/protection mutation.
+            return bytes;
         }
 
         public ulong GetX(int index) => _context.GetStorage().X[index];
@@ -187,9 +246,10 @@ namespace Ryujinx.Cpu.Nce
             ref NceNativeContext.NativeCtxStorage storage = ref _context.GetStorage();
             storage.X[30] = address;
             storage.Pc = address;
-            Volatile.Write(ref storage.HostThreadHandle, NceThreadPal.GetCurrentThreadHandle());
-
+            // Install the signal stack before publishing a handle that another core may use.
+            // The initial InManaged=1 remains set until the native entry handshake consumes pending work.
             RegisterAlternateStack();
+            Volatile.Write(ref storage.HostThreadHandle, NceThreadPal.GetCurrentThreadHandle());
         }
 
         public void Exit()
@@ -233,7 +293,8 @@ namespace Ryujinx.Cpu.Nce
         public bool OnInterrupt()
         {
             _exceptionCallbacks.InterruptCallback?.Invoke(this);
-            return Running;
+            bool running = Running;
+            return running;
         }
 
         public void RequestInterrupt()

@@ -55,13 +55,13 @@ namespace Ryujinx.Cpu
             }
         }
 
-        public MemoryEhMeilleure(ulong asSize, MemoryTracking tracking)
+        public MemoryEhMeilleure(ulong asSize, MemoryTracking tracking, TrackingEventDelegate trackingEvent = null)
         {
             _tracking = tracking;
             _baseAddress = 0UL;
             ulong endAddress = asSize;
 
-            _trackingEvent = VirtualMemoryEvent;
+            _trackingEvent = trackingEvent ?? VirtualMemoryEvent;
 
             _pageSize = MemoryBlock.GetPageSize();
 

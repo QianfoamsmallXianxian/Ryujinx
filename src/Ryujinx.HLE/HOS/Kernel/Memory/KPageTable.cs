@@ -1,4 +1,5 @@
 using Ryujinx.Horizon.Common;
+using Ryujinx.Cpu.Nce;
 using Ryujinx.Memory;
 using Ryujinx.Memory.Range;
 using System;
@@ -155,6 +156,8 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
                 Context.CommitMemory(addr, size);
 
                 _cpuMemory.Map(currentVa, addr, size, flags);
+                if (_cpuMemory is MemoryManagerNative { HasGuestPermissionComposition: true } native)
+                    native.SetMappedPermission(currentVa, size, permission.Convert());
 
                 if (shouldFillPages)
                 {

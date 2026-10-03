@@ -3,6 +3,7 @@ package org.kenjinx.android.viewmodels
 import android.app.Activity
 import android.content.Context
 import androidx.core.content.edit
+import org.kenjinx.android.SystemLanguage
 
 /**
  * Stores only per-title overrides. Global QuickSettings remain the source of truth
@@ -24,6 +25,16 @@ class GameSettingsStore(activity: Activity, titleId: String) {
                 preferences.edit { putBoolean(key("enabled"), value) }
             }
         }
+
+    /** Empty follows the global language. Persist enum names so ordinals are not part of the file format. */
+    var languageOverride: String
+        get() = if (!isValid) "" else runCatching { preferences.getString(key("languageOverride"), "").orEmpty() }.getOrDefault("")
+        set(value) {
+            if (isValid) preferences.edit { putString(key("languageOverride"), value) }
+        }
+
+    fun resolveLanguage(global: SystemLanguage): SystemLanguage =
+        if (!isEnabled || !isValid) global else resolveLanguageOverride(languageOverride, global)
 
     /**
      * Empty means follow the globally selected Vulkan driver.
@@ -256,6 +267,9 @@ class GameSettingsStore(activity: Activity, titleId: String) {
 
         /** Per game driver override value that selects the system Vulkan driver. */
         const val SYSTEM_DRIVER = "system"
+
+        internal fun resolveLanguageOverride(value: String, global: SystemLanguage): SystemLanguage =
+            runCatching { SystemLanguage.valueOf(value) }.getOrDefault(global)
 
         fun cleanupOrphanedDriver(context: Context, deletedDriverPath: String) {
             if (deletedDriverPath.isBlank()) return

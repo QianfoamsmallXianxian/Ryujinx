@@ -1,15 +1,25 @@
 # Ryujinx Neo Current — changelog e funcionalidades
 
-- **Versão no código:** Android 0.0.1 (`versionCode 20108`)
+- **Versão no código:** Android 0.0.23 (`versionCode 20130`)
 - **Branch analisada:** [`neo-v2-nce2`](https://github.com/Sunshinin11/Ryujinx_Neo/tree/neo-v2-nce2)
-- **Estado remoto do código:** mudanças funcionais publicadas até 01/10/2026 na branch GitHub
-- **Último commit de código publicado:** [`d24e22d2d`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/d24e22d2d2714fecdae89377f1261ac49d79e3b1), de 01/10/2026
+- **Estado remoto do código:** base publicada até 02/10/2026; promoção local de 03/10/2026 aguarda commit/push
+- **Último commit de código publicado antes desta promoção:** [`06b96f2a7`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/06b96f2a7103bffe44a63bea01e0a774e8ce2d7c), de 02/10/2026
 - **Mudanças funcionais de 28/09:** publicadas em cinco commits integrados à branch [`neo-v2-nce2`](https://github.com/Sunshinin11/Ryujinx_Neo/tree/neo-v2-nce2)
-- **Data da revisão:** 01/10/2026
+- **Data da revisão:** 03/10/2026 — promoção local aprovada; APK Current e publicação pendentes
 
 Este texto cobre **somente a linha Ryujinx Neo Current em `neo-v2-nce2`**. A linha histórica `neo-v2-fase1` e o trabalho Linux ARM64 do Hugare não fazem parte deste changelog. A análise combinou o histórico publicado, o [relatório técnico](docs/RELATORIO_COMPLETO_RYUJINX_NEO.md), os commits de código publicados até `d24e22d2d`. Toda mudança do Current foi implementada e testada no Experimental antes da promoção, após aprovação e sem regressões. Esta revisão analisa o Current e não repetiu os testes do Experimental.
 
 ## Changelog do Neo Current
+
+### 3 de outubro — promoção das melhorias validadas no Experimental
+
+- **NCE:** promoção cumulativa das correções de XZR e branches, ABI de sinais Android, contexto/lifetime de threads, acessos exclusivos, transições nativo/gerenciado, classificação de falhas, encerramento por sinal, registradores de threads pausadas e NRO dinâmico. Inclui a correção R14-FIX que permite repetir acessos guest válidos quando outro consumidor rearma o tracking, sem aceitar acesso revogado. A tabela de permissões usa os blocos de até 128 intervalos da R14-OPT, preservando composição e publicação após sucesso. O usuário aprovou a última build Experimental e autorizou esta promoção. [Escopo e limites](docs/CURRENT_PROMOTION_2026_10_03.md).
+- **Current sem a telemetria da investigação:** não recebe NceTelemetry, sessões/timers, amostragem de SVC/ticks/proteções, contadores nos callbacks, arquivo experimental_session.txt ou identidade de pacote Experimental. As correções funcionais e a estrutura otimizada permanecem; o Experimental conserva a instrumentação.
+- **Mods por pasta:** seleção da pasta do mod/tradução pelo Android, mantendo também instalação ZIP e validação da estrutura. **Idioma por jogo:** perfil individual permite herdar o padrão global ou escolher o idioma do sistema emulado.
+- **Conversões e cards:** descompactação NSZ→NSP e NCZ avulso→NCA, com temporário, verificação, sincronização/publicação e exclusão da origem somente após sucesso. Os cards de compactação/descompactação seguem a identidade visual do Neo; compressão oferece Rápido/Máximo e otimização recomendada de NSZ sólido para blocos. NSP comprimido pelo Neo já usa NCZBLOCK; o otimizador Android preserva entradas já em blocos e demais arquivos.
+- **Fechamento do jogo:** botão de fechar é retirado imediatamente após o primeiro clique, com proteção para requisições repetidas durante o encerramento.
+- **Código remoto preservado:** base integra os commits publicados até [06b96f2a7](https://github.com/Sunshinin11/Ryujinx_Neo/commit/06b96f2a7103bffe44a63bea01e0a774e8ce2d7c). O leitor/conversor desktop publicado permanece no caminho desktop; Android mantém o leitor e cache aprovados, sem incorporar P/Invoke Zstd desktop ao APK.
+- **Validação:** aprovação relatada pelo usuário refere-se às builds Experimental. Esta promoção foi conferida estaticamente; o APK Current ainda deve ser gerado. Não há medição suficiente para prometer ganho geral de FPS. A investigação de crash ao catalogar updates/DLC em NSZ foi adiada pelo usuário e não está declarada resolvida.
 
 ### 1º de outubro — retorno à biblioteca e arquivos NSZ/XCZ
 

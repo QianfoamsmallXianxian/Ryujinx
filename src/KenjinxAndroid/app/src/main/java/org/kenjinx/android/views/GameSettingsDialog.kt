@@ -51,6 +51,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.kenjinx.android.MainActivity
+import org.kenjinx.android.SystemLanguage
+import org.kenjinx.android.displayName
 import org.kenjinx.android.viewmodels.GameSettingsStore
 import org.kenjinx.android.viewmodels.QuickSettings
 import org.kenjinx.android.viewmodels.VSyncMode
@@ -106,6 +108,7 @@ fun GameSettingsPage(
     val driverViewModel = remember(titleId) { VulkanDriverViewModel(activity) }
     val availableDrivers = remember(titleId) { driverViewModel.getAvailableDrivers().toList() }
     var driverOverride by remember(titleId) { mutableStateOf(store.driverOverride) }
+    var languageOverride by remember(titleId) { mutableStateOf(store.languageOverride) }
 
     val bitmap = remember(titleId) {
         runCatching {
@@ -152,6 +155,7 @@ fun GameSettingsPage(
                 }
             )
             store.driverOverride = driverOverride
+            store.languageOverride = languageOverride
         } else {
             store.isEnabled = false
         }
@@ -190,6 +194,7 @@ fun GameSettingsPage(
         nifmOfflineEnabled = false
         strictSyncMode = 0
         driverOverride = ""
+        languageOverride = ""
     }
 
     // Voltar (gesto ou botao) sai sem salvar, igual ao "Cancelar" de antes.
@@ -200,6 +205,15 @@ fun GameSettingsPage(
     // Cada secao e uma funcao para poder ser colocada em 1 coluna (retrato) ou 2 colunas (paisagem).
     val systemSection: @Composable () -> Unit = {
         SettingsSection("Sistema e CPU") {
+            val languageOptions = listOf("" to "Usar idioma global") +
+                SystemLanguage.entries.map { it.name to it.displayName }
+            SelectSetting(
+                "Idioma do jogo",
+                "Idioma informado ao jogo. Reinicie o jogo para aplicar.",
+                languageOptions.firstOrNull { it.first == languageOverride }?.second ?: "Usar idioma global",
+                languageOptions,
+                custom
+            ) { languageOverride = it }
             SwitchSetting("Execução nativa (NCE)", "Desligado usa JIT (mais lento, mais compatível).", useNce, custom) { useNce = it }
             SwitchSetting("PPTC", "Guarda o código já traduzido para abrir o jogo mais rápido.", enablePptc, custom) { enablePptc = it }
             SwitchSetting("Memory Slack (12 GiB)", "Mais memória para jogos que travam por falta dela.", memorySlack, custom) { memorySlack = it }

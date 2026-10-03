@@ -1,5 +1,6 @@
-﻿using ARMeilleure.Memory;
+using ARMeilleure.Memory;
 using Ryujinx.Common.Logging;
+using Ryujinx.Common;
 using Ryujinx.Memory;
 using Ryujinx.Memory.Range;
 using Ryujinx.Memory.Tracking;
@@ -23,6 +24,7 @@ namespace Ryujinx.Cpu.Nce
         private readonly MemoryEhMeilleure _memoryEh;
 
         private readonly ManagedPageFlags _pages;
+        private readonly NceMemoryProtectionMap _protections;
 
         /// <inheritdoc/>
         public bool UsesPrivateAllocations => false;
@@ -31,7 +33,18 @@ namespace Ryujinx.Cpu.Nce
 
         public ulong ReservedSize => (ulong)_addressSpace.Pointer.ToInt64();
 
+        // Actual native VA reservation, including code patch islands allocated by the loader.
+        internal ulong GuestAddressStart => ReservedSize;
+        internal ulong GuestAddressEnd => checked(ReservedSize + _addressSpace.Size);
+
         public MemoryManagerType Type => MemoryManagerType.HostMappedUnsafe;
+        public bool HasGuestPermissionComposition => _protections != null;
+
+        // The initial mapping contract must not erase a remapped region's tracking demand.
+        public void SetMappedPermission(ulong address, ulong size, MemoryPermission permission)
+        {
+            _protections.SetGuest(address, size, permission, restoreTracking: true);
+        }
 
         public MemoryTracking Tracking { get; }
 
@@ -72,8 +85,13 @@ namespace Ryujinx.Cpu.Nce
 
             _addressSpace = addressSpace;
 
+            if (PlatformInfo.IsBionic)
+                _protections = new NceMemoryProtectionMap(GuestAddressStart, _addressSpace.Size,
+                    MemoryBlock.GetPageSize(), ApplyNativeProtection);
+
             Tracking = new MemoryTracking(this, PageSize, invalidAccessHandler);
-            _memoryEh = new MemoryEhMeilleure(addressSpaceSize, Tracking);
+            _memoryEh = new MemoryEhMeilleure(addressSpaceSize, Tracking,
+                _protections != null ? HandleGuestTrackingFault : null);
         }
 
         /// <inheritdoc/>
@@ -81,6 +99,18 @@ namespace Ryujinx.Cpu.Nce
         {
             AssertValidAddressAndSize(va, size);
 
+            if (_protections != null)
+            {
+                _protections.Map(va, size, () =>
+                {
+                    _addressSpace.MapView(_backingMemory, pa, AddressToOffset(va), size);
+                    _pages.AddMapping(va, size);
+                    PtMap(va, pa, size);
+                });
+                // Do not hold the protection lock while entering tracking callbacks.
+                Tracking.Map(va, size);
+                return;
+            }
             _addressSpace.MapView(_backingMemory, pa, AddressToOffset(va), size);
             _pages.AddMapping(va, size);
             PtMap(va, pa, size);
@@ -108,6 +138,16 @@ namespace Ryujinx.Cpu.Nce
             UnmapEvent?.Invoke(va, size);
             Tracking.Unmap(va, size);
 
+            if (_protections != null)
+            {
+                _protections.Unmap(va, size, () =>
+                {
+                    _pages.RemoveMapping(va, size);
+                    PtUnmap(va, size);
+                    _addressSpace.UnmapView(_backingMemory, AddressToOffset(va), size);
+                });
+                return;
+            }
             _pages.RemoveMapping(va, size);
             PtUnmap(va, size);
             _addressSpace.UnmapView(_backingMemory, AddressToOffset(va), size);
@@ -127,6 +167,16 @@ namespace Ryujinx.Cpu.Nce
         /// <inheritdoc/>
         public void Reprotect(ulong va, ulong size, MemoryPermission protection)
         {
+            if (_protections != null)
+            {
+                bool restored = _protections.SetGuest(va, size, protection, TrackingProtectionRestoreEnabled);
+                if (restored && !_protectionRestoreLogged)
+                {
+                    _protectionRestoreLogged = true;
+                    Logger.Info?.Print(LogClass.Cpu, $"[NEOV2-NCE-PROT1] Tracking protection restored after a guest permission change at 0x{va:X} (0x{size:X} bytes)");
+                }
+                return;
+            }
             _addressSpace.Reprotect(AddressToOffset(va), size, protection);
 
             // NEOV2 NCE-PROT1: on NCE the guest permission is applied to the same host pages the memory tracking
@@ -285,7 +335,8 @@ namespace Ryujinx.Cpu.Nce
         {
             if (guest)
             {
-                _addressSpace.Reprotect(AddressToOffset(va), size, protection, false);
+                if (_protections != null) _protections.SetTracking(va, size, protection);
+                else _addressSpace.Reprotect(AddressToOffset(va), size, protection, false);
             }
             else
             {
@@ -309,6 +360,46 @@ namespace Ryujinx.Cpu.Nce
         public SmartMultiRegionHandle BeginSmartGranularTracking(ulong address, ulong size, ulong granularity, int id)
         {
             return Tracking.BeginSmartGranularTracking(address, size, granularity, id);
+        }
+
+        private void ApplyNativeProtection(ulong address, ulong size, MemoryPermission permission)
+        {
+            _addressSpace.Reprotect(AddressToOffset(address), size, permission);
+        }
+
+        // Only a genuine data-tracking fault may mark GPU resources dirty.
+        // Kernel frame classification (including prefetch) stays in the approved R10 path.
+        private ulong HandleGuestTrackingFault(ulong address, ulong size, bool write)
+        {
+            if (!_protections.IsGuestAccessAllowed(address, size, write))
+            {
+                return 0;
+            }
+            ulong pageMask = (ulong)PageSize - 1;
+            ulong aligned = address & ~pageMask;
+            ulong end = checked((address + size + pageMask) & ~pageMask);
+            try
+            {
+                if (!Tracking.VirtualMemoryEvent(aligned, end - aligned, write))
+                {
+                    return 0;
+                }
+
+                // Tracking releases its lock before returning. Another thread may have
+                // rearmed R/None already; that still permits a retry of a valid guest access.
+                // Only a revoked guest contract/unmap makes this an unhandled fault.
+                var access = _protections.GetAccessState(address, size, write);
+                if (!access.GuestAllowed)
+                {
+                    return 0;
+                }
+                return address;
+            }
+            catch (Exception exception) when (exception is Ryujinx.Memory.MemoryProtectionException or InvalidMemoryRegionException or ArgumentException)
+            {
+                // A failed mprotect cannot be reported as a handled fault or retried forever.
+                return 0;
+            }
         }
 
         private ulong AddressToOffset(ulong address)

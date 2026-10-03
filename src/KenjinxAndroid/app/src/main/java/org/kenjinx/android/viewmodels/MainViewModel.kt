@@ -59,6 +59,8 @@ class MainViewModel(val activity: MainActivity) {
     @Volatile var rendererReady: Boolean = false
     @Volatile var emulationRunning: Boolean = false
     @Volatile var emulationClosing: Boolean = false
+    val gameExitRequested: MutableState<Boolean> = mutableStateOf(false)
+    private var gameExitGeneration = 0L
 
     // Default Game Folder
     var defaultGameFolderUri: Uri? = null
@@ -88,6 +90,31 @@ class MainViewModel(val activity: MainActivity) {
 
     fun refreshFirmwareVersion() {
         firmwareVersion = KenjinxNative.deviceGetInstalledFirmwareVersion()
+    }
+
+    // UI-thread entry shared by the dialog and the hotkey. The claim lasts until the next game screen.
+    fun requestGameExit(): Boolean {
+        val nav = navController ?: return false
+        if (nav.currentDestination?.route != "game" || gameExitRequested.value) return false
+
+        gameExitRequested.value = true
+        val generation = gameExitGeneration
+        // Let Compose remove the exit controls before closeGame's existing joins can block the UI.
+        // Allow an intervening frame without moving teardown to a new thread.
+        activity.window.decorView.postOnAnimation {
+            activity.window.decorView.postOnAnimation finishExit@{
+                if (generation != gameExitGeneration || nav.currentDestination?.route != "game") return@finishExit
+                try {
+                    closeGame()
+                    // NEOV2-CLOSE2 remains: never pop the library from a repeated/stale exit.
+                    if (nav.currentDestination?.route == "game") nav.popBackStack()
+                    activity.isGameRunning = false
+                } catch (error: Exception) {
+                    Log.e("MainViewModel", "Game exit failed; duplicate exit remains blocked.", error)
+                }
+            }
+        }
+        return true
     }
 
     fun closeGame() {
@@ -139,7 +166,9 @@ class MainViewModel(val activity: MainActivity) {
     private fun loadSystemLanguage(): SystemLanguage {
         val prefs = PreferenceManager.getDefaultSharedPreferences(activity)
         val stored = prefs.getString("system_language", "AmericanEnglish") ?: "AmericanEnglish"
-        return runCatching { SystemLanguage.valueOf(stored) }.getOrElse { SystemLanguage.AmericanEnglish }
+        val global = runCatching { SystemLanguage.valueOf(stored) }.getOrElse { SystemLanguage.AmericanEnglish }
+        val titleId = gameModel?.titleId.orEmpty()
+        return if (titleId.isBlank()) global else GameSettingsStore(activity, titleId).resolveLanguage(global)
     }
 
     private fun loadRegionCode(): RegionCode {
@@ -666,6 +695,8 @@ class MainViewModel(val activity: MainActivity) {
     }
 
     fun navigateToGame() {
+        gameExitGeneration++
+        gameExitRequested.value = false
         navController?.navigate("game")
         activity.isGameRunning = true
         if (getSettingsForGame().enableMotion)

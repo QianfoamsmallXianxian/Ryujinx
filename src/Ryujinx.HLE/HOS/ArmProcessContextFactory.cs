@@ -57,7 +57,7 @@ namespace Ryujinx.HLE.HOS
 
         public static NceCpuCodePatch CreateCodePatchForNce(KernelContext context, bool for64Bit, ReadOnlySpan<byte> textSection)
         {
-            if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64 && for64Bit && context.Device.Configuration.UseHypervisor && !OperatingSystem.IsMacOS())
+            if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64 && for64Bit && context.Device.Configuration.UseHypervisor && !OperatingSystem.IsMacOS() && NceEngine.IsSupportedHostPageSize)
             {
                 return NcePatcher.CreatePatch(textSection);
             }
@@ -71,7 +71,10 @@ namespace Ryujinx.HLE.HOS
 
             bool isArm64Host = RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
 
-            if (isArm64Host && for64Bit && context.Device.Configuration.UseHypervisor)
+            if (isArm64Host && for64Bit && context.Device.Configuration.UseHypervisor && !NceEngine.IsSupportedHostPageSize)
+                Logger.Warning?.Print(LogClass.Cpu, $"[NEO-NCE-R14] hostPageBytes={MemoryBlock.GetPageSize()}; using JIT because native 4 KiB guest permissions cannot be enforced on this host.");
+
+            if (isArm64Host && for64Bit && context.Device.Configuration.UseHypervisor && NceEngine.IsSupportedHostPageSize)
             {
                 if (OperatingSystem.IsMacOS())
                 {

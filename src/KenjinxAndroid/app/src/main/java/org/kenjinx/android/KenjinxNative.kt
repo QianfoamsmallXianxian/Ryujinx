@@ -78,6 +78,18 @@ interface KenjinxNativeJna : Library {
     fun deviceCompressProgress(): Int
     fun deviceCompressPhase(): Int
     fun deviceCompressCancel()
+
+    fun deviceDecompressSize(inDescriptor: Int, standalone: Int): Long
+    fun deviceDecompress(inDescriptor: Int, outDescriptor: Int, standalone: Int, sourceName: String): Int
+    fun deviceDecompressProgress(): Int
+    fun deviceDecompressPhase(): Int
+    fun deviceDecompressCancel()
+
+    fun deviceOptimizeNszSize(inDescriptor: Int): Long
+    fun deviceOptimizeNsz(inDescriptor: Int, outDescriptor: Int): Int
+    fun deviceOptimizeNszProgress(): Int
+    fun deviceOptimizeNszPhase(): Int
+    fun deviceOptimizeNszCancel()
     fun deviceSetExperimentalGameFixes(enable: Boolean)
     fun deviceSetNifmOffline(enable: Boolean)
     fun deviceSetRejectUnmappedDescriptors(enable: Boolean)

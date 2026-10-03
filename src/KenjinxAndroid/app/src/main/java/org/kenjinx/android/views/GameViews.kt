@@ -139,6 +139,7 @@ class GameViews {
                 val enableMotion = remember { mutableStateOf(initialSettings.enableMotion) }
                 val showMore = remember { mutableStateOf(false) }
                 val showBackNotice = remember { mutableStateOf(false) }
+                val gameExitRequested = mainViewModel.gameExitRequested
                 val showLoading = remember { mutableStateOf(true) }
                 val progressValue = remember { mutableFloatStateOf(0.0f) }
                 val progress = remember { mutableStateOf("Loading") }
@@ -216,13 +217,13 @@ class GameViews {
                                         }
                                     },
                                     onDragEnd = {
-                                        if (distance >= 72f) showMore.value = true
+                                        if (distance >= 72f && !gameExitRequested.value) showMore.value = true
                                     }
                                 )
                             }
                     )
 
-                    if (showMore.value) {
+                    if (showMore.value && !gameExitRequested.value) {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -350,6 +351,10 @@ class GameViews {
  progressValue = progressValue.floatValue
  )
 
+ // Absorb repeated Back presses while the accepted exit is waiting for teardown.
+ BackHandler(enabled = gameExitRequested.value) { }
+
+ if (!gameExitRequested.value) {
  SimpleAlertDialog.Confirmation(
  showDialog = showBackNotice,
  title = "Sair do jogo",
@@ -357,15 +362,13 @@ class GameViews {
  confirmText = "Sair do jogo",
  dismissText = "Continuar jogando",
  onConfirm = {
- // NEOV2-CLOSE2: um segundo toque no mesmo quadro nao pode tirar a tela inicial da pilha (tela branca).
- val nav = mainViewModel.navController
- if (nav?.currentDestination?.route == "game") {
- mainViewModel.closeGame()
- nav?.popBackStack()
- mainViewModel.activity.isGameRunning = false
- }
+ // Hide the exit controls immediately; the shared gate also rejects already queued clicks.
+ showMore.value = false
+ showBackNotice.value = false
+ mainViewModel.requestGameExit()
  }
  )
+ }
 
  mainViewModel.activity.uiHandler.Compose()
  }
