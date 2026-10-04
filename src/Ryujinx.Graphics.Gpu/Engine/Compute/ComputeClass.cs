@@ -156,6 +156,13 @@ namespace Ryujinx.Graphics.Gpu.Engine.Compute
             {
                 BufferDescriptor sb = info.SBuffers[index];
 
+                if (TextureArrayFeedback.IsFeedbackBuffer(sb))
+                {
+                    // NEOV2-ARRAYFB1: host buffer, not guest memory.
+                    _channel.BufferManager.SetComputeTextureArrayFeedback(sb.Slot);
+                    continue;
+                }
+
                 ulong sbDescAddress = _channel.BufferManager.GetComputeUniformBufferAddress(sb.SbCbSlot);
                 sbDescAddress += (ulong)sb.SbCbOffset * 4;
 

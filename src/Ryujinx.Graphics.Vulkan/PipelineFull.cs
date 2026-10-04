@@ -249,7 +249,9 @@ namespace Ryujinx.Graphics.Vulkan
                 // in use by the current command buffer is above a given limit, and those resources were disposed.
                 _byteWeight += byteWeight;
 
-                if (_byteWeight >= MinByteWeightForFlush)
+                // NEOV2-GPUMEM2: with "Memoria de GPU estilo Eden", submit after 64 MB of released resources
+                // (texture upload buffers during loading screens) instead of 256 MB.
+                if (_byteWeight >= (Ryujinx.Graphics.GAL.GpuMemoryStats.HostRamGuardEnabled ? 64UL * 1024 * 1024 : MinByteWeightForFlush))
                 {
                     FlushCommandsImpl();
                 }

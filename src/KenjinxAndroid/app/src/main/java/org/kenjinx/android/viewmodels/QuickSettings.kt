@@ -76,6 +76,9 @@ class QuickSettings(val activity: Activity) {
     // NEOV2-VP9EDEN1: VP9 pelo FFmpeg (como o Eden). Ligado por padrao na Current (Zelda LA); pode ser desligado por jogo.
     var enableVp9FFmpeg: Boolean
 
+    // NEOV2-GPUMEM1: memoria de GPU estilo Eden. Ligada por padrao; pode ser desligada por jogo.
+    var enableEdenGpuMemory: Boolean
+
     // NEOV2-AUDIO1: amplificacao do audio (1.0 = 100%, 2.0 = 200%).
     var audioBoost: Float
 
@@ -179,6 +182,7 @@ class QuickSettings(val activity: Activity) {
         enableNceTrackingProtection = sharedPref.getBoolean("enableNceTrackingProtection", false)
         enableRelaxedDmaCopy = sharedPref.getBoolean("enableRelaxedDmaCopy", false)
         enableVp9FFmpeg = sharedPref.getBoolean("enableVp9FFmpeg", true)
+        enableEdenGpuMemory = sharedPref.getBoolean("enableEdenGpuMemory", true)
         audioBoost = sharedPref.getFloat("audioBoost", 1f).coerceIn(1f, 2f)
         drawFlushMode = sharedPref.getInt("drawFlushMode", 0)
         bufferReadbackMode = sharedPref.getInt("bufferReadbackMode", 0)
@@ -275,6 +279,7 @@ class QuickSettings(val activity: Activity) {
             putBoolean("enableNceTrackingProtection", enableNceTrackingProtection)
             putBoolean("enableRelaxedDmaCopy", enableRelaxedDmaCopy)
             putBoolean("enableVp9FFmpeg", enableVp9FFmpeg)
+            putBoolean("enableEdenGpuMemory", enableEdenGpuMemory)
             putFloat("audioBoost", audioBoost)
             putBoolean("enableRejectUnmappedDescriptors", enableRejectUnmappedDescriptors)
             putBoolean("enableAsyncLarge3DUpload", enableAsyncLarge3DUpload)

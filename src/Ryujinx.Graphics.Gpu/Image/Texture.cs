@@ -218,6 +218,11 @@ namespace Ryujinx.Graphics.Gpu.Image
         public LinkedListNode<Texture> CacheNode { get; set; }
 
         /// <summary>
+        /// NEOV2-GPUMEM1: last auto delete cache frame where this texture was used (Eden-style collection).
+        /// </summary>
+        public ulong CacheLastUseFrame;
+
+        /// <summary>
         /// Entry for this texture in the short duration cache, if present.
         /// </summary>
         public ShortTextureCacheEntry ShortCacheEntry { get; set; }

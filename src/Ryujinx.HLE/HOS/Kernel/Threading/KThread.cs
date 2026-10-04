@@ -1473,5 +1473,19 @@ namespace Ryujinx.HLE.HOS.Kernel.Threading
         {
             Owner.CpuMemory.Write<ushort>(_tlsAddress + TlsUserInterruptFlagOffset, 0);
         }
+
+        // NEOV2-TLSHANDLE1: the real kernel stores each thread's own handle in its thread local region
+        // (svc::ThreadLocalRegion::thread_handle, offset 0x110), for the main thread at process start and for
+        // every thread in svcCreateThread. SDK 22 locks (nlibsdk heap mutex) read it as the owner tag and abort
+        // when it is 0.
+        private const int TlsThreadHandleOffset = 0x110;
+
+        public void SetThreadLocalHandle(int handle)
+        {
+            if (_tlsAddress != 0 && Owner != null)
+            {
+                Owner.CpuMemory.Write<int>(_tlsAddress + TlsThreadHandleOffset, handle);
+            }
+        }
     }
 }

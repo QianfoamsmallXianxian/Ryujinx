@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace Ryujinx.Graphics.Gpu.Memory
 {
@@ -369,6 +370,9 @@ namespace Ryujinx.Graphics.Gpu.Memory
         {
             lock (_pageTable)
             {
+                // NEOV2-ARRAYMEM1: lets cached "sparse/aliased backing" decisions expire when the mapping changes.
+                Interlocked.Increment(ref _mappingGeneration);
+
                 UnmapEventArgs e = new(va, size);
                 MemoryUnmapped?.Invoke(this, e);
 
@@ -390,6 +394,9 @@ namespace Ryujinx.Graphics.Gpu.Memory
         {
             lock (_pageTable)
             {
+                // NEOV2-ARRAYMEM1: see Map.
+                Interlocked.Increment(ref _mappingGeneration);
+
                 // Event handlers are not expected to be thread safe.
                 UnmapEventArgs e = new(va, size);
                 MemoryUnmapped?.Invoke(this, e);
@@ -447,6 +454,54 @@ namespace Ryujinx.Graphics.Gpu.Memory
         /// <param name="va">Virtual address of the range</param>
         /// <param name="size">Size of the range</param>
         /// <returns>Multi-range with the physical regions</returns>
+        private int _mappingGeneration;
+
+        /// <summary>
+        /// NEOV2-ARRAYMEM1: incremented on every GPU map/unmap.
+        /// </summary>
+        public int MappingGeneration => Volatile.Read(ref _mappingGeneration);
+
+        /// <summary>
+        /// NEOV2-ARRAYMEM1: checks if a GPU region is mostly unmapped or backed by the same physical pages repeated
+        /// (placeholder pages used by streaming engines for textures that are not resident yet).
+        /// On the console such a texture costs no memory, but the host would allocate its full size.
+        /// </summary>
+        /// <param name="va">GPU virtual address of the region</param>
+        /// <param name="size">Size of the region</param>
+        /// <param name="scratch">Reusable set used to count unique physical pages</param>
+        /// <returns>True if less than half of the sampled pages are unique and mapped</returns>
+        public bool IsSparseOrAliasedBacking(ulong va, ulong size, HashSet<ulong> scratch)
+        {
+            ulong start = va & ~PageMask;
+            ulong end = (va + size + PageMask) & ~PageMask;
+            ulong pages = (end - start) / PageSize;
+
+            if (pages < 16)
+            {
+                return false;
+            }
+
+            // Bound the cost for huge textures: at most ~4096 sampled pages.
+            ulong step = Math.Max(1UL, pages / 4096);
+            ulong sampled = 0;
+
+            scratch.Clear();
+
+            for (ulong page = 0; page < pages; page += step)
+            {
+                sampled++;
+
+                ulong pa = Translate(start + page * PageSize);
+
+                if (pa != PteUnmapped)
+                {
+                    scratch.Add(pa & ~PageMask);
+                }
+            }
+
+            return (ulong)scratch.Count * 2 <= sampled;
+        }
+
         public MultiRange GetPhysicalRegions(ulong va, ulong size)
         {
             if (IsContiguous(va, (int)size))

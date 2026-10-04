@@ -148,6 +148,92 @@ namespace Ryujinx.Graphics.Gpu.Memory
             _ranges = new BufferAssignment[Constants.TotalGpUniformBuffers * Constants.ShaderStages];
         }
 
+        // NEOV2-ARRAYFB1: host storage buffer where bindless texture array accesses record the pool index they sample.
+        // Bounds with this flag (never set by the guest) are bound to that buffer instead of guest memory.
+        private const BufferUsageFlags TextureArrayFeedbackFlag = (BufferUsageFlags)0x80;
+        private const int TextureArrayFeedbackBytes = TextureArrayFeedback.MaxEntries * sizeof(uint);
+
+        private BufferHandle _textureArrayFeedbackBuffer;
+        private PinnedSpan<byte> _textureArrayFeedbackData;
+        private bool _textureArrayFeedbackReady;
+        private bool _textureArrayFeedbackFailed;
+
+        private static BufferBounds TextureArrayFeedbackBounds =>
+            new(new MultiRange(MemoryManager.PteUnmapped, 0UL), TextureArrayFeedbackFlag | BufferUsageFlags.Write);
+
+        private BufferRange GetTextureArrayFeedbackRange()
+        {
+            EnsureTextureArrayFeedbackBuffer();
+
+            return _textureArrayFeedbackBuffer == BufferHandle.Null
+                ? BufferRange.Empty
+                : new BufferRange(_textureArrayFeedbackBuffer, 0, TextureArrayFeedbackBytes, write: true);
+        }
+
+        private void EnsureTextureArrayFeedbackBuffer()
+        {
+            if (_textureArrayFeedbackBuffer != BufferHandle.Null || _textureArrayFeedbackFailed)
+            {
+                return;
+            }
+
+            try
+            {
+                _textureArrayFeedbackBuffer = _context.Renderer.CreateBuffer(TextureArrayFeedbackBytes, BufferAccess.HostMemory);
+                _context.Renderer.SetBufferData(_textureArrayFeedbackBuffer, 0, new byte[TextureArrayFeedbackBytes]);
+
+                // Host memory buffers are persistently mapped: keep the span and read it without synchronizing with the GPU.
+                _textureArrayFeedbackData = _context.Renderer.GetBufferData(_textureArrayFeedbackBuffer, 0, TextureArrayFeedbackBytes);
+                _textureArrayFeedbackReady = _textureArrayFeedbackData.Get().Length == TextureArrayFeedbackBytes;
+            }
+            catch (Exception)
+            {
+                _textureArrayFeedbackFailed = true;
+                _textureArrayFeedbackReady = false;
+            }
+        }
+
+        /// <summary>
+        /// NEOV2-ARRAYFB1: gets the pool indices sampled by bindless texture arrays (non-zero = used at least once).
+        /// </summary>
+        public bool TryGetTextureArrayFeedback(out ReadOnlySpan<uint> feedback)
+        {
+            if (!_textureArrayFeedbackReady)
+            {
+                feedback = default;
+                return false;
+            }
+
+            feedback = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, uint>(_textureArrayFeedbackData.Get());
+            return true;
+        }
+
+        /// <summary>
+        /// NEOV2-ARRAYFB1: binds the texture array feedback buffer to a graphics storage buffer slot.
+        /// </summary>
+        public void SetGraphicsTextureArrayFeedback(int stage, int index)
+        {
+            BuffersPerStage buffers = _gpStorageBuffers[stage];
+            BufferBounds bounds = TextureArrayFeedbackBounds;
+
+            if (!buffers.Buffers[index].Equals(bounds))
+            {
+                _gpStorageBuffersDirty = true;
+            }
+
+            buffers.SetBounds(index, bounds.Range, bounds.Flags);
+        }
+
+        /// <summary>
+        /// NEOV2-ARRAYFB1: binds the texture array feedback buffer to a compute storage buffer slot.
+        /// </summary>
+        public void SetComputeTextureArrayFeedback(int index)
+        {
+            BufferBounds bounds = TextureArrayFeedbackBounds;
+
+            _cpStorageBuffers.SetBounds(index, bounds.Range, bounds.Flags);
+        }
+
         /// <summary>
         /// Sets the memory range with the index buffer data, to be used for subsequent draw calls.
         /// </summary>
@@ -759,6 +845,12 @@ namespace Ryujinx.Graphics.Gpu.Memory
 
                     BufferBounds bounds = buffers.Buffers[bindingInfo.Slot];
 
+                    if (isStorage && (bounds.Flags & TextureArrayFeedbackFlag) != 0)
+                    {
+                        ranges[rangesCount++] = new BufferAssignment(bindingInfo.Binding, GetTextureArrayFeedbackRange());
+                        continue;
+                    }
+
                     if (!bounds.IsUnmapped)
                     {
                         bool isWrite = (bounds.Flags & BufferUsageFlags.Write) == BufferUsageFlags.Write;
@@ -795,6 +887,12 @@ namespace Ryujinx.Graphics.Gpu.Memory
                 ref BufferDescriptor bindingInfo = ref buffers.Bindings[index];
 
                 BufferBounds bounds = buffers.Buffers[bindingInfo.Slot];
+
+                if (isStorage && (bounds.Flags & TextureArrayFeedbackFlag) != 0)
+                {
+                    ranges[rangesCount++] = new BufferAssignment(bindingInfo.Binding, GetTextureArrayFeedbackRange());
+                    continue;
+                }
 
                 if (!bounds.IsUnmapped)
                 {

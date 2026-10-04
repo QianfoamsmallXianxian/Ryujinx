@@ -99,6 +99,7 @@ fun GameSettingsPage(
     var bufferReadbackMode by remember(titleId) { mutableStateOf(store.bufferReadbackMode) }
     var vp9FFmpegMode by remember(titleId) { mutableStateOf(store.vp9FFmpegMode) }
     var relaxedDmaCopyMode by remember(titleId) { mutableStateOf(store.relaxedDmaCopyMode) }
+    var edenGpuMemoryMode by remember(titleId) { mutableStateOf(store.edenGpuMemoryMode) }
     var rejectUnmappedDescriptorsMode by remember(titleId) { mutableStateOf(store.rejectUnmappedDescriptorsMode) }
     var asyncLarge3DUploadMode by remember(titleId) { mutableStateOf(store.asyncLarge3DUploadMode) }
     var gpuOptimizationsMode by remember(titleId) { mutableStateOf(store.gpuOptimizationsMode) }
@@ -128,6 +129,7 @@ fun GameSettingsPage(
             store.bufferReadbackMode = bufferReadbackMode
             store.vp9FFmpegMode = vp9FFmpegMode
             store.relaxedDmaCopyMode = relaxedDmaCopyMode
+            store.edenGpuMemoryMode = edenGpuMemoryMode
             store.rejectUnmappedDescriptorsMode = rejectUnmappedDescriptorsMode
             store.asyncLarge3DUploadMode = asyncLarge3DUploadMode
             store.gpuOptimizationsMode = gpuOptimizationsMode
@@ -187,6 +189,7 @@ fun GameSettingsPage(
         bufferReadbackMode = 0
         vp9FFmpegMode = 0
         relaxedDmaCopyMode = 0
+        edenGpuMemoryMode = 0
         rejectUnmappedDescriptorsMode = 0
         asyncLarge3DUploadMode = 0
         gpuOptimizationsMode = 0
@@ -295,6 +298,7 @@ fun GameSettingsPage(
             ChoiceSetting("VTG via Compute", null, globalOnOff, vtgViaComputeMode, custom) { vtgViaComputeMode = it }
             ChoiceSetting("VP9 pelo FFmpeg", "Desligue se o vídeo do jogo ficar com erros (ex.: GRID Autosport).", globalOnOff, vp9FFmpegMode, custom) { vp9FFmpegMode = it }
             ChoiceSetting("Cópia DMA relaxada", "Mais desempenho em alguns jogos (ex.: Diablo II); pode causar erros gráficos.", globalOnOff, relaxedDmaCopyMode, custom) { relaxedDmaCopyMode = it }
+            ChoiceSetting("Memória de GPU estilo Eden", "Libera buffers e texturas sem uso e fecha o jogo se a RAM acabar (ex.: DOOM Eternal). Desligue se aparecer erro gráfico.", globalOnOff, edenGpuMemoryMode, custom) { edenGpuMemoryMode = it }
             ChoiceSetting("Rejeitar descritores não mapeados", null, globalOnOff, rejectUnmappedDescriptorsMode, custom) { rejectUnmappedDescriptorsMode = it }
             ChoiceSetting("Upload assíncrono de texturas 3D (Eden)", null, globalOnOff, asyncLarge3DUploadMode, custom) { asyncLarge3DUploadMode = it }
         }

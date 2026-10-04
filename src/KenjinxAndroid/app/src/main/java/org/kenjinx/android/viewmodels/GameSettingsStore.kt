@@ -60,6 +60,13 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             if (isValid) preferences.edit { putInt(key("vp9FFmpegMode"), value) }
         }
 
+    /** NEOV2-GPUMEM1: 0: Use Global, 1: Enabled, 2: Disabled */
+    var edenGpuMemoryMode: Int
+        get() = if (!isValid) 0 else preferences.getInt(key("edenGpuMemoryMode"), 0)
+        set(value) {
+            if (isValid) preferences.edit { putInt(key("edenGpuMemoryMode"), value) }
+        }
+
     /** NEOV2 DMA-RELAX1: 0: Use Global, 1: Enabled, 2: Disabled */
     var relaxedDmaCopyMode: Int
         get() = if (!isValid) 0 else preferences.getInt(key("relaxedDmaCopyMode"), 0)
@@ -160,6 +167,10 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             1 -> settings.enableRelaxedDmaCopy = true
             2 -> settings.enableRelaxedDmaCopy = false
         }
+        when (safeInt(key("edenGpuMemoryMode"), 0)) {
+            1 -> settings.enableEdenGpuMemory = true
+            2 -> settings.enableEdenGpuMemory = false
+        }
         when (safeInt(key("rejectUnmappedDescriptorsMode"), 0)) {
             1 -> settings.enableRejectUnmappedDescriptors = true
             2 -> settings.enableRejectUnmappedDescriptors = false
@@ -216,6 +227,7 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             putInt(key("nceTrackingProtectionMode"), nceTrackingProtectionMode)
             putInt(key("vp9FFmpegMode"), vp9FFmpegMode)
             putInt(key("relaxedDmaCopyMode"), relaxedDmaCopyMode)
+            putInt(key("edenGpuMemoryMode"), edenGpuMemoryMode)
             putInt(key("rejectUnmappedDescriptorsMode"), rejectUnmappedDescriptorsMode)
             putInt(key("asyncLarge3DUploadMode"), asyncLarge3DUploadMode)
             putInt(key("gpuOptimizationsMode"), gpuOptimizationsMode)

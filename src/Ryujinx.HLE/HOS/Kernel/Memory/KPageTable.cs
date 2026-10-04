@@ -15,6 +15,9 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
 
         protected override bool UsesPrivateAllocations => _cpuMemory.UsesPrivateAllocations;
 
+        // NEOV2 NCE-PHYSWIN1: only the native (NCE) memory manager maps one host view per guest Map.
+        protected override bool UsePhysicalWindows => NcePhysicalWindowsEnabled && _cpuMemory is MemoryManagerNative;
+
         public KPageTable(KernelContext context, IVirtualMemoryManager cpuMemory, ulong reservedAddressSpaceSize) : base(context, reservedAddressSpaceSize)
         {
             _cpuMemory = cpuMemory;

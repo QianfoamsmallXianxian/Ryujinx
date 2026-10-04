@@ -268,7 +268,10 @@ namespace Ryujinx.HLE.Loaders.Processes
             }
 
             NceCpuCodePatch[] nsoPatch = new NceCpuCodePatch[executables.Length];
+            // NEOV2-NCE-FARPATCH1: second patch block placed after the image, for sites beyond imm26 reach of the first.
+            NceCpuCodePatch[] nsoFarPatch = new NceCpuCodePatch[executables.Length];
             ulong[] nsoBase = new ulong[executables.Length];
+            ulong[] nsoFarPatchBase = new ulong[executables.Length];
 
             for (int index = 0; index < executables.Length; index++)
             {
@@ -294,17 +297,33 @@ namespace Ryujinx.HLE.Loaders.Processes
 
                 bool for64Bit = ((ProcessCreationFlags)meta.Flags).HasFlag(ProcessCreationFlags.Is64Bit);
 
-                NceCpuCodePatch codePatch = ArmProcessContextFactory.CreateCodePatchForNce(context, for64Bit, nso.Text);
+                // NEOV2-NCE36: NCE places the guest right after the host reserve and only lays out 39-bit address
+                // spaces that way. 36-bit titles (SDK 0.x/1.x, e.g. Street Fighter 30th Anniversary) fail process
+                // creation with InvalidMemoryRegion under NCE, so they are not patched and run on JIT instead.
+                bool nceAddressSpace = ((ProcessCreationFlags)meta.Flags & ProcessCreationFlags.AddressSpaceMask) == ProcessCreationFlags.AddressSpace64Bit;
+
+                NceCpuCodePatch codePatch = ArmProcessContextFactory.CreateCodePatchForNce(context, for64Bit && nceAddressSpace, nso.Text);
                 nsoPatch[index] = codePatch;
 
                 if (codePatch != null)
                 {
+                    nsoFarPatch[index] = codePatch.SplitFarTargets(nso.TextOffset);
+
                     codeSize += codePatch.Size;
                 }
 
                 nsoBase[index] = codeStart + codeSize;
 
                 codeSize += nsoSize;
+
+                if (nsoFarPatch[index] != null)
+                {
+                    nsoFarPatchBase[index] = codeStart + codeSize;
+                    codeSize += nsoFarPatch[index].Size;
+
+                    Logger.Notice.Print(LogClass.Loader,
+                        $"[NEOV2-NCE-FARPATCH1] image {index}: text=0x{nso.Text.Length:X} exceeds branch reach; {nsoFarPatch[index].TargetCount} sites moved to a post-image patch block (near=0x{codePatch.Size:X} far=0x{nsoFarPatch[index].Size:X} imageSize=0x{nsoSize:X})");
+                }
 
                 if (arguments != null && argsSize == 0)
                 {
@@ -424,7 +443,8 @@ namespace Ryujinx.HLE.Loaders.Processes
 
                 Logger.Info?.Print(LogClass.Loader, $"Loading image {index} at 0x{nsoBaseAddress:x16}...");
 
-                result = LoadIntoMemory(process, executables[index], nsoBaseAddress, nsoPatch[index]);
+                result = LoadIntoMemory(process, executables[index], nsoBaseAddress, nsoPatch[index],
+                    nsoFarPatch[index], process.Context.ReservedSize + nsoFarPatchBase[index]);
 
                 if (result != Result.Success)
                 {
@@ -484,7 +504,8 @@ namespace Ryujinx.HLE.Loaders.Processes
             return processResult;
         }
 
-        private static Result LoadIntoMemory(KProcess process, IExecutable image, ulong baseAddress, NceCpuCodePatch codePatch = null)
+        private static Result LoadIntoMemory(KProcess process, IExecutable image, ulong baseAddress, NceCpuCodePatch codePatch = null,
+            NceCpuCodePatch farCodePatch = null, ulong farPatchAddress = 0)
         {
             ulong textStart = baseAddress + image.TextOffset;
             ulong roStart = baseAddress + image.RoOffset;
@@ -506,7 +527,12 @@ namespace Ryujinx.HLE.Loaders.Processes
 
             if (codePatch != null)
             {
+                // Validate both blocks before the first text write, so a failure never leaves a half-patched image.
+                codePatch.ValidateAddresses(baseAddress - codePatch.Size, textStart);
+                farCodePatch?.ValidateAddresses(farPatchAddress, textStart);
+
                 codePatch.Write(process.CpuMemory, baseAddress - codePatch.Size, textStart);
+                farCodePatch?.Write(process.CpuMemory, farPatchAddress, textStart);
             }
 
             Result SetProcessMemoryPermission(ulong address, ulong size, KMemoryPermission permission)

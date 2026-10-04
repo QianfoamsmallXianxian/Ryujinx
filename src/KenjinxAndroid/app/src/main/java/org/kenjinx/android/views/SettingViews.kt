@@ -374,6 +374,7 @@ class SettingViews {
             val enableNceTrackingProtection = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableNceTrackingProtection) }
             val enableRelaxedDmaCopy = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableRelaxedDmaCopy) }
             val enableVp9FFmpeg = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableVp9FFmpeg) }
+            val enableEdenGpuMemory = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableEdenGpuMemory) }
             val audioBoost = remember { mutableFloatStateOf(QuickSettings(mainViewModel.activity).audioBoost) }
             val enableRejectUnmappedDescriptors = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableRejectUnmappedDescriptors) }
             val enableAsyncLarge3DUpload = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableAsyncLarge3DUpload) }
@@ -700,6 +701,7 @@ class SettingViews {
                 qs.enableNceTrackingProtection = enableNceTrackingProtection.value
                 qs.enableRelaxedDmaCopy = enableRelaxedDmaCopy.value
                 qs.enableVp9FFmpeg = enableVp9FFmpeg.value
+                qs.enableEdenGpuMemory = enableEdenGpuMemory.value
                 qs.audioBoost = audioBoost.floatValue
                 qs.enableRejectUnmappedDescriptors = enableRejectUnmappedDescriptors.value
                 qs.enableAsyncLarge3DUpload = enableAsyncLarge3DUpload.value
@@ -1453,6 +1455,17 @@ class SettingViews {
                                                 val qsRelaxedDma = QuickSettings(mainViewModel.activity)
                                                 qsRelaxedDma.enableRelaxedDmaCopy = it
                                                 qsRelaxedDma.save()
+                                            }
+                                        )
+                                        HighContrastToggle(
+                                            title = "Memória de GPU estilo Eden",
+                                            description = "Como no Eden: buffers e texturas sem uso são liberados quando a memória de GPU passa de 1,6 GB (mais forte a partir de 3,2 GB). Se a RAM do Android acabar, o jogo é fechado em vez de travar o aparelho (ex.: DOOM Eternal). Ligado por padrão; pode ser ajustado por jogo. (Requer reiniciar o jogo)",
+                                            checked = enableEdenGpuMemory.value,
+                                            onCheckedChange = {
+                                                enableEdenGpuMemory.value = it
+                                                val qsEdenGpuMemory = QuickSettings(mainViewModel.activity)
+                                                qsEdenGpuMemory.enableEdenGpuMemory = it
+                                                qsEdenGpuMemory.save()
                                             }
                                         )
                                         HighContrastToggle(

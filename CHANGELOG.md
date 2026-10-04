@@ -1,15 +1,24 @@
 # Ryujinx Neo Current — changelog e funcionalidades
 
-- **Versão no código:** Android 0.0.23 (`versionCode 20130`)
+- **Versão no código:** Android 0.0.24 (`versionCode 20138`)
 - **Branch analisada:** [`neo-v2-nce2`](https://github.com/Sunshinin11/Ryujinx_Neo/tree/neo-v2-nce2)
 - **Estado remoto do código:** mudanças funcionais publicadas até 03/10/2026 na branch GitHub
 - **Último commit de código publicado:** [`783e07fd9`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/783e07fd96587d430b53a97c46c60dd4fb885e65), de 03/10/2026
 - **Mudanças funcionais de 28/09:** publicadas em cinco commits integrados à branch [`neo-v2-nce2`](https://github.com/Sunshinin11/Ryujinx_Neo/tree/neo-v2-nce2)
-- **Data da revisão:** 03/10/2026
+- **Data da revisão:** 04/10/2026 — promoção local concluída; APK, commit e push desta rodada pendentes
 
 Este texto cobre **somente a linha Ryujinx Neo Current em `neo-v2-nce2`**. A linha histórica `neo-v2-fase1` e o trabalho Linux ARM64 do Hugare não fazem parte deste changelog. A análise combinou o histórico publicado, o [relatório técnico](docs/RELATORIO_COMPLETO_RYUJINX_NEO.md) e os commits de código até `783e07fd9`. As mudanças de 03/10 foram promovidas do Experimental e publicadas na Current; esta revisão descreve o estado do código no GitHub.
 
 ## Changelog do Neo Current
+
+### 4 de outubro — promoção de compatibilidade, áudio e memória de GPU
+
+- **CPU e memória:** backing memfd no Android e janelas físicas de 512 KiB para reduzir fragmentação de VMAs; reserva de páginas limitada e reclamável. NCE usa memória espelhável mesmo com o gerenciador seguro; títulos com espaço de endereços de 36 bits usam JIT. NSO com compressão ZBIC, segundo bloco de patches para textos grandes e handle da thread em TLS também são promovidos.
+- **Serviços e áudio:** comandos de teclado 12/17 do serviço de settings; saída OpenAL estéreo, preroll após interrupções e tratamento de fontes paradas para preservar buffers ainda não reproduzidos.
+- **Memória de GPU estilo Eden:** opção global e por jogo, ligada por padrão. Mantém orçamento/GC de buffers e texturas, readback com sincronização antes de descartar dados alterados, cópia/limpeza DMA na CPU quando elegível e flush de uploads de textura a cada 64 MiB. Guarda de alocações e monitor de RAM solicitam encerramento quando a memória disponível é insuficiente.
+- **Arrays bindless e shaders:** orçamento e filtro de páginas inválidas/repetidas; feedback dos índices usados pelo shader evita criar todas as texturas do pool; descritores são reenviados quando mudam. Fallback de memória global admite bases de descritores usadas pelo Eden e pelo Ryujinx. Cache de shaders versão 7360 e diretório separado `-gmemfb1` com a opção ligada.
+- **Current sem telemetria desta investigação:** não recebe NceTelemetry, watchdog/histórico HANG1/HANG2, dumps periódicos, cronômetros nem contadores usados apenas para diagnóstico. A contagem de memória e o feedback de índices permanecem porque controlam o comportamento; mensagens de erro da proteção de RAM são mantidas.
+- **Limites da promoção:** retoma a transferência parcial deixada pelo Claude. O documento fornecido relata Dragon Quest funcionando e Doom Eternal chegando ao menu, mas ainda registra manchas no menu e Power Rangers pendente; esta promoção não declara esses problemas resolvidos nem promete ganho geral de FPS. APK Current e validação no aparelho continuam pendentes. [Escopo e verificações](docs/CURRENT_PROMOTION_2026_10_04.md).
 
 ### 3 de outubro — NCE e melhorias da interface Android
 

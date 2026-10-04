@@ -280,6 +280,11 @@ class MainViewModel(val activity: MainActivity) {
             KenjinxNative.deviceSetRelaxedDmaCopy(settings.enableRelaxedDmaCopy)
         } catch (_: Throwable) {
         }
+        // NEOV2-GPUMEM1: memoria de GPU estilo Eden, valor efetivo (global + override por jogo).
+        try {
+            KenjinxNative.deviceSetEdenGpuMemory(settings.enableEdenGpuMemory)
+        } catch (_: Throwable) {
+        }
         // NEOV2-VP9EDEN1: VP9 pelo FFmpeg (chave geral).
         try {
             KenjinxNative.deviceSetVp9FFmpeg(settings.enableVp9FFmpeg)
@@ -454,6 +459,11 @@ class MainViewModel(val activity: MainActivity) {
         // NEOV2 DMA-RELAX1: sem perfil de jogo, vale a configuracao global.
         try {
             KenjinxNative.deviceSetRelaxedDmaCopy(settings.enableRelaxedDmaCopy)
+        } catch (_: Throwable) {
+        }
+        // NEOV2-GPUMEM1: sem perfil de jogo, vale a configuracao global.
+        try {
+            KenjinxNative.deviceSetEdenGpuMemory(settings.enableEdenGpuMemory)
         } catch (_: Throwable) {
         }
         // NEOV2-VP9EDEN1: VP9 pelo FFmpeg (chave geral).

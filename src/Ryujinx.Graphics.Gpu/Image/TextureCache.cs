@@ -1466,6 +1466,9 @@ namespace Ryujinx.Graphics.Gpu.Image
         public void Tick()
         {
             _cache.ProcessShortCache();
+
+            // NEOV2-GPUMEM1: Eden-style collection driven by the real device memory usage.
+            _cache.TickMemoryPressure();
         }
 
         /// <summary>

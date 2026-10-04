@@ -96,6 +96,13 @@ namespace Ryujinx.Graphics.Gpu
         public static bool RelaxedDmaCopy;
 
         /// <summary>
+        /// NEOV2-GPUMEM1: "Memoria de GPU estilo Eden". When enabled, the buffer and texture caches free unused
+        /// resources based on the real device memory usage, with the same thresholds Eden uses on integrated GPUs
+        /// (collect from 1.6 GiB, aggressive from 3.2 GiB), and Android low RAM forces aggressive collection.
+        /// </summary>
+        public static bool EdenGpuMemory;
+
+        /// <summary>
         /// Rejects texture descriptors pointing to unmapped guest memory.
         /// OFF by default globally in Current. Descriptor address 0 is always rejected regardless of this setting.
         /// </summary>

@@ -1069,6 +1069,15 @@ namespace LibKenjinx
             Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-DMA-RELAX1] Relaxed DMA copy: {(enable ? "enabled" : "disabled")}");
         }
 
+        // NEOV2-GPUMEM1: chave geral e por jogo "Memoria de GPU estilo Eden", definida antes de carregar o jogo.
+        [UnmanagedCallersOnly(EntryPoint = "deviceSetEdenGpuMemory")]
+        public static void JniDeviceSetEdenGpuMemory(bool enable)
+        {
+            Ryujinx.Graphics.Gpu.GraphicsConfig.EdenGpuMemory = enable;
+            Ryujinx.Graphics.GAL.GpuMemoryStats.HostRamGuardEnabled = enable; // NEOV2-RAMGUARD1
+            Logger.Info?.Print(LogClass.Gpu, $"Memoria de GPU estilo Eden: {(enable ? "ligada" : "desligada")}");
+        }
+
         // NEOV2-VP9EDEN1: chave geral "VP9 pelo FFmpeg (Eden)", definida antes de carregar o jogo.
         [UnmanagedCallersOnly(EntryPoint = "deviceSetVp9FFmpeg")]
         public static void JniDeviceSetVp9FFmpeg(bool enable)

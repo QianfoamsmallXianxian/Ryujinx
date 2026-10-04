@@ -124,6 +124,12 @@ namespace Ryujinx.Graphics.Gpu.Shader
             // compiled under the previous policy are never reused.
             string cacheDirectory = GraphicsConfig.EnableShaderLoopSafety ? "shader-vtgp1" : "shader-no-loop-guard-vtgp1";
 
+            // NEOV2-GMEMFB1: "Memoria de GPU estilo Eden" changes how global memory is translated.
+            if (GraphicsConfig.EdenGpuMemory)
+            {
+                cacheDirectory += "-gmemfb1";
+            }
+
             return GraphicsConfig.EnableShaderCache && GraphicsConfig.TitleId != null
                 ? Path.Combine(AppDataManager.GamesDirPath, GraphicsConfig.TitleId.ToLower(), "cache", cacheDirectory)
                 : null;

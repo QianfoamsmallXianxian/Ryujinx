@@ -187,6 +187,9 @@ namespace LibKenjinx
             device.Gpu.ShaderCacheStateChanged += LoadProgressStateChangedHandler;
             device.Processes.ActiveApplication.DiskCacheLoadState.StateChanged += LoadProgressStateChangedHandler;
 
+            // NEOV2-GPUMEM1: Android RAM watchdog while the game runs.
+            HostMemoryWatchdog.Start();
+
             try
             {
                 device.Gpu.Renderer.RunLoop(() =>
@@ -239,6 +242,7 @@ namespace LibKenjinx
             }
             finally
             {
+                HostMemoryWatchdog.Stop();
                 device.Gpu.ShaderCacheStateChanged -= LoadProgressStateChangedHandler;
                 device.Processes.ActiveApplication.DiskCacheLoadState.StateChanged -= LoadProgressStateChangedHandler;
             }

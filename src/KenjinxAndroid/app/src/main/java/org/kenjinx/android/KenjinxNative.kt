@@ -71,6 +71,8 @@ interface KenjinxNativeJna : Library {
     fun graphicsSetFullscreenStretch(enable: Boolean)
     fun deviceSetNceTrackingProtection(enable: Boolean)
     fun deviceSetRelaxedDmaCopy(enable: Boolean)
+    // NEOV2-GPUMEM1: memoria de GPU estilo Eden (coleta de buffers/texturas + protecao contra falta de RAM).
+    fun deviceSetEdenGpuMemory(enable: Boolean)
     fun deviceSetVp9FFmpeg(enable: Boolean)
     fun deviceSetAudioBoost(gain: Float)
     // NEOV2-NCZ2: conversor NSP -> NSZ (0 ok, 1 erro, 2 cancelado; progresso em milesimos; fase 1 comprimindo, 2 verificando).
@@ -321,6 +323,30 @@ object KenjinxNative : KenjinxNativeJna by jnaInstance {
 
     @JvmStatic
     fun test() { /* no-op */ }
+
+    // NEOV2-GPUMEM1: chamado pelo nativo quando a RAM do Android fica critica durante o jogo.
+    // Sai do jogo pelo caminho normal (como o botao Sair) para o aparelho nao travar.
+    @JvmStatic
+    fun onHostLowMemory() {
+        val vm = MainActivity.mainViewModel ?: return
+        val expectedHost = vm.gameHost
+        vm.activity.runOnUiThread {
+            if (vm.gameHost !== expectedHost || !vm.activity.isGameRunning) return@runOnUiThread
+            try {
+                android.widget.Toast.makeText(
+                    vm.activity,
+                    "Memória insuficiente: o jogo foi fechado para o aparelho não travar.",
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
+            } catch (_: Throwable) {
+            }
+            try {
+                vm.requestGameExit()
+            } catch (t: Throwable) {
+                Log.e("KenjinxNative", "onHostLowMemory exit failed", t)
+            }
+        }
+    }
 
     @JvmStatic
     fun getSurfacePtr(): Long = MainActivity.mainViewModel?.gameHost?.currentSurface ?: -1

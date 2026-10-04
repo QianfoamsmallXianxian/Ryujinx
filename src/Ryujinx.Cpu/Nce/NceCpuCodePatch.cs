@@ -68,6 +68,75 @@ namespace Ryujinx.Cpu.Nce
             AddCode(textIndex, emitted);
         }
 
+        /// <summary>Number of trampoline sites (excluding in-place rewrites) owned by this patch.</summary>
+        public int TargetCount => _patchTargets.Count;
+
+        /// <summary>
+        /// NEOV2-NCE-FARPATCH1: a patch block placed just before the module can only serve text sites within
+        /// the signed imm26 branch reach (+-128 MiB). For larger texts (SDK 22 titles have 185+ MiB of text),
+        /// sites that are too far are moved to a second block, which the loader places right after the module image.
+        /// Each trampoline is self-contained (internal labels plus the final return branch), so moving it is safe.
+        /// Returns the far block, or null when every site is reachable from the block before the module.
+        /// </summary>
+        /// <param name="textOffset">Offset of the text section from the module base</param>
+        public NceCpuCodePatch SplitFarTargets(ulong textOffset)
+        {
+            // Conservative: assume the trampoline may sit anywhere in a block as large as the whole patch.
+            const ulong Reach = 0x7fffffcUL - 0x10000UL;
+            ulong blockBound = Size + 0x1000UL;
+
+            bool IsFar(PatchTarget target) => textOffset + (ulong)target.TextIndex * sizeof(uint) + sizeof(uint) + blockBound > Reach;
+
+            bool anyFar = false;
+
+            foreach (PatchTarget target in _patchTargets)
+            {
+                if (IsFar(target))
+                {
+                    anyFar = true;
+                    break;
+                }
+            }
+
+            if (!anyFar)
+            {
+                return null;
+            }
+
+            Dictionary<int, uint> snapshotInstructions = new(_snapshotTargets.Count);
+
+            foreach (var snapshot in _snapshotTargets)
+            {
+                snapshotInstructions[snapshot.PatchIndex] = snapshot.Instruction;
+            }
+
+            PatchTarget[] targets = _patchTargets.ToArray();
+            uint[] code = _code.ToArray();
+
+            _code.Clear();
+            _patchTargets.Clear();
+            _snapshotTargets.Clear();
+
+            NceCpuCodePatch far = new();
+
+            foreach (PatchTarget target in targets)
+            {
+                uint[] chunk = code[target.PatchStartIndex..(target.PatchBranchIndex + 1)];
+                NceCpuCodePatch destination = IsFar(target) ? far : this;
+
+                if (snapshotInstructions.TryGetValue(target.PatchStartIndex, out uint instruction))
+                {
+                    destination.AddCode(target.TextIndex, chunk, instruction);
+                }
+                else
+                {
+                    destination.AddCode(target.TextIndex, chunk);
+                }
+            }
+
+            return far;
+        }
+
         /// <inheritdoc/>
         public void Write(IVirtualMemoryManager memoryManager, ulong patchAddress, ulong textAddress)
         {
@@ -110,7 +179,6 @@ namespace Ryujinx.Cpu.Nce
                 NceSnapshotCodeMap map = NceSnapshotCodeMap.ForMemory(memoryManager);
                 map.RegisterBlock(patchAddress, textAddress, _snapshotTargets);
             }
-
         }
 
         // Dynamic modules select their address before any source-alias write.
