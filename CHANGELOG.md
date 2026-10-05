@@ -2,14 +2,19 @@
 
 - **Versão no código:** Android 0.0.24 (`versionCode 20138`)
 - **Branch analisada:** [`neo-v2-nce2`](https://github.com/Sunshinin11/Ryujinx_Neo/tree/neo-v2-nce2)
-- **Estado remoto do código:** mudanças funcionais publicadas até 04/10/2026 na branch GitHub
-- **Último commit de código publicado:** [`68b46c9a4`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/68b46c9a49c5610bed47d9827a462297a37550c8), de 04/10/2026
+- **Estado remoto do código:** mudanças funcionais publicadas até 05/10/2026 na branch GitHub
+- **Último commit de código publicado:** [`1178c711e`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/1178c711e9f07a9b9dde12b90ee42f3ee5eb68db), de 05/10/2026
 - **Mudanças funcionais de 28/09:** publicadas em cinco commits integrados à branch [`neo-v2-nce2`](https://github.com/Sunshinin11/Ryujinx_Neo/tree/neo-v2-nce2)
-- **Data da revisão:** 04/10/2026
+- **Data da revisão:** 05/10/2026
 
-Este texto cobre **somente a linha Ryujinx Neo Current em `neo-v2-nce2`**. A linha histórica `neo-v2-fase1` e o trabalho Linux ARM64 do Hugare não fazem parte deste changelog. A análise combinou o histórico publicado, o [relatório técnico](docs/RELATORIO_COMPLETO_RYUJINX_NEO.md) e os commits de código até `68b46c9a4`. Esta revisão descreve o estado publicado da Current no GitHub.
+Este texto cobre **somente a linha Ryujinx Neo Current em `neo-v2-nce2`**. A linha histórica `neo-v2-fase1` e o trabalho Linux ARM64 do Hugare não fazem parte deste changelog. A análise combinou o histórico publicado, o [relatório técnico](docs/RELATORIO_COMPLETO_RYUJINX_NEO.md) e os commits de código até `1178c711e`. Esta revisão descreve o estado publicado da Current no GitHub.
 
 ## Changelog do Neo Current
+
+### 5 de outubro — termos offline por jogo (BioShock)
+
+- **Termos offline:** nova opção nas configurações de sistema por jogo, desligada por padrão e aplicada ao iniciar o título quando o perfil personalizado está ativo. Permite concluir a tela de termos do navegador offline em jogos como *BioShock*, devolvendo ao jogo a URL de conclusão encontrada nos arquivos HTML/JavaScript do próprio título. [Commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/1178c711e9f07a9b9dde12b90ee42f3ee5eb68db)
+- **Conclusão do applet:** para páginas offline com extensão JavaScript que não fornecem uma URL de conclusão, retorna `WindowClosed` e `http://localhost/`, atendendo ao fluxo de fechamento da página de termos. A escolha é salva por Title ID e restaurar o perfil desliga a opção. [Commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/1178c711e9f07a9b9dde12b90ee42f3ee5eb68db)
 
 ### 4 de outubro — compatibilidade NCE, áudio e memória de GPU
 
