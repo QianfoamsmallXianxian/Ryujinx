@@ -102,6 +102,13 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             if (isValid) preferences.edit { putBoolean(key("nifmOfflineEnabled"), value) }
         }
 
+    /** Termos offline: conclui a tela de termos do applet offline (BioShock). Desligado por padrao. */
+    var webOfflineTermsEnabled: Boolean
+        get() = isValid && preferences.getBoolean(key("webOfflineTermsEnabled"), false)
+        set(value) {
+            if (isValid) preferences.edit { putBoolean(key("webOfflineTermsEnabled"), value) }
+        }
+
     /** Otimizacoes de GPU: 0: Use Global, 1: Enabled, 2: Disabled */
     var gpuOptimizationsMode: Int
         get() = if (!isValid) 0 else preferences.getInt(key("gpuOptimizationsMode"), 0)
@@ -233,6 +240,7 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             putInt(key("gpuOptimizationsMode"), gpuOptimizationsMode)
             putBoolean(key("experimentalGameFixesEnabled"), experimentalGameFixesEnabled)
             putBoolean(key("nifmOfflineEnabled"), nifmOfflineEnabled)
+            putBoolean(key("webOfflineTermsEnabled"), webOfflineTermsEnabled)
             putInt(key("drawFlushMode"), drawFlushMode)
             putInt(key("bufferReadbackMode"), bufferReadbackMode)
             putInt(key("strictSyncMode"), strictSyncMode)

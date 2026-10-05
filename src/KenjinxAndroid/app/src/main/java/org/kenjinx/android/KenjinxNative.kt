@@ -94,6 +94,7 @@ interface KenjinxNativeJna : Library {
     fun deviceOptimizeNszCancel()
     fun deviceSetExperimentalGameFixes(enable: Boolean)
     fun deviceSetNifmOffline(enable: Boolean)
+    fun deviceSetWebOfflineTerms(enable: Boolean)
     fun deviceSetRejectUnmappedDescriptors(enable: Boolean)
     fun deviceSetAsyncLarge3DTextureUpload(enable: Boolean)
     // Opcao por jogo "Otimizacoes de GPU".

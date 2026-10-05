@@ -105,6 +105,7 @@ fun GameSettingsPage(
     var gpuOptimizationsMode by remember(titleId) { mutableStateOf(store.gpuOptimizationsMode) }
     var experimentalGameFixesEnabled by remember(titleId) { mutableStateOf(store.experimentalGameFixesEnabled) }
     var nifmOfflineEnabled by remember(titleId) { mutableStateOf(store.nifmOfflineEnabled) }
+    var webOfflineTermsEnabled by remember(titleId) { mutableStateOf(store.webOfflineTermsEnabled) }
     var strictSyncMode by remember(titleId) { mutableStateOf(store.strictSyncMode) }
     val driverViewModel = remember(titleId) { VulkanDriverViewModel(activity) }
     val availableDrivers = remember(titleId) { driverViewModel.getAvailableDrivers().toList() }
@@ -135,6 +136,7 @@ fun GameSettingsPage(
             store.gpuOptimizationsMode = gpuOptimizationsMode
             store.experimentalGameFixesEnabled = experimentalGameFixesEnabled
             store.nifmOfflineEnabled = nifmOfflineEnabled
+            store.webOfflineTermsEnabled = webOfflineTermsEnabled
             store.strictSyncMode = strictSyncMode
             store.save(
                 initial.apply {
@@ -195,6 +197,7 @@ fun GameSettingsPage(
         gpuOptimizationsMode = 0
         experimentalGameFixesEnabled = false
         nifmOfflineEnabled = false
+        webOfflineTermsEnabled = false
         strictSyncMode = 0
         driverOverride = ""
         languageOverride = ""
@@ -221,6 +224,7 @@ fun GameSettingsPage(
             SwitchSetting("PPTC", "Guarda o código já traduzido para abrir o jogo mais rápido.", enablePptc, custom) { enablePptc = it }
             SwitchSetting("Memory Slack (12 GiB)", "Mais memória para jogos que travam por falta dela.", memorySlack, custom) { memorySlack = it }
             SwitchSetting("Modo sem internet", "Para jogos que travam antes do gameplay esperando a rede (ex.: DOOM 2016).", nifmOfflineEnabled, custom) { nifmOfflineEnabled = it }
+            SwitchSetting("Termos offline", "Conclui a tela de termos do navegador offline em jogos que travam nela (ex.: BioShock).", webOfflineTermsEnabled, custom) { webOfflineTermsEnabled = it }
             ChoiceSetting(
                 "Modo do console",
                 null,

@@ -104,6 +104,9 @@
             set => _nifmOfflineEnabled = value;
         }
 
+        /// <summary>WEBOFF1: opcao por jogo "Termos offline" (applet offline conclui a tela de termos, ex.: BioShock). Desligada por padrao.</summary>
+        public static bool WebOfflineTermsEnabled { get; set; }
+
         /// <summary>TexturePool mantem invalido o slot com endereco 0 ao ser modificado.</summary>
         public static bool TexturePoolKeepInvalidEnabled { get; set; } = true;
 

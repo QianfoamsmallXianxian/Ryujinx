@@ -212,6 +212,8 @@ class MainViewModel(val activity: MainActivity) {
         val experimentalStore = GameSettingsStore(activity, game.titleId.orEmpty())
         KenjinxNative.deviceSetExperimentalGameFixes(experimentalStore.isEnabled && experimentalStore.experimentalGameFixesEnabled)
         KenjinxNative.deviceSetNifmOffline(experimentalStore.isEnabled && experimentalStore.nifmOfflineEnabled)
+        // Opcao por jogo "Termos offline" (BioShock).
+        KenjinxNative.deviceSetWebOfflineTerms(experimentalStore.isEnabled && experimentalStore.webOfflineTermsEnabled)
 
         KenjinxNative.deviceReinitEmulation()
         MainActivity.mainViewModel?.activity?.uiHandler = UiHandler()

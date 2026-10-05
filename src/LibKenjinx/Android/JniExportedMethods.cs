@@ -1352,5 +1352,12 @@ namespace LibKenjinx
         {
             Ryujinx.Common.Diagnostics.NeoGraphicsSettings.NifmOfflineEnabled = enable;
         }
+
+        // Opcao por jogo "Termos offline" (BioShock).
+        [UnmanagedCallersOnly(EntryPoint = "deviceSetWebOfflineTerms")]
+        public static void JniDeviceSetWebOfflineTerms(bool enable)
+        {
+            Ryujinx.Common.Diagnostics.NeoGraphicsSettings.WebOfflineTermsEnabled = enable;
+        }
     }
 }

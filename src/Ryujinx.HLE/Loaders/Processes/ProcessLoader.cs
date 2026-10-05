@@ -33,6 +33,15 @@ namespace Ryujinx.HLE.Loaders.Processes
             _processesByPid = new ConcurrentDictionary<ulong, ProcessResult>();
         }
 
+        // NEOV2-WEBOFF1: per-game option "Termos offline". The offline browser applet reads the game's HtmlDocument NCA from here.
+        private void RegisterOfflineHtml(IFileSystem partition)
+        {
+            if (Ryujinx.Common.Diagnostics.NeoGraphicsSettings.WebOfflineTermsEnabled)
+            {
+                HOS.Applets.Browser.NeoOfflineHtml.Register(partition, _device.Configuration.VirtualFileSystem.KeySet);
+            }
+        }
+
         public bool TryGetProcess(ulong pid, out ProcessResult process)
         {
             return _processesByPid.TryGetValue(pid, out process);
@@ -77,10 +86,12 @@ namespace Ryujinx.HLE.Loaders.Processes
             // NEOV2-NCZ1: XCZ (particao secure com NCZ) e carregado pelo PFS0 virtual.
             if (NczSupport.TryWrap(securePartition, out PartitionFileSystem nczPartition))
             {
+                RegisterOfflineHtml(nczPartition); // NEOV2-WEBOFF1
                 (success, processResult) = nczPartition.TryLoad(_device, stream, applicationId, out errorMessage);
             }
             else
             {
+                RegisterOfflineHtml(securePartition); // NEOV2-WEBOFF1
                 (success, processResult) = securePartition.TryLoad(_device, stream, applicationId, out errorMessage);
             }
 
@@ -121,6 +132,8 @@ namespace Ryujinx.HLE.Loaders.Processes
             {
                 partitionFileSystem = nczPartition;
             }
+
+            RegisterOfflineHtml(partitionFileSystem); // NEOV2-WEBOFF1
 
             (bool success, ProcessResult processResult) = partitionFileSystem.TryLoad(_device, stream, applicationId, out string errorMessage);
 
