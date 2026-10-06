@@ -90,6 +90,8 @@ namespace Ryujinx.Graphics.Vulkan
         private ArrayRef<ImageArray>[] _imageArrayExtraRefs;
 
         private readonly DescriptorBufferInfo[] _uniformBuffers;
+        private readonly DescriptorBufferInfo[] _uniformDynamicDescriptors;
+        private readonly uint[] _uniformDynamicOffsets;
         private readonly DescriptorBufferInfo[] _storageBuffers;
         private readonly DescriptorImageInfo[] _textures;
         private readonly DescriptorImageInfo[] _images;
@@ -106,6 +108,8 @@ namespace Ryujinx.Graphics.Vulkan
         private int _pdSequence = 1;
 
         private bool _updateDescriptorCacheCbIndex;
+        private DescriptorSet _lastUniformDescriptorSet;
+        private bool _lastUniformDescriptorSetValid;
 
         [Flags]
         private enum DirtyFlags
@@ -148,6 +152,8 @@ namespace Ryujinx.Graphics.Vulkan
             _imageArrayExtraRefs = [];
 
             _uniformBuffers = new DescriptorBufferInfo[Constants.MaxUniformBufferBindings];
+            _uniformDynamicDescriptors = new DescriptorBufferInfo[Constants.MaxUniformBufferBindings];
+            _uniformDynamicOffsets = new uint[Constants.MaxUniformBufferBindings];
             _storageBuffers = new DescriptorBufferInfo[Constants.MaxStorageBufferBindings];
             _textures = new DescriptorImageInfo[Constants.MaxTexturesPerStage];
             _images = new DescriptorImageInfo[Constants.MaxImagesPerStage];
@@ -377,7 +383,27 @@ namespace Ryujinx.Graphics.Vulkan
 
         public void SetProgram(CommandBufferScoped cbs, ShaderCollection program, bool isBound)
         {
-            if (!program.HasSameLayout(_program))
+            if (!Ryujinx.Common.Diagnostics.NeoGraphicsSettings.HugareOptimizationsEnabled)
+            {
+                if (!program.HasSameLayout(_program)) AdvancePdSequence();
+                _program = program;
+                _updateDescriptorCacheCbIndex = true;
+                _dirty |= DirtyFlags.All;
+                _lastUniformDescriptorSetValid = false;
+                return;
+            }
+
+            ShaderCollection previousProgram = _program;
+            bool sameLayout = program.HasSameLayout(previousProgram);
+            bool sameBindPoint = previousProgram != null && program.IsCompute == previousProgram.IsCompute;
+            DirtyFlags programDirty = DirtyFlags.All;
+
+            if (sameLayout && sameBindPoint && isBound)
+            {
+                programDirty = GetProgramSwitchDirtyFlags(previousProgram, program);
+            }
+
+            if (!sameLayout)
             {
                 // When the pipeline layout changes, push descriptor bindings are invalidated.
 
@@ -385,8 +411,72 @@ namespace Ryujinx.Graphics.Vulkan
             }
 
             _program = program;
-            _updateDescriptorCacheCbIndex = true;
-            _dirty = DirtyFlags.All;
+
+            if (programDirty != DirtyFlags.None)
+            {
+                _updateDescriptorCacheCbIndex = true;
+                _dirty |= programDirty;
+
+                if ((programDirty & DirtyFlags.Uniform) != 0)
+                {
+                    _lastUniformDescriptorSetValid = false;
+                }
+            }
+
+        }
+
+        // Descriptor sets remain bound across compatible Vulkan pipeline layouts. When
+        // the next program only uses segments already populated by the previous program,
+        // keep those sets bound instead of allocating and rewriting identical copies.
+        private static DirtyFlags GetProgramSwitchDirtyFlags(ShaderCollection previousProgram, ShaderCollection program)
+        {
+            DirtyFlags dirty = DirtyFlags.None;
+
+            for (int setIndex = 0; setIndex < PipelineBase.DescriptorSetLayouts; setIndex++)
+            {
+                if (setIndex >= previousProgram.BindingSegments.Length ||
+                    setIndex >= program.BindingSegments.Length ||
+                    !SegmentsCovered(previousProgram.BindingSegments[setIndex], program.BindingSegments[setIndex]))
+                {
+                    dirty |= setIndex switch
+                    {
+                        PipelineBase.UniformSetIndex => DirtyFlags.Uniform,
+                        PipelineBase.StorageSetIndex => DirtyFlags.Storage,
+                        PipelineBase.TextureSetIndex => DirtyFlags.Texture,
+                        PipelineBase.ImageSetIndex => DirtyFlags.Image,
+                        _ => DirtyFlags.All,
+                    };
+                }
+            }
+
+            return dirty;
+        }
+
+        private static bool SegmentsCovered(ResourceBindingSegment[] previousSegments, ResourceBindingSegment[] segments)
+        {
+            foreach (ResourceBindingSegment segment in segments)
+            {
+                bool found = false;
+
+                foreach (ResourceBindingSegment previousSegment in previousSegments)
+                {
+                    if (segment.Binding == previousSegment.Binding &&
+                        segment.Count == previousSegment.Count &&
+                        segment.Type == previousSegment.Type &&
+                        segment.IsArray == previousSegment.IsArray)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public void SetImage(CommandBufferScoped cbs, ShaderStage stage, int binding, ITexture image)
@@ -422,6 +512,8 @@ namespace Ryujinx.Graphics.Vulkan
 
         public void SetStorageBuffers(CommandBuffer commandBuffer, ReadOnlySpan<BufferAssignment> buffers)
         {
+            bool changed = false;
+
             for (int i = 0; i < buffers.Length; i++)
             {
                 BufferAssignment assignment = buffers[i];
@@ -450,14 +542,22 @@ namespace Ryujinx.Graphics.Vulkan
 
                     currentInfo = info;
                     currentBufferRef = newRef;
+                    changed = true;
                 }
             }
 
-            SignalDirty(DirtyFlags.Storage);
+            // NEOV2-DESCRIPTOR-DIRTY-DEDUP1: setting an identical binding must not
+            // allocate/update/bind another Vulkan descriptor set at the next draw.
+            if (changed)
+            {
+                SignalDirty(DirtyFlags.Storage);
+            }
         }
 
         public void SetStorageBuffers(CommandBuffer commandBuffer, int first, ReadOnlySpan<Auto<DisposableBuffer>> buffers)
         {
+            bool changed = false;
+
             for (int i = 0; i < buffers.Length; i++)
             {
                 Auto<DisposableBuffer> vkBuffer = buffers[i];
@@ -481,10 +581,14 @@ namespace Ryujinx.Graphics.Vulkan
 
                     currentInfo = info;
                     currentBufferRef = newRef;
+                    changed = true;
                 }
             }
 
-            SignalDirty(DirtyFlags.Storage);
+            if (changed)
+            {
+                SignalDirty(DirtyFlags.Storage);
+            }
         }
 
         public void SetTextureAndSampler(
@@ -631,6 +735,8 @@ namespace Ryujinx.Graphics.Vulkan
 
         public void SetUniformBuffers(CommandBuffer commandBuffer, ReadOnlySpan<BufferAssignment> buffers)
         {
+            bool changed = false;
+
             for (int i = 0; i < buffers.Length; i++)
             {
                 BufferAssignment assignment = buffers[i];
@@ -660,10 +766,14 @@ namespace Ryujinx.Graphics.Vulkan
 
                     currentInfo = info;
                     currentBufferRef = newRef;
+                    changed = true;
                 }
             }
 
-            SignalDirty(DirtyFlags.Uniform);
+            if (changed)
+            {
+                SignalDirty(DirtyFlags.Uniform);
+            }
         }
 
         private void SignalDirty(DirtyFlags flag)
@@ -688,7 +798,14 @@ namespace Ryujinx.Graphics.Vulkan
                 }
                 else
                 {
-                    UpdateAndBind(cbs, program, PipelineBase.UniformSetIndex, pbp);
+                    if (program.UseDynamicUniformBuffers)
+                    {
+                        UpdateAndBindDynamicUniformBuffers(cbs, program, pbp);
+                    }
+                    else
+                    {
+                        UpdateAndBind(cbs, program, PipelineBase.UniformSetIndex, pbp);
+                    }
                 }
             }
 
@@ -755,6 +872,131 @@ namespace Ryujinx.Graphics.Vulkan
             }
 
             return mirrored;
+        }
+
+        // NEOV2-DYNAMIC-UBO1
+        // Keep the VkBuffer and range in the descriptor set, and move the frequently
+        // changing byte offset to vkCmdBindDescriptorSets. This avoids allocating and
+        // rewriting a descriptor set when only a uniform offset changed.
+        private void UpdateAndBindDynamicUniformBuffers(
+            CommandBufferScoped cbs,
+            ShaderCollection program,
+            PipelineBindPoint pbp)
+        {
+            ResourceBindingSegment[] bindingSegments = program.BindingSegments[PipelineBase.UniformSetIndex];
+
+            if (bindingSegments.Length == 0)
+            {
+                return;
+            }
+
+            Auto<DisposableBuffer> dummyBuffer = _dummyBuffer?.GetBuffer();
+            bool descriptorChanged = !_lastUniformDescriptorSetValid;
+            int dynamicOffsetCount = 0;
+            Span<uint> dynamicOffsets = stackalloc uint[Constants.MaxUniformBufferBindings];
+            Span<uint> offsetsByBinding = stackalloc uint[Constants.MaxUniformBufferBindings];
+            offsetsByBinding.Clear();
+
+            foreach (ResourceBindingSegment segment in bindingSegments)
+            {
+                int binding = segment.Binding;
+                int count = segment.Count;
+
+                for (int i = 0; i < count; i++)
+                {
+                    int index = binding + i;
+                    bool needsResolve = _uniformSet.Set(index);
+
+                    if (needsResolve)
+                    {
+                        ref BufferRef buffer = ref _uniformBufferRefs[index];
+                        ref DescriptorBufferInfo resolved = ref _uniformBuffers[index];
+
+                        bool mirrored = UpdateBuffer(cbs, ref resolved, ref buffer, dummyBuffer, true);
+                        _uniformMirrored.Set(index, mirrored);
+                    }
+
+                    if (needsResolve || !_lastUniformDescriptorSetValid)
+                    {
+                        DescriptorBufferInfo resolved = _uniformBuffers[index];
+
+                        // Vulkan dynamic offsets are uint32. Preserve any upper bits in
+                        // the descriptor base offset so their sum is the original offset.
+                        ulong descriptorBaseOffset = resolved.Offset & ~((ulong)uint.MaxValue);
+                        uint dynamicOffset = (uint)(resolved.Offset - descriptorBaseOffset);
+
+                        DescriptorBufferInfo descriptor = new()
+                        {
+                            Buffer = resolved.Buffer,
+                            Offset = descriptorBaseOffset,
+                            Range = resolved.Range,
+                        };
+
+                        ref DescriptorBufferInfo currentDescriptor = ref _uniformDynamicDescriptors[index];
+                        bool resolvedDescriptorChanged =
+                            currentDescriptor.Buffer.Handle != descriptor.Buffer.Handle ||
+                            currentDescriptor.Offset != descriptor.Offset ||
+                            currentDescriptor.Range != descriptor.Range;
+
+                        descriptorChanged |= resolvedDescriptorChanged;
+                        currentDescriptor = descriptor;
+                        _uniformDynamicOffsets[index] = dynamicOffset;
+                    }
+
+                    offsetsByBinding[index] = _uniformDynamicOffsets[index];
+                }
+            }
+
+            // Include unused declared bindings with offset zero (their descriptor may be a dummy buffer).
+            foreach (ResourceBindingSegment segment in program.ClearSegments[PipelineBase.UniformSetIndex])
+            {
+                for (int i = 0; i < segment.Count; i++)
+                {
+                    dynamicOffsets[dynamicOffsetCount++] = offsetsByBinding[segment.Binding + i];
+                }
+            }
+
+            if (descriptorChanged)
+            {
+                if (_updateDescriptorCacheCbIndex)
+                {
+                    _updateDescriptorCacheCbIndex = false;
+                    program.UpdateDescriptorCacheCommandBufferIndex(cbs.CommandBufferIndex);
+                }
+
+                DescriptorSetCollection dsc = program.GetNewDescriptorSetCollection(
+                    PipelineBase.UniformSetIndex,
+                    out bool isNew).Get(cbs);
+
+                if (!program.HasMinimalLayout && isNew)
+                {
+                    Initialize(cbs, PipelineBase.UniformSetIndex, dsc);
+                }
+
+                DescriptorSetTemplateWriter tu = _templateUpdater.Begin(program.Templates[PipelineBase.UniformSetIndex]);
+
+                foreach (ResourceBindingSegment segment in bindingSegments)
+                {
+                    ReadOnlySpan<DescriptorBufferInfo> descriptors = _uniformDynamicDescriptors;
+                    tu.Push(descriptors.Slice(segment.Binding, segment.Count));
+                }
+
+                DescriptorSet[] sets = dsc.GetSets();
+                _templateUpdater.Commit(_gd, _device, sets[0]);
+
+                _lastUniformDescriptorSet = sets[0];
+                _lastUniformDescriptorSetValid = true;
+            }
+
+            _gd.Api.CmdBindDescriptorSets(
+                cbs.CommandBuffer,
+                pbp,
+                program.PipelineLayout,
+                PipelineBase.UniformSetIndex,
+                1,
+                MemoryMarshal.CreateReadOnlySpan(ref _lastUniformDescriptorSet, 1),
+                (uint)dynamicOffsetCount,
+                dynamicOffsets[..dynamicOffsetCount]);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1081,7 +1323,13 @@ namespace Ryujinx.Graphics.Vulkan
 
             foreach (ResourceBindingSegment segment in _program.ClearSegments[setIndex])
             {
-                dsc.InitializeBuffers(0, segment.Binding, segment.Count, segment.Type.Convert(), dummyBuffer);
+                DescriptorType descriptorType = _program.UseDynamicUniformBuffers &&
+                    setIndex == PipelineBase.UniformSetIndex &&
+                    segment.Type == ResourceType.UniformBuffer
+                        ? DescriptorType.UniformBufferDynamic
+                        : segment.Type.Convert();
+
+                dsc.InitializeBuffers(0, segment.Binding, segment.Count, descriptorType, dummyBuffer);
             }
         }
 
@@ -1138,6 +1386,7 @@ namespace Ryujinx.Graphics.Vulkan
         public void SignalCommandBufferChange()
         {
             _updateDescriptorCacheCbIndex = true;
+            _lastUniformDescriptorSetValid = false;
             _dirty = DirtyFlags.All;
 
             _uniformSet.Clear();

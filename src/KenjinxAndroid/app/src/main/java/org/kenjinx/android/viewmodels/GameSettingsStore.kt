@@ -109,6 +109,13 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             if (isValid) preferences.edit { putBoolean(key("webOfflineTermsEnabled"), value) }
         }
 
+    /** Otimização do Hugare: 0: Use Global, 1: Enabled, 2: Disabled */
+    var hugareOptimizationsMode: Int
+        get() = if (!isValid) 0 else preferences.getInt(key("hugareOptimizationsMode"), 0)
+        set(value) {
+            if (isValid) preferences.edit { putInt(key("hugareOptimizationsMode"), value) }
+        }
+
     /** Otimizacoes de GPU: 0: Use Global, 1: Enabled, 2: Disabled */
     var gpuOptimizationsMode: Int
         get() = if (!isValid) 0 else preferences.getInt(key("gpuOptimizationsMode"), 0)
@@ -186,6 +193,10 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             1 -> settings.enableAsyncLarge3DUpload = true
             2 -> settings.enableAsyncLarge3DUpload = false
         }
+        when (safeInt(key("hugareOptimizationsMode"), 0)) {
+            1 -> settings.enableHugareOptimizations = true
+            2 -> settings.enableHugareOptimizations = false
+        }
         when (safeInt(key("gpuOptimizationsMode"), 0)) {
             1 -> settings.enableGpuOptimizations = true
             2 -> settings.enableGpuOptimizations = false
@@ -238,6 +249,7 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             putInt(key("rejectUnmappedDescriptorsMode"), rejectUnmappedDescriptorsMode)
             putInt(key("asyncLarge3DUploadMode"), asyncLarge3DUploadMode)
             putInt(key("gpuOptimizationsMode"), gpuOptimizationsMode)
+            putInt(key("hugareOptimizationsMode"), hugareOptimizationsMode)
             putBoolean(key("experimentalGameFixesEnabled"), experimentalGameFixesEnabled)
             putBoolean(key("nifmOfflineEnabled"), nifmOfflineEnabled)
             putBoolean(key("webOfflineTermsEnabled"), webOfflineTermsEnabled)

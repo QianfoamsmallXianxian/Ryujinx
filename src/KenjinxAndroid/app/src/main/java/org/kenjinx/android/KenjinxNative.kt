@@ -103,6 +103,7 @@ interface KenjinxNativeJna : Library {
     fun deviceSetCommandFetchNoFlush(enable: Boolean)
     fun deviceSetTexelBufferExactOffset(enable: Boolean)
     fun deviceSetQueueHysteresis(enable: Boolean)
+    fun deviceSetHugareOptimizations(enable: Boolean)
     fun deviceSetTimelineLazy(enable: Boolean)
     fun deviceSetStagingBufferLock(enable: Boolean)
     fun deviceSetTexturePoolKeepInvalid(enable: Boolean)

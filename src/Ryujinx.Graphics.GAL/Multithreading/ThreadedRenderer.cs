@@ -24,6 +24,8 @@ namespace Ryujinx.Graphics.GAL.Multithreading
         private const int SpanPoolBytes = 8 * 1024 * 1024;
         private const int MaxRefsPerCommand = 2;
         private const int QueueCount = 10000;
+        private const int ConsumerBatchSize = 64;
+        private readonly bool _hugareOptimizations = Ryujinx.Common.Diagnostics.NeoGraphicsSettings.HugareOptimizationsEnabled;
 
         private readonly int _elementSize;
         private readonly IRenderer _baseRenderer;
@@ -122,20 +124,109 @@ namespace Ryujinx.Graphics.GAL.Multithreading
 
             _backendThread = Thread.CurrentThread;
 
-            _gpuThread = new Thread(gpuLoop)
+            _gpuThread = new Thread(() =>
+            {
+                if (_hugareOptimizations) BackendThreadAffinity.PinCurrentThreadToGpuCores();
+                gpuLoop();
+            })
             {
                 Name = "GPU.MainThread",
             };
 
             _gpuThread.Start();
 
-            // NEOV2 BACKEND-PRIME1: o backend Vulkan roda nesta thread; fixa no(s) nucleo(s) mais rapido(s).
-            BackendThreadAffinity.PinCurrentThreadToFastestCores();
+            // NEOV2 GPU-AFFINITY2: keep the backend away from a unique prime core
+            // reserved for GPU.MainThread.
+            if (_hugareOptimizations) BackendThreadAffinity.PinCurrentThreadToBackendCores();
+            else BackendThreadAffinity.PinCurrentThreadToFastestCores();
 
             RenderLoop();
         }
 
         public void RenderLoop()
+        {
+            if (!_hugareOptimizations)
+            {
+                RenderLoopLegacy();
+                return;
+            }
+
+            // Power through the render queue until the Gpu thread work is done.
+
+            while (_running)
+            {
+                _galWorkAvailable.Wait();
+                _galWorkAvailable.Reset();
+
+                if (Volatile.Read(ref _interruptAction) != null)
+                {
+                    _interruptAction?.Invoke();
+                    _interruptRun.Set();
+
+                    Interlocked.Exchange(ref _interruptAction, null);
+                }
+
+                // The other thread can only increase the command count.
+                // We can assume that if it is above 0, it will stay there or get higher.
+
+                while (Volatile.Read(ref _commandCount) > 0 && Volatile.Read(ref _interruptAction) == null)
+                {
+                    // NEOV2 GAL-CMDBATCH1: publish queue progress once for a small group of
+                    // commands instead of issuing a full-barrier atomic decrement for every
+                    // command. Interrupts are still checked between individual commands.
+                    int available = Math.Min(Volatile.Read(ref _commandCount), ConsumerBatchSize);
+                    int commandPtr = _consumerPtr;
+                    int processed = 0;
+
+                    while (processed < available && Volatile.Read(ref _interruptAction) == null)
+                    {
+                        Span<byte> command = new(_commandQueue, commandPtr * _elementSize, _elementSize);
+
+                        // Run the command.
+
+                        CommandHelper.RunCommand(command, this, _baseRenderer);
+
+                        // Invoke commands are rare. Avoid an exclusive ARM64 read/modify/write
+                        // on the overwhelmingly common asynchronous command path.
+                        if (Volatile.Read(ref _invokePtr) == commandPtr &&
+                            Interlocked.CompareExchange(ref _invokePtr, -1, commandPtr) == commandPtr)
+                        {
+                            _invokeRun.Set();
+                        }
+
+                        commandPtr++;
+
+                        if (commandPtr == QueueCount)
+                        {
+                            commandPtr = 0;
+                        }
+
+                        processed++;
+                    }
+
+                    // Publish the consumed slots before reducing the count. Interlocked.Add is
+                    // the release barrier observed by producers waiting for queue space.
+                    Volatile.Write(ref _consumerPtr, commandPtr);
+                    int remaining = Interlocked.Add(ref _commandCount, -processed);
+
+                    if (_queueHysteresis)
+                    {
+                        if (Volatile.Read(ref _producerWaiting) != 0 &&
+                            QueueCount - 1 - remaining >= QueueResumeFreeSlots &&
+                            Interlocked.Exchange(ref _producerWaiting, 0) != 0)
+                        {
+                            _queueSpaceAvailable.Set();
+                        }
+                    }
+                    else if (Volatile.Read(ref _producerWaiting) != 0)
+                    {
+                        _queueSpaceAvailable.Set();
+                    }
+                }
+            }
+        }
+
+        private void RenderLoopLegacy()
         {
             // Power through the render queue until the Gpu thread work is done.
 

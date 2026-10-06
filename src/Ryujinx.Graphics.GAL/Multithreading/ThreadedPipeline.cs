@@ -8,7 +8,17 @@ namespace Ryujinx.Graphics.GAL.Multithreading
 {
     public class ThreadedPipeline : IPipeline
     {
+        private const int MaxTrackedBlendStates = 8;
+        private const int MaxTrackedVertexAttributes = 32;
+
         private readonly ThreadedRenderer _renderer;
+        private readonly bool _hugareOptimizations = Ryujinx.Common.Diagnostics.NeoGraphicsSettings.HugareOptimizationsEnabled;
+        private readonly BlendDescriptor[] _lastBlendStates = new BlendDescriptor[MaxTrackedBlendStates];
+        private readonly bool[] _lastBlendStateValid = new bool[MaxTrackedBlendStates];
+        private readonly VertexAttribDescriptor[] _lastVertexAttribs = new VertexAttribDescriptor[MaxTrackedVertexAttributes];
+        private int _lastVertexAttribCount = -1;
+        private FrontFace _lastFrontFace;
+        private bool _lastFrontFaceValid;
 
         public ThreadedPipeline(ThreadedRenderer renderer)
         {
@@ -130,12 +140,29 @@ namespace Ryujinx.Graphics.GAL.Multithreading
 
         public unsafe void SetBlendState(AdvancedBlendDescriptor blend)
         {
+            // Advanced blending replaces the state for every target, so the
+            // per-target producer cache must be invalidated.
+            Array.Clear(_lastBlendStateValid);
             _renderer.New<SetBlendStateAdvancedCommand>()->Set(blend);
             _renderer.QueueCommand();
         }
 
         public unsafe void SetBlendState(int index, BlendDescriptor blend)
         {
+            if (!_hugareOptimizations)
+            {
+                _renderer.New<SetBlendStateCommand>()->Set(index, blend);
+                _renderer.QueueCommand();
+                return;
+            }
+
+            if (_lastBlendStateValid[index] && BlendStateEquals(_lastBlendStates[index], blend))
+            {
+                return;
+            }
+
+            _lastBlendStates[index] = blend;
+            _lastBlendStateValid[index] = true;
             _renderer.New<SetBlendStateCommand>()->Set(index, blend);
             _renderer.QueueCommand();
         }
@@ -172,6 +199,20 @@ namespace Ryujinx.Graphics.GAL.Multithreading
 
         public unsafe void SetFrontFace(FrontFace frontFace)
         {
+            if (!_hugareOptimizations)
+            {
+                _renderer.New<SetFrontFaceCommand>()->Set(frontFace);
+                _renderer.QueueCommand();
+                return;
+            }
+
+            if (_lastFrontFaceValid && _lastFrontFace == frontFace)
+            {
+                return;
+            }
+
+            _lastFrontFace = frontFace;
+            _lastFrontFaceValid = true;
             _renderer.New<SetFrontFaceCommand>()->Set(frontFace);
             _renderer.QueueCommand();
         }
@@ -331,8 +372,37 @@ namespace Ryujinx.Graphics.GAL.Multithreading
 
         public unsafe void SetVertexAttribs(ReadOnlySpan<VertexAttribDescriptor> vertexAttribs)
         {
+            if (!_hugareOptimizations)
+            {
+                _renderer.New<SetVertexAttribsCommand>()->Set(_renderer.CopySpan(vertexAttribs));
+                _renderer.QueueCommand();
+                return;
+            }
+
+            int count = Math.Min(MaxTrackedVertexAttributes, vertexAttribs.Length);
+            ReadOnlySpan<VertexAttribDescriptor> relevantAttribs = vertexAttribs[..count];
+
+            if (vertexAttribs.Length <= MaxTrackedVertexAttributes && _lastVertexAttribCount == count && relevantAttribs.SequenceEqual(_lastVertexAttribs.AsSpan(0, count)))
+            {
+                return;
+            }
+
+            relevantAttribs.CopyTo(_lastVertexAttribs);
+            _lastVertexAttribCount = vertexAttribs.Length <= MaxTrackedVertexAttributes ? count : -1;
             _renderer.New<SetVertexAttribsCommand>()->Set(_renderer.CopySpan(vertexAttribs));
             _renderer.QueueCommand();
+        }
+
+        private static bool BlendStateEquals(BlendDescriptor left, BlendDescriptor right)
+        {
+            return left.Enable == right.Enable &&
+                   left.BlendConstant == right.BlendConstant &&
+                   left.ColorOp == right.ColorOp &&
+                   left.ColorSrcFactor == right.ColorSrcFactor &&
+                   left.ColorDstFactor == right.ColorDstFactor &&
+                   left.AlphaOp == right.AlphaOp &&
+                   left.AlphaSrcFactor == right.AlphaSrcFactor &&
+                   left.AlphaDstFactor == right.AlphaDstFactor;
         }
 
         public unsafe void SetVertexBuffers(ReadOnlySpan<VertexBufferDescriptor> vertexBuffers)

@@ -79,6 +79,8 @@ class QuickSettings(val activity: Activity) {
     // NEOV2-GPUMEM1: memoria de GPU estilo Eden. Ligada por padrao; pode ser desligada por jogo.
     var enableEdenGpuMemory: Boolean
 
+    var enableHugareOptimizations: Boolean
+
     // NEOV2-AUDIO1: amplificacao do audio (1.0 = 100%, 2.0 = 200%).
     var audioBoost: Float
 
@@ -183,6 +185,7 @@ class QuickSettings(val activity: Activity) {
         enableRelaxedDmaCopy = sharedPref.getBoolean("enableRelaxedDmaCopy", false)
         enableVp9FFmpeg = sharedPref.getBoolean("enableVp9FFmpeg", true)
         enableEdenGpuMemory = sharedPref.getBoolean("enableEdenGpuMemory", true)
+        enableHugareOptimizations = sharedPref.getBoolean("enableHugareOptimizations", false)
         audioBoost = sharedPref.getFloat("audioBoost", 1f).coerceIn(1f, 2f)
         drawFlushMode = sharedPref.getInt("drawFlushMode", 0)
         bufferReadbackMode = sharedPref.getInt("bufferReadbackMode", 0)
@@ -280,6 +283,7 @@ class QuickSettings(val activity: Activity) {
             putBoolean("enableRelaxedDmaCopy", enableRelaxedDmaCopy)
             putBoolean("enableVp9FFmpeg", enableVp9FFmpeg)
             putBoolean("enableEdenGpuMemory", enableEdenGpuMemory)
+            putBoolean("enableHugareOptimizations", enableHugareOptimizations)
             putFloat("audioBoost", audioBoost)
             putBoolean("enableRejectUnmappedDescriptors", enableRejectUnmappedDescriptors)
             putBoolean("enableAsyncLarge3DUpload", enableAsyncLarge3DUpload)

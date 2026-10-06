@@ -1134,8 +1134,9 @@ namespace Ryujinx.Graphics.Gpu.Engine.Threed
                 GpuVa endAddress = vertexBufferEndAddressSpan[index];
 
                 ulong address = vertexBuffer.Address.Pack();
+                bool mapped = _channel.MemoryManager.IsMapped(address);
 
-                if (_channel.MemoryManager.IsMapped(address))
+                if (mapped)
                 {
                     vbEnableMask |= 1u << index;
                 }
@@ -1196,7 +1197,7 @@ namespace Ryujinx.Graphics.Gpu.Engine.Threed
                     size = Math.Min(vbSize, (ulong)((firstInstance + drawFirstVertex + drawVertexCount) * stride));
                 }
 
-                vertexBuffersSpan[index] = new BufferPipelineDescriptor(_channel.MemoryManager.IsMapped(address), stride, divisor);
+                vertexBuffersSpan[index] = new BufferPipelineDescriptor(Ryujinx.Common.Diagnostics.NeoGraphicsSettings.HugareOptimizationsEnabled ? mapped : _channel.MemoryManager.IsMapped(address), stride, divisor);
                 _channel.BufferManager.SetVertexBuffer(index, address, size, stride, divisor);
             }
 

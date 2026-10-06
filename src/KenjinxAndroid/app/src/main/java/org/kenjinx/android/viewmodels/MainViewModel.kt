@@ -305,6 +305,9 @@ class MainViewModel(val activity: MainActivity) {
             KenjinxNative.deviceSetAsyncLarge3DTextureUpload(settings.enableAsyncLarge3DUpload)
         } catch (_: Throwable) {
         }
+        // Reset the effective Hugare setting for every launch, including shortcuts.
+        KenjinxNative.deviceSetHugareOptimizations(settings.enableHugareOptimizations)
+
         // Opcao "Otimizacoes de GPU", antes de criar o renderer. TEXBUF-ALIGN1 e correcao e fica sempre ligado.
         try {
             KenjinxNative.deviceSetTurnipFence(settings.enableGpuOptimizations)
@@ -486,6 +489,9 @@ class MainViewModel(val activity: MainActivity) {
             KenjinxNative.deviceSetAsyncLarge3DTextureUpload(settings.enableAsyncLarge3DUpload)
         } catch (_: Throwable) {
         }
+        // Reset the effective Hugare setting for every launch, including shortcuts.
+        KenjinxNative.deviceSetHugareOptimizations(settings.enableHugareOptimizations)
+
         // Opcao "Otimizacoes de GPU", antes de criar o renderer. TEXBUF-ALIGN1 e correcao e fica sempre ligado.
         try {
             KenjinxNative.deviceSetTurnipFence(settings.enableGpuOptimizations)

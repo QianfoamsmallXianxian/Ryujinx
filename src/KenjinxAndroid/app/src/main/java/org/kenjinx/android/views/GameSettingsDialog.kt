@@ -102,6 +102,7 @@ fun GameSettingsPage(
     var edenGpuMemoryMode by remember(titleId) { mutableStateOf(store.edenGpuMemoryMode) }
     var rejectUnmappedDescriptorsMode by remember(titleId) { mutableStateOf(store.rejectUnmappedDescriptorsMode) }
     var asyncLarge3DUploadMode by remember(titleId) { mutableStateOf(store.asyncLarge3DUploadMode) }
+    var hugareOptimizationsMode by remember(titleId) { mutableStateOf(store.hugareOptimizationsMode) }
     var gpuOptimizationsMode by remember(titleId) { mutableStateOf(store.gpuOptimizationsMode) }
     var experimentalGameFixesEnabled by remember(titleId) { mutableStateOf(store.experimentalGameFixesEnabled) }
     var nifmOfflineEnabled by remember(titleId) { mutableStateOf(store.nifmOfflineEnabled) }
@@ -134,6 +135,7 @@ fun GameSettingsPage(
             store.rejectUnmappedDescriptorsMode = rejectUnmappedDescriptorsMode
             store.asyncLarge3DUploadMode = asyncLarge3DUploadMode
             store.gpuOptimizationsMode = gpuOptimizationsMode
+            store.hugareOptimizationsMode = hugareOptimizationsMode
             store.experimentalGameFixesEnabled = experimentalGameFixesEnabled
             store.nifmOfflineEnabled = nifmOfflineEnabled
             store.webOfflineTermsEnabled = webOfflineTermsEnabled
@@ -195,6 +197,7 @@ fun GameSettingsPage(
         rejectUnmappedDescriptorsMode = 0
         asyncLarge3DUploadMode = 0
         gpuOptimizationsMode = 0
+        hugareOptimizationsMode = 0
         experimentalGameFixesEnabled = false
         nifmOfflineEnabled = false
         webOfflineTermsEnabled = false
@@ -299,6 +302,7 @@ fun GameSettingsPage(
             SwitchSetting("Compatibilidade gráfica 2D", "Corrige tela preta e escala em jogos 2D.", experimentalGameFixesEnabled, custom) { experimentalGameFixesEnabled = it }
             ChoiceSetting("Proteção de memória NCE", "Corrige tela preta em alguns jogos (ex.: MUA3).", globalOnOff, nceTrackingProtectionMode, custom) { nceTrackingProtectionMode = it }
             ChoiceSetting("Otimizações de GPU", null, globalOnOff, gpuOptimizationsMode, custom) { gpuOptimizationsMode = it }
+            ChoiceSetting("Otimização do Hugare", "Pode melhorar o desempenho ou causar lentidão e travamentos, dependendo do jogo. Requer reiniciar o jogo.", globalOnOff, hugareOptimizationsMode, custom) { hugareOptimizationsMode = it }
             ChoiceSetting("VTG via Compute", null, globalOnOff, vtgViaComputeMode, custom) { vtgViaComputeMode = it }
             ChoiceSetting("VP9 pelo FFmpeg", "Desligue se o vídeo do jogo ficar com erros (ex.: GRID Autosport).", globalOnOff, vp9FFmpegMode, custom) { vp9FFmpegMode = it }
             ChoiceSetting("Cópia DMA relaxada", "Mais desempenho em alguns jogos (ex.: Diablo II); pode causar erros gráficos.", globalOnOff, relaxedDmaCopyMode, custom) { relaxedDmaCopyMode = it }

@@ -375,6 +375,7 @@ class SettingViews {
             val enableRelaxedDmaCopy = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableRelaxedDmaCopy) }
             val enableVp9FFmpeg = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableVp9FFmpeg) }
             val enableEdenGpuMemory = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableEdenGpuMemory) }
+            val enableHugareOptimizations = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableHugareOptimizations) }
             val audioBoost = remember { mutableFloatStateOf(QuickSettings(mainViewModel.activity).audioBoost) }
             val enableRejectUnmappedDescriptors = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableRejectUnmappedDescriptors) }
             val enableAsyncLarge3DUpload = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableAsyncLarge3DUpload) }
@@ -702,6 +703,7 @@ class SettingViews {
                 qs.enableRelaxedDmaCopy = enableRelaxedDmaCopy.value
                 qs.enableVp9FFmpeg = enableVp9FFmpeg.value
                 qs.enableEdenGpuMemory = enableEdenGpuMemory.value
+                qs.enableHugareOptimizations = enableHugareOptimizations.value
                 qs.audioBoost = audioBoost.floatValue
                 qs.enableRejectUnmappedDescriptors = enableRejectUnmappedDescriptors.value
                 qs.enableAsyncLarge3DUpload = enableAsyncLarge3DUpload.value
@@ -1455,6 +1457,17 @@ class SettingViews {
                                                 val qsRelaxedDma = QuickSettings(mainViewModel.activity)
                                                 qsRelaxedDma.enableRelaxedDmaCopy = it
                                                 qsRelaxedDma.save()
+                                            }
+                                        )
+                                        HighContrastToggle(
+                                            title = "Otimização do Hugare",
+                                            description = "Melhorias gráficas que podem aumentar o desempenho em alguns jogos, mas causar lentidão ou travamentos em outros. Desligada por padrão; também pode ser ajustada por jogo. Requer reiniciar o jogo.",
+                                            checked = enableHugareOptimizations.value,
+                                            onCheckedChange = {
+                                                enableHugareOptimizations.value = it
+                                                val qsHugare = QuickSettings(mainViewModel.activity)
+                                                qsHugare.enableHugareOptimizations = it
+                                                qsHugare.save()
                                             }
                                         )
                                         HighContrastToggle(

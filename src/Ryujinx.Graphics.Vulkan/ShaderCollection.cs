@@ -20,6 +20,7 @@ namespace Ryujinx.Graphics.Vulkan
 
         public bool HasMinimalLayout { get; }
         public bool UsePushDescriptors { get; }
+        public bool UseDynamicUniformBuffers => _plce.UseDynamicUniformBuffers;
         public bool IsCompute { get; }
         public bool HasTessellationControlShader => (Stages & (1u << 3)) != 0;
 
@@ -119,6 +120,7 @@ namespace Ryujinx.Graphics.Vulkan
                 _gd.Capabilities.SupportsPushDescriptors &&
                 !IsCompute &&
                 !HasPushDescriptorsBug(gd) &&
+                (!Ryujinx.Common.Diagnostics.NeoGraphicsSettings.HugareOptimizationsEnabled || !gd.IsTurnip) &&
                 CanUsePushDescriptors(gd, resourceLayout, IsCompute);
 
             ReadOnlyCollection<ResourceDescriptorCollection> sets = usePushDescriptors ?
@@ -130,7 +132,7 @@ namespace Ryujinx.Graphics.Vulkan
             UsePushDescriptors = usePushDescriptors;
 
             Stages = stages;
-            bool hasBatchedTextureSamplerBug = false;//gd.Vendor == Vendor.Qualcomm;
+            bool hasBatchedTextureSamplerBug = Ryujinx.Common.Diagnostics.NeoGraphicsSettings.HugareOptimizationsEnabled && gd.Vendor == Vendor.Qualcomm;
 
             ClearSegments = BuildClearSegments(sets);
             BindingSegments = BuildBindingSegments(resourceLayout.SetUsages, hasBatchedTextureSamplerBug, out bool usesBufferTextures);

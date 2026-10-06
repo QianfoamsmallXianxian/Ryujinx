@@ -72,6 +72,15 @@
         /// <summary>Per game override as selected by the user, or null when "use global" is selected. Log only.</summary>
         public static StrictSyncMode? StrictSyncGameOverride { get; set; }
 
+        // Resolved before each game creates its graphics resources; requires restarting the game.
+        private static bool _hugareOptimizationsEnabled;
+
+        public static bool HugareOptimizationsEnabled
+        {
+            get => System.Threading.Volatile.Read(ref _hugareOptimizationsEnabled);
+            set => System.Threading.Volatile.Write(ref _hugareOptimizationsEnabled, value);
+        }
+
         // Opcao por jogo "Otimizacoes de GPU": desligada, estas otimizacoes voltam ao comportamento anterior.
         // Todas com padrao ligado. Lidas quando o renderer e criado.
 

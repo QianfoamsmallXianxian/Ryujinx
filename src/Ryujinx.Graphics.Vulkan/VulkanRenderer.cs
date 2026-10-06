@@ -120,6 +120,11 @@ namespace Ryujinx.Graphics.Vulkan
         internal bool IsTBDR { get; private set; }
         internal bool IsSharedMemory { get; private set; }
 
+        // NEOV2-DYNAMIC-UBO1: Used to keep dynamic uniform layouts within the
+        // limit advertised by the active Vulkan device.
+        internal uint MaxDynamicUniformBuffers =>
+            _physicalDevice.PhysicalDeviceProperties.Limits.MaxDescriptorSetUniformBuffersDynamic;
+
         public string GpuVendor { get; private set; }
         public string GpuDriver { get; private set; }
         public string GpuRenderer { get; private set; }

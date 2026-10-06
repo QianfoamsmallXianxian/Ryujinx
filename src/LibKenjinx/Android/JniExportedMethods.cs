@@ -1245,6 +1245,12 @@ namespace LibKenjinx
             Ryujinx.Common.Diagnostics.NeoGraphicsSettings.TexelBufferExactOffsetEnabled = enable;
         }
 
+        [UnmanagedCallersOnly(EntryPoint = "deviceSetHugareOptimizations")]
+        public static void JniDeviceSetHugareOptimizations(bool enable)
+        {
+            Ryujinx.Common.Diagnostics.NeoGraphicsSettings.HugareOptimizationsEnabled = enable;
+        }
+
         [UnmanagedCallersOnly(EntryPoint = "deviceSetQueueHysteresis")]
         public static void JniDeviceSetQueueHysteresis(bool enable)
         {

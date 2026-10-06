@@ -3,6 +3,7 @@ using Ryujinx.Memory.Range;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace Ryujinx.Graphics.Gpu.Memory
 {
@@ -31,6 +32,19 @@ namespace Ryujinx.Graphics.Gpu.Memory
 
         private const ulong MaxDynamicGrowthSize = 0x100000;
 
+        private readonly bool _hugareOptimizations = Ryujinx.Common.Diagnostics.NeoGraphicsSettings.HugareOptimizationsEnabled;
+        private const int TranslationCacheSize = 2048;
+        private const int TranslationCacheMask = TranslationCacheSize - 1;
+
+        private struct TranslationCacheEntry
+        {
+            public MemoryManager MemoryManager;
+            public ulong GpuVa;
+            public ulong Size;
+            public ulong Address;
+            public int Sequence;
+        }
+
         private readonly GpuContext _context;
         private readonly PhysicalMemory _physicalMemory;
 
@@ -43,7 +57,9 @@ namespace Ryujinx.Graphics.Gpu.Memory
 
         private readonly Dictionary<ulong, BufferCacheEntry> _dirtyCache;
         private readonly Dictionary<ulong, BufferCacheEntry> _modifiedCache;
+        private readonly TranslationCacheEntry[] _translationCache;
         private bool _pruneCaches;
+        private int _translationCacheSequence;
         private int _virtualModifiedSequenceNumber;
 
         // NEOV2-GPUMEM1: Eden-style buffer garbage collection ("Memoria de GPU estilo Eden").
@@ -65,6 +81,7 @@ namespace Ryujinx.Graphics.Gpu.Memory
             _multiRangeBuffers = [];
 
             _dirtyCache = new Dictionary<ulong, BufferCacheEntry>();
+            _translationCache = new TranslationCacheEntry[TranslationCacheSize];
 
             // There are a lot more entries on the modified cache, so it is separate from the one for ForceDirty.
             _modifiedCache = new Dictionary<ulong, BufferCacheEntry>();
@@ -108,7 +125,35 @@ namespace Ryujinx.Graphics.Gpu.Memory
                 return new MultiRange(MemoryManager.PteUnmapped, size);
             }
 
-            ulong address = memoryManager.Translate(gpuVa);
+            ulong address;
+
+            if (_hugareOptimizations)
+            {
+                int sequence = Volatile.Read(ref _translationCacheSequence);
+                int cacheIndex = (int)(((gpuVa >> 8) ^ (gpuVa >> 20)) & TranslationCacheMask);
+                ref TranslationCacheEntry entry = ref _translationCache[cacheIndex];
+
+                if (entry.Sequence == sequence &&
+                    ReferenceEquals(entry.MemoryManager, memoryManager) &&
+                    entry.GpuVa == gpuVa &&
+                    entry.Size == size)
+                {
+                    address = entry.Address;
+                }
+                else
+                {
+                    address = memoryManager.Translate(gpuVa);
+                    entry.MemoryManager = memoryManager;
+                    entry.GpuVa = gpuVa;
+                    entry.Size = size;
+                    entry.Address = address;
+                    entry.Sequence = sequence;
+                }
+            }
+            else
+            {
+                address = memoryManager.Translate(gpuVa);
+            }
 
             if (address != MemoryManager.PteUnmapped)
             {
@@ -1124,6 +1169,7 @@ namespace Ryujinx.Graphics.Gpu.Memory
         public void QueuePrune()
         {
             _pruneCaches = true;
+            Interlocked.Increment(ref _translationCacheSequence);
         }
 
         /// <summary>
