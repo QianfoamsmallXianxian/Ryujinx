@@ -1,15 +1,23 @@
 # Ryujinx Neo Current — changelog e funcionalidades
 
-- **Versão no código:** Android 0.0.24 (`versionCode 20138`)
+- **Versão no código:** Android 0.0.25 (`versionCode 20139`)
 - **Branch analisada:** [`neo-v2-nce2`](https://github.com/Sunshinin11/Ryujinx_Neo/tree/neo-v2-nce2)
-- **Estado remoto do código:** mudanças funcionais publicadas até 05/10/2026 na branch GitHub
-- **Último commit de código publicado:** [`1178c711e`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/1178c711e9f07a9b9dde12b90ee42f3ee5eb68db), de 05/10/2026
+- **Estado remoto do código:** mudanças funcionais publicadas até 06/10/2026 na branch GitHub
+- **Último commit de código publicado:** [`dddc0f080`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/dddc0f0803cd804eea1240d6f9690aac2b5be732), de 06/10/2026
 - **Mudanças funcionais de 28/09:** publicadas em cinco commits integrados à branch [`neo-v2-nce2`](https://github.com/Sunshinin11/Ryujinx_Neo/tree/neo-v2-nce2)
-- **Data da revisão:** 05/10/2026
+- **Data da revisão:** 06/10/2026
 
-Este texto cobre **somente a linha Ryujinx Neo Current em `neo-v2-nce2`**. A linha histórica `neo-v2-fase1` e o trabalho Linux ARM64 do Hugare não fazem parte deste changelog. A análise combinou o histórico publicado, o [relatório técnico](docs/RELATORIO_COMPLETO_RYUJINX_NEO.md) e os commits de código até `1178c711e`. Esta revisão descreve o estado publicado da Current no GitHub.
+Este texto cobre **somente a linha Ryujinx Neo Current em `neo-v2-nce2`**. A linha histórica `neo-v2-fase1` e o trabalho Linux ARM64 do Hugare não fazem parte deste changelog. A análise combinou o histórico publicado, o [relatório técnico](docs/RELATORIO_COMPLETO_RYUJINX_NEO.md) e os commits de código até `dddc0f080`. Esta revisão descreve o estado publicado da Current no GitHub.
 
 ## Changelog do Neo Current
+
+### 6 de outubro — Otimização do Hugare, global e por jogo
+
+- **Otimização do Hugare:** nova opção global e por jogo, desligada por padrão, com herança da configuração global e aplicação antes da criação dos recursos gráficos. A alteração exige reiniciar o jogo. [Commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/dddc0f0803cd804eea1240d6f9690aac2b5be732)
+- **Fila gráfica e CPU:** consumo de comandos GAL em lotes de até 64, eliminação de estados gráficos repetidos e distribuição das threads produtora e de backend entre núcleos de desempenho quando elegível. [Commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/dddc0f0803cd804eea1240d6f9690aac2b5be732)
+- **Buffers de GPU:** cache de traduções de endereços, reutilização de bindings e eliminação de sincronizações repetidas de faixas iguais de buffers uniformes, com invalidação quando os mapeamentos mudam. [Commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/dddc0f0803cd804eea1240d6f9690aac2b5be732)
+- **Descritores Vulkan:** reutilização de layouts compatíveis, atualização apenas de bindings alterados e buffers uniformes com offsets dinâmicos dentro dos limites da GPU. Com a opção ligada, o Turnip deixa de usar push descriptors e o caminho Qualcomm recebe o tratamento de agrupamento de texturas. [Commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/dddc0f0803cd804eea1240d6f9690aac2b5be732)
+- **Android 0.0.25:** versão no código atualizada para `0.0.25`, com `versionCode 20139`. [Commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/dddc0f0803cd804eea1240d6f9690aac2b5be732)
 
 ### 5 de outubro — termos offline por jogo (BioShock)
 

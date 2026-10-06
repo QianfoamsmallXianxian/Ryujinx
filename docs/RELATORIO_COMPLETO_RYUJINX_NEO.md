@@ -3,7 +3,7 @@
 - **Projeto:** Ryujinx Neo, fork Android derivado do Kenji-NX
 - **Repositório:** [Sunshinin11/Ryujinx_Neo](https://github.com/Sunshinin11/Ryujinx_Neo)
 - **Branch analisada:** `neo-v2-nce2` no GitHub
-- **Último código publicado:** [`1178c711e`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/1178c711e9f07a9b9dde12b90ee42f3ee5eb68db) (05/10/2026)
+- **Último código publicado:** [`dddc0f080`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/dddc0f0803cd804eea1240d6f9690aac2b5be732) (06/10/2026)
 - **Código das mudanças de 28/09 publicado:** cinco commits integrados ao GitHub em 29/09/2026
 - **Mudança de 29/09:** caminho VP9 via FFmpeg e otimizações NEON no NVDEC, publicado no GitHub
 - **Mudança de 30/09:** correções VP9, controle do caminho FFmpeg, atalho de saída, áudio, idioma, pilha e teclado, publicada no GitHub
@@ -12,18 +12,19 @@
 - **Mudanças de 03/10:** promoção NCE e melhorias Android de mods, idioma e arquivos comprimidos
 - **Mudanças de 04/10:** compatibilidade NCE, áudio OpenAL e gerenciamento de memória da GPU publicados na Current
 - **Mudanças de 05/10:** opção por jogo “Termos offline” para o applet de navegador offline, com BioShock como caso de compatibilidade
-- **Data desta revisão:** 05/10/2026
-- **Versão Android no código:** `0.0.24`, `versionCode 20138` ([build.gradle](https://github.com/Sunshinin11/Ryujinx_Neo/blob/neo-v2-nce2/src/KenjinxAndroid/app/build.gradle))
+- **Mudanças de 06/10:** Otimização do Hugare em GPU, fila GAL e descritores Vulkan, global e por jogo, desligada por padrão
+- **Data desta revisão:** 06/10/2026
+- **Versão Android no código:** `0.0.25`, `versionCode 20139` ([build.gradle](https://github.com/Sunshinin11/Ryujinx_Neo/blob/neo-v2-nce2/src/KenjinxAndroid/app/build.gradle))
 - **Dispositivo histórico de referência:** AYN Thor, Snapdragon 8 Gen 2, Adreno 740
 - **Plataforma em foco:** Android arm64-v8a / Linux Bionic, Vulkan em Turnip/Adreno
 
-> As seções 5–10 e as métricas por jogo preservam o histórico até 20/09. As seções 11–17 registram as mudanças do Current publicadas até 05/10, distinguindo o que os commits relatam das medições históricas. Esta revisão descreve somente o código da Current e não repetiu testes de jogos.
+> As seções 5–10 e as métricas por jogo preservam o histórico até 20/09. As seções 11–17 registram as mudanças do Current publicadas até 06/10, distinguindo o que os commits relatam das medições históricas. Esta revisão descreve somente o código da Current e não repetiu testes de jogos.
 
 ---
 
 ## 1. Resumo executivo
 
-O Ryujinx Neo é um fork Android do Kenji-NX com trabalho próprio no backend Vulkan, NCE, compatibilidade gráfica e interface. A linha **Neo Current** está em `neo-v2-nce2`; o código Android declara versão `0.0.24` (`versionCode 20138`). O [changelog](../CHANGELOG.md) lista as mudanças por período, incluindo o trabalho funcional de 28/09 publicado na branch.
+O Ryujinx Neo é um fork Android do Kenji-NX com trabalho próprio no backend Vulkan, NCE, compatibilidade gráfica e interface. A linha **Neo Current** está em `neo-v2-nce2`; o código Android declara versão `0.0.25` (`versionCode 20139`). O [changelog](../CHANGELOG.md) lista as mudanças por período, incluindo o trabalho funcional de 28/09 publicado na branch.
 
 As frentes implementadas na branch incluem:
 
@@ -717,6 +718,18 @@ A promoção de 03/10 não inclui `NceTelemetry`, timers, sessões e contadores 
 
 ---
 
+### 14.4 Otimização do Hugare — 06/10
+
+O commit [`dddc0f080`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/dddc0f0803cd804eea1240d6f9690aac2b5be732) integra à Current as otimizações gráficas estudadas na proposta Linux ARM64 do Hugare. A opção **Otimização do Hugare** aparece nas configurações globais e no perfil por Title ID, com os modos herdar global, ligado e desligado. Vem desligada por padrão, é independente da opção anterior **Otimizacoes de GPU** e exige reiniciar o jogo.
+
+- **Produção e consumo GAL:** evita reenviar estados de blend, front face e atributos de vértices iguais; o blend avançado invalida o cache correspondente. O consumidor processa até 64 comandos por lote, preservando as verificações de interrupção e o tratamento de chamadas síncronas.
+- **Afinidade:** tenta distribuir a thread principal da GPU e o backend por núcleos de desempenho elegíveis, respeitando a disponibilidade dos núcleos; mantém o caminho anterior quando a opção está desligada.
+- **Buffers:** reutiliza traduções e bindings de buffers uniformes e evita sincronizar a mesma faixa física repetidamente na passagem gráfica. Os caches são invalidados na troca de gerenciador ou no remapeamento de memória.
+- **Vulkan:** reutiliza descritores entre programas com layouts e segmentos compatíveis, evita marcar bindings idênticos como alterados e usa buffers uniformes dinâmicos quando o dispositivo comporta o layout. O caminho opcional também desativa push descriptors no Turnip e habilita o tratamento de agrupamento de texturas Qualcomm.
+- **Integração Android:** a escolha efetiva global/por jogo é enviada ao core antes de criar os recursos gráficos. A versão passa a `0.0.25`, `versionCode 20139`.
+
+O commit acrescenta testes de regressão para ordem dos comandos, interrupções, chamadas síncronas e invalidação dos estados em cache. Não altera o NCE nem importa os patches específicos de jogos da proposta Linux.
+
 ## 15. Metodologia de benchmark recomendada
 
 Para transformar o histórico em evidência de release:
@@ -882,6 +895,7 @@ Preservar a metodologia da seção 15: mesmo save e driver, cache frio/quente se
 
 | Commit | Descrição |
 |---|---|
+| [`dddc0f080`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/dddc0f0803cd804eea1240d6f9690aac2b5be732) | Otimização do Hugare global/por jogo, desligada por padrão; fila GAL, buffers e descritores Vulkan; Android 0.0.25 |
 | `4c5abb58f` | Port da correção MUA3 V29 geometry-as-compute |
 | `e564bb060` | Consolidação inicial das otimizações Vulkan e Memory Slack |
 | `f8d0b8e06` | Snapshot do MUA3 anterior ao NCE Neo 2 |
@@ -952,3 +966,5 @@ Preservar a metodologia da seção 15: mesmo save e driver, cache frio/quente se
 O Ryujinx Neo Current não parou nas alterações de 27/09. Em 28/09, o checkout Current recebeu mudanças funcionais em interface Android, DLC/atualizações, NIFM por jogo, NCE, limite de memória, logs e envio seletivo de texturas 2D grandes. O código foi organizado e publicado em cinco commits na branch GitHub em 29/09 (`339470edc`, `526f03540`, `dc519b29b`, `6283a0ca4` e `e39e26833`).
 
 Em 29/09, o commit [`d805ae2bf`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/d805ae2bf214f1906183c61861da2f1bbed856f3) acrescentou VP9 via FFmpeg e otimizações NEON no ARM64. Em 30/09, [`6c51417ab`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/6c51417ab065d72271b217f3e150c618861c1498) corrigiu o decodificador VP9 em C#, expôs a escolha global/por jogo e acrescentou atalho de saída, volume, prioridade de idioma, ajuste de pilha e fallback de teclado. Em 01/10, [`4597726eb`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/4597726ebe979df02831dcc6acfc69ee5a3c3ca3) passou o atalho para retorno à biblioteca e protegeu o fechamento duplicado, enquanto [`abd14ca31`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/abd14ca31b225b55930384744efd884f73efe8f0) adicionou NSZ/XCZ e a conversão NSP para NSZ. Ainda em 01/10, [`d24e22d2d`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/d24e22d2d2714fecdae89377f1261ac49d79e3b1) reforçou a validação da conversão, preservou o NSP quando não há economia e introduziu cache comprimido em blocos para NCZ sólido. Em 02/10, [`06b96f2a7`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/06b96f2a7103bffe44a63bea01e0a774e8ce2d7c) acrescentou o caminho desktop de NSZ/XCZ e NCZBLOCK. Em 03/10, [`783e07fd9`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/783e07fd96587d430b53a97c46c60dd4fb885e65) publicou a promoção das correções de NCE e das novas ações Android de mods, idioma e arquivos comprimidos. Em 04/10, [`68b46c9a4`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/68b46c9a49c5610bed47d9827a462297a37550c8) acrescentou backing memfd e ajustes de mapeamento NCE, serviços e áudio, controle da memória GPU, arrays bindless e fallback de memória global em shaders. Em 05/10, [`1178c711e`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/1178c711e9f07a9b9dde12b90ee42f3ee5eb68db) acrescentou a opção por jogo **Termos offline**, desligada por padrão, para concluir o applet offline usado na tela de termos de *BioShock*. A falha de catalogação de atualizações/DLCs em NSZ permanece pendente. A matriz de regressão permanece como rotina das futuras promoções.
+
+Em 06/10, [`dddc0f080`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/dddc0f0803cd804eea1240d6f9690aac2b5be732) acrescentou a opção **Otimização do Hugare**, global e por jogo, desligada por padrão, reunindo as otimizações de fila GAL, buffers e descritores Vulkan na Current 0.0.25.
