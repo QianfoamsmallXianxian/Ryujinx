@@ -908,7 +908,16 @@ namespace Ryujinx.Graphics.Vulkan
                 shaderSubgroupSize: (int)Capabilities.SubgroupSize,
                 storageBufferOffsetAlignment: (int)limits.MinStorageBufferOffsetAlignment,
                 textureBufferOffsetAlignment: (int)limits.MinTexelBufferOffsetAlignment,
-                gatherBiasPrecision: IsIntelWindows || IsAmdWindows ? (int)Capabilities.SubTexelPrecisionBits : 0,
+                // Adreno (Turnip) picks a different 2x2 textureGather footprint than NVIDIA when the
+                // coordinate lands on a texel center, like AMD/Intel. In TOTK this shifts the quarter-res
+                // depth gathers of the sun shadow mask and produces dark 64x64 tiles on sloped terrain.
+                // See docs/TOTK-turnip-gather-bias.md. RYUJINX_TOTK_TURNIP_GATHER_BIAS=0 disables it (A/B).
+                gatherBiasPrecision:
+                    IsIntelWindows ||
+                    IsAmdWindows ||
+                    (IsTurnip && Environment.GetEnvironmentVariable("RYUJINX_TOTK_TURNIP_GATHER_BIAS") != "0")
+                        ? (int)Capabilities.SubTexelPrecisionBits
+                        : 0,
                 maximumGpuMemory: GetTotalGPUMemory());
         }
 
