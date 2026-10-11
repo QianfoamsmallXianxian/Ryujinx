@@ -950,7 +950,7 @@ namespace Ryujinx.Graphics.Gpu.Memory
         /// <param name="stage">Buffer stage that triggered the access</param>
         /// <param name="write">Whether the buffer will be written to by this use</param>
         /// <returns>The buffer sub-range starting at the given memory address</returns>
-        public BufferRange GetBufferRangeAligned(MultiRange range, BufferStage stage, bool write = false)
+        public BufferRange GetBufferRangeAligned(MultiRange range, BufferStage stage, bool write = false, ulong writeTrackingLimit = 0)
         {
             if (range.Count > 1)
             {
@@ -959,6 +959,18 @@ namespace Ryujinx.Graphics.Gpu.Memory
             else
             {
                 MemoryRange subRange = range.GetSubRange(0);
+
+                if (write && writeTrackingLimit != 0 && writeTrackingLimit < subRange.Size)
+                {
+                    // NEOV2-SSBOCLAMP: the whole range is synchronized and bound, but only the first writeTrackingLimit bytes
+                    // are tracked as written by the GPU (see SsboWriteClamp).
+                    Buffer limitedBuffer = GetBuffer(subRange.Address, subRange.Size, stage, write: false);
+
+                    limitedBuffer.SignalModified(subRange.Address, writeTrackingLimit, stage);
+
+                    return limitedBuffer.GetRangeAligned(subRange.Address, subRange.Size, write);
+                }
+
                 return GetBuffer(subRange.Address, subRange.Size, stage, write).GetRangeAligned(subRange.Address, subRange.Size, write);
             }
         }

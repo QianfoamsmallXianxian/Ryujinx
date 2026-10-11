@@ -362,6 +362,16 @@ namespace Ryujinx.Graphics.Gpu.Engine.Threed
             }
             while (scaleMismatch);
 
+            // NEOV2-SSBOCLAMP: tells the buffer manager if this draw uses the MUA3 geometry shader whose storage buffer 1 needs a
+            // limited GPU write tracking.
+            if (_drawState.GeometryAsCompute != null || SsboWriteClamp.TargetDraw)
+            {
+                SsboWriteClamp.Update(
+                    _drawState.GeometryAsCompute != null,
+                    _state.State.ShaderBaseAddress.Pack(),
+                    _state.State.ShaderState.AsSpan()[4].Offset);
+            }
+
             _channel.BufferManager.CommitGraphicsBindings(_drawState.DrawIndexed);
         }
 

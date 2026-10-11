@@ -921,8 +921,15 @@ namespace Ryujinx.Graphics.Gpu.Memory
                     if (!bounds.IsUnmapped)
                     {
                         bool isWrite = (bounds.Flags & BufferUsageFlags.Write) == BufferUsageFlags.Write;
+
+                        // NEOV2-SSBOCLAMP: geometry stage, storage buffer 1, written by the MUA3 geometry shader 0x100719F30.
+                        ulong writeTrackingLimit = isStorage && isWrite && SsboWriteClamp.TargetDraw &&
+                            stage == ShaderStage.Geometry && bindingInfo.Slot == 1 && bounds.Range.Count == 1
+                            ? SsboWriteClamp.WriteTrackingLimit
+                            : 0;
+
                         BufferRange range = isStorage
-                            ? bufferCache.GetBufferRangeAligned(bounds.Range, bufferStage | BufferStageUtils.FromUsage(bounds.Flags), isWrite)
+                            ? bufferCache.GetBufferRangeAligned(bounds.Range, bufferStage | BufferStageUtils.FromUsage(bounds.Flags), isWrite, writeTrackingLimit)
                             : bufferCache.GetBufferRange(bounds.Range, bufferStage);
 
                         ranges[rangesCount++] = new BufferAssignment(bindingInfo.Binding, range);
