@@ -1,8 +1,6 @@
-using System;
-
 namespace Ryujinx.Graphics.Gpu.Memory
 {
-    // NEOV2-SSBOCLAMP: MARVEL Ultimate Alliance 3 (010060700AC50000) flicker and corruption fix.
+    // NEOV2-SSBOCLAMP: flicker and corruption fix found in MARVEL Ultimate Alliance 3. It is selected only by the shader, not by the title.
     //
     // The geometry shader 0x100719F30 (a passthrough geometry shader that the VTG runs as compute) binds its storage buffer 1
     // with the whole size of the driver descriptor, an 8 MB window that slides by about 0x2C28 bytes on every draw, but it writes
@@ -14,7 +12,6 @@ namespace Ryujinx.Graphics.Gpu.Memory
     // and storage buffer 0 (the 96 KB counters that the CPU reads) stays fully tracked.
     static class SsboWriteClamp
     {
-        private const string TitleId = "010060700AC50000";
         private const ulong GeometryShaderOffset = 0x719F30;
         private const ulong ShaderBase = 0x100000000UL;
 
@@ -37,8 +34,7 @@ namespace Ryujinx.Graphics.Gpu.Memory
         {
             TargetDraw = usesGeometryAsCompute &&
                 shaderBaseAddress == ShaderBase &&
-                geometryOffset == GeometryShaderOffset &&
-                string.Equals(GraphicsConfig.TitleId, TitleId, StringComparison.OrdinalIgnoreCase);
+                geometryOffset == GeometryShaderOffset;
         }
     }
 }
