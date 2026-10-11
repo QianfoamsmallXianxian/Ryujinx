@@ -3,17 +3,17 @@
 - **Versão no código:** Android 0.0.25 (`versionCode 20139`)
 - **Branch analisada:** [`neo-v2-nce2`](https://github.com/Sunshinin11/Ryujinx_Neo/tree/neo-v2-nce2)
 - **Estado remoto do código:** mudanças funcionais publicadas até 11/10/2026 na branch GitHub
-- **Último commit de código publicado:** [`df2abc834`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/df2abc834dfdf938de788f762de6e66910a55edd), de 11/10/2026
+- **Último commit de código publicado:** [`cbf1e6b73`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/cbf1e6b733c585bc0a42cf7581b7458e3800a736), de 11/10/2026
 - **Mudanças funcionais de 28/09:** publicadas em cinco commits integrados à branch [`neo-v2-nce2`](https://github.com/Sunshinin11/Ryujinx_Neo/tree/neo-v2-nce2)
 - **Data da revisão:** 11/10/2026
 
-Este texto cobre **somente a linha Ryujinx Neo Current em `neo-v2-nce2`**. A linha histórica `neo-v2-fase1` e o trabalho Linux ARM64 do Hugare não fazem parte deste changelog. A análise combinou o histórico publicado, o [relatório técnico](docs/RELATORIO_COMPLETO_RYUJINX_NEO.md) e os commits de código até `df2abc834`. Esta revisão descreve o estado publicado da Current no GitHub.
+Este texto cobre **somente a linha Ryujinx Neo Current em `neo-v2-nce2`**. A linha histórica `neo-v2-fase1` e o trabalho Linux ARM64 do Hugare não fazem parte deste changelog. A análise combinou o histórico publicado, o [relatório técnico](docs/RELATORIO_COMPLETO_RYUJINX_NEO.md) e os commits de código até `cbf1e6b73`. Esta revisão descreve o estado publicado da Current no GitHub.
 
 ## Changelog do Neo Current
 
 ### 11 de outubro — correção de corrupção gráfica no MUA3
 
-- **Rastreamento de escrita do SSBO no VTG via Compute:** em *MARVEL Ultimate Alliance 3*, o geometry shader `0x100719F30` vinculava uma janela de 8 MiB, embora escrevesse aproximadamente `0x2C28` bytes por draw. Marcar toda a janela como modificada pela GPU alcançava páginas reescritas pela CPU e podia reutilizar vértices antigos, causando piscadas e corrupção na cena do holofote. O buffer continua sincronizado e vinculado integralmente, mas somente os primeiros 64 KiB são marcados como escritos. A correção é restrita ao Title ID `010060700AC50000`, ao shader afetado e ao SSBO 1 do estágio de geometria. [Commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/df2abc834dfdf938de788f762de6e66910a55edd)
+- **Rastreamento de escrita do SSBO no VTG via Compute:** em *MARVEL Ultimate Alliance 3*, o geometry shader `0x100719F30` vinculava uma janela de 8 MiB, embora escrevesse aproximadamente `0x2C28` bytes por draw. Marcar toda a janela como modificada pela GPU alcançava páginas reescritas pela CPU e podia reutilizar vértices antigos, causando piscadas e corrupção na cena do holofote. O buffer continua sincronizado e vinculado integralmente, mas somente os primeiros 64 KiB são marcados como escritos. O limite é selecionado pelo geometry shader `0x100719F30` executado como compute, com base `0x100000000`, e aplicado ao SSBO 1 do estágio de geometria, sem depender do Title ID do jogo. [Implementação](https://github.com/Sunshinin11/Ryujinx_Neo/commit/df2abc834dfdf938de788f762de6e66910a55edd) · [remoção do teste de título](https://github.com/Sunshinin11/Ryujinx_Neo/commit/cbf1e6b733c585bc0a42cf7581b7458e3800a736)
 
 ### 6 de outubro — Otimização do Hugare, global e por jogo
 
