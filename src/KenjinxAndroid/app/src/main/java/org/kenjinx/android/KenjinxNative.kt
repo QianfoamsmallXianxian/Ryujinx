@@ -1,6 +1,11 @@
 package org.kenjinx.android
 
 import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
+import android.content.Context
+import android.view.InputDevice
 import com.sun.jna.JNIEnv
 import com.sun.jna.Library
 import com.sun.jna.Native
@@ -74,6 +79,8 @@ interface KenjinxNativeJna : Library {
     // NEOV2-GPUMEM1: memoria de GPU estilo Eden (coleta de buffers/texturas + protecao contra falta de RAM).
     fun deviceSetEdenGpuMemory(enable: Boolean)
     fun deviceSetVp9FFmpeg(enable: Boolean)
+    fun deviceSetFrameGen(enable: Boolean, dllPath: String)
+    fun frameGenValidateDll(dllPath: String): Int
     fun deviceSetAudioBoost(gain: Float)
     // NEOV2-NCZ2: conversor NSP -> NSZ (0 ok, 1 erro, 2 cancelado; progresso em milesimos; fase 1 comprimindo, 2 verificando).
     fun deviceCompressNsp(inDescriptor: Int, outDescriptor: Int, level: Int): Int
@@ -173,6 +180,8 @@ val jnaInstance: KenjinxNativeJna = Native.load(
 )
 
 object KenjinxNative : KenjinxNativeJna by jnaInstance {
+    private var activeVibrator: Vibrator? = null
+    private var rumbleInputDeviceId = -1
 
     fun loggingSetEnabled(logLevel: LogLevel, enabled: Boolean) =
         loggingSetEnabled(logLevel.ordinal, enabled)
@@ -325,6 +334,78 @@ object KenjinxNative : KenjinxNativeJna by jnaInstance {
 
     @JvmStatic
     fun test() { /* no-op */ }
+
+    // O host envia um estado de vibração sem duração finita. O efeito tem um prazo de
+    // segurança e é renovado enquanto chegam comandos; zero cancela imediatamente.
+    private const val RUMBLE_SAFETY_MS = 400L
+    private const val RUMBLE_REFRESH_MS = 350L
+    private var lastAmplitude = 0
+    private var lastVibrateAt = 0L
+
+    @JvmStatic
+    @Synchronized
+    fun setRumbleInputDeviceId(id: Int) {
+        if (rumbleInputDeviceId != id) {
+            rumbleInputDeviceId = id
+            cancelVibration()
+        }
+    }
+
+    @JvmStatic
+    @Synchronized
+    fun cancelVibration() {
+        activeVibrator?.cancel()
+        activeVibrator = null
+        lastAmplitude = 0
+        lastVibrateAt = 0L
+    }
+
+    private fun controllerVibratorOrNull(): Vibrator? {
+        val dev = InputDevice.getDevice(rumbleInputDeviceId) ?: return null
+        if ((dev.sources and InputDevice.SOURCE_GAMEPAD) != InputDevice.SOURCE_GAMEPAD &&
+            (dev.sources and InputDevice.SOURCE_JOYSTICK) != InputDevice.SOURCE_JOYSTICK) return null
+        val v = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            dev.vibratorManager.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            dev.vibrator
+        }
+        return v.takeIf { it.hasVibrator() }
+    }
+
+    @JvmStatic
+    @Synchronized
+    fun vibrate(player: Int, low: Float, high: Float) {
+        if (player != 0) return
+        val intensity = maxOf(low, high).coerceIn(0f, 1f)
+        if (intensity <= 0.01f) {
+            cancelVibration()
+            return
+        }
+        val activity = MainActivity.mainViewModel?.activity ?: return
+        if (!activity.isGameRunning) return
+        val vibrator = activeVibrator ?: controllerVibratorOrNull() ?: run {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                activity.getSystemService(VibratorManager::class.java)?.defaultVibrator
+            } else {
+                @Suppress("DEPRECATION")
+                activity.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+            }
+        } ?: return
+        if (!vibrator.hasVibrator()) return
+
+        activeVibrator = vibrator
+        val amplitude = if (vibrator.hasAmplitudeControl()) {
+            (intensity * 255f).toInt().coerceIn(1, 255)
+        } else {
+            VibrationEffect.DEFAULT_AMPLITUDE
+        }
+        val now = android.os.SystemClock.uptimeMillis()
+        if (amplitude == lastAmplitude && now - lastVibrateAt < RUMBLE_REFRESH_MS) return
+        lastAmplitude = amplitude
+        lastVibrateAt = now
+        vibrator.vibrate(VibrationEffect.createOneShot(RUMBLE_SAFETY_MS, amplitude))
+    }
 
     // NEOV2-GPUMEM1: chamado pelo nativo quando a RAM do Android fica critica durante o jogo.
     // Sai do jogo pelo caminho normal (como o botao Sair) para o aparelho nao travar.

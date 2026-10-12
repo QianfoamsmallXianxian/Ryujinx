@@ -123,6 +123,7 @@ class GameController3(var activity: Activity) : IGameController {
     }
 
     private fun handleEvent(ev: Event) {
+        KenjinxNative.setRumbleInputDeviceId(-1)
         if (controllerId == -1)
             controllerId = KenjinxNative.inputConnectGamepad(0)
 

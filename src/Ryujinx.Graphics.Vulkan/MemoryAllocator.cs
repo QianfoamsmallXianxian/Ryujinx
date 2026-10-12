@@ -8,6 +8,7 @@ namespace Ryujinx.Graphics.Vulkan
     class MemoryAllocator : IDisposable
     {
         private const ulong MaxDeviceMemoryUsageEstimate = 16UL * 1024 * 1024 * 1024;
+        private const int MinBlockAlignment = 4 * 1024 * 1024;
 
         private readonly Vk _api;
         private readonly VulkanPhysicalDevice _physicalDevice;
@@ -23,6 +24,20 @@ namespace Ryujinx.Graphics.Vulkan
             _device = device;
             _blockLists = [];
             _blockAlignment = (int)Math.Min(int.MaxValue, MaxDeviceMemoryUsageEstimate / _physicalDevice.PhysicalDeviceProperties.Limits.MaxMemoryAllocationCount);
+
+            // Drivers that report an effectively unlimited maxMemoryAllocationCount (Turnip: 0xFFFFFFFF) end up with a
+            // 4-byte block size, so every image/buffer gets its own vkAllocateMemory/vkFreeMemory (a new kernel BO each
+            // time), which makes texture streaming stutter. Use at least the block size NVIDIA/AMD get from their 4096
+            // allocation limit (4 MiB) so allocations are sub-allocated.
+            // RYUJINX_NEO_MIN_BLOCK=<MiB> overrides it (0 restores the old behaviour, for A/B testing).
+            int minBlock = MinBlockAlignment;
+
+            if (int.TryParse(Environment.GetEnvironmentVariable("RYUJINX_NEO_MIN_BLOCK"), out int minBlockMiB) && minBlockMiB >= 0 && minBlockMiB <= 256)
+            {
+                minBlock = minBlockMiB * 1024 * 1024;
+            }
+
+            _blockAlignment = Math.Max(_blockAlignment, minBlock);
             _lock = new(LockRecursionPolicy.NoRecursion);
 
             // NEOV2-GPUMEM1: a new renderer starts with no device memory.

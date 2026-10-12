@@ -374,6 +374,36 @@ class SettingViews {
             val enableNceTrackingProtection = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableNceTrackingProtection) }
             val enableRelaxedDmaCopy = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableRelaxedDmaCopy) }
             val enableVp9FFmpeg = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableVp9FFmpeg) }
+            val enableFrameGen = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableFrameGen) }
+            val frameGenDllStatus = remember { mutableStateOf(if (java.io.File(mainViewModel.activity.filesDir, "lossless/Lossless.dll").isFile) "DLL instalada" else "Nenhuma DLL selecionada") }
+            val frameGenDllValid = remember { mutableStateOf(java.io.File(mainViewModel.activity.filesDir, "lossless/Lossless.dll").isFile && KenjinxNative.frameGenValidateDll(java.io.File(mainViewModel.activity.filesDir, "lossless/Lossless.dll").absolutePath) == 0) }
+            val frameGenPicker = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+                if (uri != null) {
+                    val dir = java.io.File(mainViewModel.activity.filesDir, "lossless").apply { mkdirs() }
+                    val tmp = java.io.File(dir, "Lossless.dll.tmp")
+                    try {
+                        mainViewModel.activity.contentResolver.openInputStream(uri)?.use { input -> tmp.outputStream().use { input.copyTo(it) } }
+                        val status = KenjinxNative.frameGenValidateDll(tmp.absolutePath)
+                        if (status == 0) {
+                            val dest = java.io.File(dir, "Lossless.dll")
+                            dest.delete(); tmp.renameTo(dest)
+                            frameGenDllValid.value = true
+                            frameGenDllStatus.value = "DLL válida instalada"
+                        } else {
+                            tmp.delete()
+                            frameGenDllStatus.value = when (status) {
+                                3 -> "Erro: o arquivo não é uma DLL do Windows válida"
+                                4 -> "Erro: a DLL não contém os shaders do Lossless Scaling esperados"
+                                2 -> "Erro: não foi possível ler o arquivo"
+                                else -> "Erro: falha ao preparar os shaders da DLL"
+                            }
+                        }
+                    } catch (e: Throwable) {
+                        tmp.delete()
+                        frameGenDllStatus.value = "Erro ao copiar a DLL"
+                    }
+                }
+            }
             val enableEdenGpuMemory = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableEdenGpuMemory) }
             val enableHugareOptimizations = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableHugareOptimizations) }
             val audioBoost = remember { mutableFloatStateOf(QuickSettings(mainViewModel.activity).audioBoost) }
@@ -445,6 +475,9 @@ class SettingViews {
 
                 mutableStateOf(QuickSettings(mainViewModel.activity).showPerformanceOverlay)
 
+            }
+            val performanceOverlayLevel = remember {
+                mutableIntStateOf(QuickSettings(mainViewModel.activity).performanceOverlayLevel)
             }
 
             val controllerStickSensitivity = remember { mutableFloatStateOf(1.0f) }
@@ -694,6 +727,7 @@ class SettingViews {
                 qs.disableThreadedRendering = disableThreadedRendering.value
 
                 qs.showPerformanceOverlay = showPerformanceOverlay.value
+                qs.performanceOverlayLevel = performanceOverlayLevel.intValue
 
                 qs.virtualControllerPreset = vcPreset.value
 
@@ -702,6 +736,7 @@ class SettingViews {
                 qs.enableNceTrackingProtection = enableNceTrackingProtection.value
                 qs.enableRelaxedDmaCopy = enableRelaxedDmaCopy.value
                 qs.enableVp9FFmpeg = enableVp9FFmpeg.value
+                qs.enableFrameGen = enableFrameGen.value
                 qs.enableEdenGpuMemory = enableEdenGpuMemory.value
                 qs.enableHugareOptimizations = enableHugareOptimizations.value
                 qs.audioBoost = audioBoost.floatValue
@@ -1097,20 +1132,24 @@ class SettingViews {
 
 
 
-                                        HighContrastToggle(
-
-                                            title = "Mostrar estatísticas de desempenho",
-
-                                            description = "Exibe FPS, tempos de quadro e uso de memória sobre a tela do jogo",
-
-                                            checked = showPerformanceOverlay.value,
-
-                                            onCheckedChange = {
-                                                showPerformanceOverlay.value = it
-                                                val qsSpo = QuickSettings(mainViewModel.activity); qsSpo.showPerformanceOverlay = it; qsSpo.save()
-                                            }
-
+                                        SectionTitle("Estatísticas de desempenho")
+                                        val statisticsOptions = listOf(
+                                            0 to "Desligado",
+                                            1 to "Só FPS",
+                                            2 to "FPS + quadro",
+                                            3 to "Completo"
                                         )
+                                        CompactSelect(
+                                            selectedLabel = statisticsOptions.first { it.first == performanceOverlayLevel.intValue }.second,
+                                            options = statisticsOptions
+                                        ) { level ->
+                                            performanceOverlayLevel.intValue = level
+                                            showPerformanceOverlay.value = level != 0
+                                            val qs = QuickSettings(mainViewModel.activity)
+                                            qs.performanceOverlayLevel = level
+                                            qs.showPerformanceOverlay = level != 0
+                                            qs.save()
+                                        }
 
 
 
@@ -1145,30 +1184,6 @@ class SettingViews {
                                             onCheckedChange = { useNce.value = it }
 
                                         )
-
-                                        HighContrastToggle(
-
-                                            title = "Proteção de memória NCE",
-
-                                            description = "Mantém o rastreamento de memória da GPU quando o jogo muda permissões de memória em NCE. Corrige tela preta em alguns jogos (ex.: MUA3), mas pode causar travamentos em outros (ex.: MP4). Pode ser ajustado por jogo. (Requer reiniciar o jogo)",
-
-                                            checked = enableNceTrackingProtection.value,
-
-                                            onCheckedChange = {
-
-                                                enableNceTrackingProtection.value = it
-
-                                                val qsNceProtection = QuickSettings(mainViewModel.activity)
-
-                                                qsNceProtection.enableNceTrackingProtection = it
-
-                                                qsNceProtection.save()
-
-                                            }
-
-                                        )
-
-
 
                                         HighContrastToggle(
 
@@ -1288,17 +1303,6 @@ class SettingViews {
 
 
 
-                                        HighContrastToggle(
-
-                                            title = "Limitar à velocidade do Switch",
-
-                                            description = "Ativado respeita o limite do jogo; desativado libera a taxa de quadros",
-
-                                            checked = vSyncMode.value == VSyncMode.Switch,
-
-                                            onCheckedChange = { vSyncMode.value = if (it) VSyncMode.Switch else VSyncMode.Unbounded }
-
-                                        )
 
 
 
@@ -1376,20 +1380,6 @@ class SettingViews {
 
                                         HighContrastToggle(
 
-                                            title = "Proteção de Loops em Shaders (Shader Loop Safety)",
-
-                                            description = "Limita loops de shader que podem prender a GPU; pode causar falhas visuais em alguns jogos",
-
-                                            checked = enableShaderLoopSafety.value,
-
-                                            onCheckedChange = { enableShaderLoopSafety.value = it }
-
-                                        )
-
-
-
-                                        HighContrastToggle(
-
                                             title = "Recompressão de Texturas",
 
                                             description = "Reduz o uso de VRAM recomprimindo formatos pesados de textura",
@@ -1460,17 +1450,6 @@ class SettingViews {
                                             }
                                         )
                                         HighContrastToggle(
-                                            title = "Otimização do Hugare",
-                                            description = "Melhorias gráficas que podem aumentar o desempenho em alguns jogos, mas causar lentidão ou travamentos em outros. Desligada por padrão; também pode ser ajustada por jogo. Requer reiniciar o jogo.",
-                                            checked = enableHugareOptimizations.value,
-                                            onCheckedChange = {
-                                                enableHugareOptimizations.value = it
-                                                val qsHugare = QuickSettings(mainViewModel.activity)
-                                                qsHugare.enableHugareOptimizations = it
-                                                qsHugare.save()
-                                            }
-                                        )
-                                        HighContrastToggle(
                                             title = "Memória de GPU estilo Eden",
                                             description = "Como no Eden: buffers e texturas sem uso são liberados quando a memória de GPU passa de 1,6 GB (mais forte a partir de 3,2 GB). Se a RAM do Android acabar, o jogo é fechado em vez de travar o aparelho (ex.: DOOM Eternal). Ligado por padrão; pode ser ajustado por jogo. (Requer reiniciar o jogo)",
                                             checked = enableEdenGpuMemory.value,
@@ -1482,16 +1461,21 @@ class SettingViews {
                                             }
                                         )
                                         HighContrastToggle(
-                                            title = "VP9 pelo FFmpeg (Eden)",
-                                            description = "Vídeos VP9 dos jogos (ex.: abertura do Zelda: Link's Awakening) passam a ser decodificados pelo FFmpeg, como no Eden, em vez do decodificador interno. Ligado por padrão. Se o vídeo de algum jogo ficar com erros (ex.: GRID Autosport), desligue nas configurações daquele jogo. (Requer reiniciar o jogo)",
-                                            checked = enableVp9FFmpeg.value,
+                                            title = "Geração de quadros (LSFG)",
+                                            description = "Gera no máximo um quadro intermediário por quadro real, com teto de 60 FPS. Jogos de 30 FPS continuam em 30. Exige uma Lossless.dll sua (não vai no app). Status: ${frameGenDllStatus.value}. (Requer reiniciar o jogo)",
+                                            checked = enableFrameGen.value && frameGenDllValid.value,
                                             onCheckedChange = {
-                                                enableVp9FFmpeg.value = it
-                                                val qsVp9 = QuickSettings(mainViewModel.activity)
-                                                qsVp9.enableVp9FFmpeg = it
-                                                qsVp9.save()
+                                                if (!it || frameGenDllValid.value) {
+                                                    enableFrameGen.value = it
+                                                    val qsFg = QuickSettings(mainViewModel.activity)
+                                                    qsFg.enableFrameGen = it
+                                                    qsFg.save()
+                                                }
                                             }
                                         )
+                                        androidx.compose.material3.Button(onClick = { frameGenPicker.launch(arrayOf("*/*")) }) {
+                                            androidx.compose.material3.Text("Selecionar Lossless.dll")
+                                        }
                                         HighContrastToggle(
                                             title = "Rejeitar descritores não mapeados",
                                             description = "Descritores de textura com endereço não mapeado são descartados antes de ler o formato. Desligado por padrão global. Pode ser ajustado por jogo. (Requer reiniciar o jogo)",

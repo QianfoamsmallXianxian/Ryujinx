@@ -60,6 +60,15 @@ namespace Ryujinx.HLE.HOS.Services.Hid
             _vibrationPermitted = true;
         }
 
+        // O Android expõe um único controle virtual como Player1. Alguns jogos enviam
+        // vibração pelo identificador Handheld (32), mesmo com esse controle ativo.
+        private static PlayerIndex GetRumblePlayer(byte playerId)
+        {
+            return OperatingSystem.IsAndroid() && playerId == (byte)NpadIdType.Handheld
+                ? PlayerIndex.Player1
+                : (PlayerIndex)playerId;
+        }
+
         [CommandCmif(0)]
         // CreateAppletResource(nn::applet::AppletResourceUserId) -> object<nn::hid::IAppletResource>
         public ResultCode CreateAppletResource(ServiceCtx context)
@@ -1256,7 +1265,7 @@ namespace Ryujinx.HLE.HOS.Services.Hid
                 [deviceHandle.Position] = vibrationValue,
             };
 
-            context.Device.Hid.Npads.UpdateRumbleQueue((PlayerIndex)deviceHandle.PlayerId, dualVibrationValues);
+            context.Device.Hid.Npads.UpdateRumbleQueue(GetRumblePlayer(deviceHandle.PlayerId), dualVibrationValues);
 
             return ResultCode.Success;
         }
@@ -1277,7 +1286,7 @@ namespace Ryujinx.HLE.HOS.Services.Hid
             long appletResourceUserId = context.RequestData.ReadInt64();
 #pragma warning restore IDE0059
 
-            VibrationValue vibrationValue = context.Device.Hid.Npads.GetLastVibrationValue((PlayerIndex)deviceHandle.PlayerId, deviceHandle.Position);
+            VibrationValue vibrationValue = context.Device.Hid.Npads.GetLastVibrationValue(GetRumblePlayer(deviceHandle.PlayerId), deviceHandle.Position);
 
             context.ResponseData.Write(vibrationValue.AmplitudeLow);
             context.ResponseData.Write(vibrationValue.FrequencyLow);
@@ -1338,11 +1347,11 @@ namespace Ryujinx.HLE.HOS.Services.Hid
             if (!deviceHandles.IsEmpty && vibrationValues.Length == deviceHandles.Length)
             {
                 Dictionary<byte, VibrationValue> dualVibrationValues = new();
-                PlayerIndex currentIndex = (PlayerIndex)deviceHandles[0].PlayerId;
+                PlayerIndex currentIndex = GetRumblePlayer(deviceHandles[0].PlayerId);
 
                 for (int deviceCounter = 0; deviceCounter < deviceHandles.Length; deviceCounter++)
                 {
-                    PlayerIndex index = (PlayerIndex)deviceHandles[deviceCounter].PlayerId;
+                    PlayerIndex index = GetRumblePlayer(deviceHandles[deviceCounter].PlayerId);
                     byte position = deviceHandles[deviceCounter].Position;
 
                     if (index != currentIndex || dualVibrationValues.Count == 2)

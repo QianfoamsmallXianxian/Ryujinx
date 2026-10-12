@@ -782,11 +782,12 @@ namespace Ryujinx.Graphics.Vulkan
             data.Dispose();
         }
 
+        private static readonly bool _useStagingForTextureUploads =
+            Environment.GetEnvironmentVariable("RYUJINX_NEO_TEX_STAGING") != "0";
+
         private void SetData(ReadOnlySpan<byte> data, int layer, int level, int layers, int levels, bool singleSlice, Rectangle<int>? region = null)
         {
             int bufferDataLength = GetBufferDataLength(data.Length);
-
-            using BufferHolder bufferHolder = _gd.BufferManager.Create(_gd, bufferDataLength);
 
             Auto<DisposableImage> imageAuto = GetImage();
 
@@ -800,6 +801,60 @@ namespace Ryujinx.Graphics.Vulkan
             {
                 _gd.PipelineInternal.EndRenderPass();
             }
+
+            // Upload through the persistent staging ring buffer when there is room, instead of creating (and allocating
+            // memory for) a temporary buffer on every texture upload. The reservation is tied to the command buffer
+            // fence, so the range is only reused after the copy completes. Offset alignment 64 covers every texel block
+            // size and the 4-byte depth/stencil rule. RYUJINX_NEO_TEX_STAGING=0 restores the old path (A/B testing).
+            StagingBufferReserved? staged = _useStagingForTextureUploads
+                ? _gd.BufferManager.StagingBuffer.TryReserveData(cbs, bufferDataLength, 64)
+                : null;
+
+            if (staged.HasValue)
+            {
+                StagingBufferReserved reserved = staged.Value;
+
+                CopyDataToBuffer(reserved.Buffer.GetDataStorage(reserved.Offset, bufferDataLength), data);
+
+                VkBuffer stagingBuffer = reserved.Buffer.GetBuffer(cbs.CommandBuffer).Get(cbs).Value;
+                Image stagingImage = imageAuto.Get(cbs).Value;
+
+                if (region.HasValue)
+                {
+                    CopyFromOrToBuffer(
+                        cbs.CommandBuffer,
+                        stagingBuffer,
+                        stagingImage,
+                        bufferDataLength,
+                        false,
+                        layer,
+                        level,
+                        region.Value.X,
+                        region.Value.Y,
+                        region.Value.Width,
+                        region.Value.Height,
+                        reserved.Offset);
+                }
+                else
+                {
+                    CopyFromOrToBuffer(
+                        cbs.CommandBuffer,
+                        stagingBuffer,
+                        stagingImage,
+                        reserved.Offset + bufferDataLength,
+                        false,
+                        layer,
+                        level,
+                        layers,
+                        levels,
+                        singleSlice,
+                        reserved.Offset);
+                }
+
+                return;
+            }
+
+            using BufferHolder bufferHolder = _gd.BufferManager.Create(_gd, bufferDataLength);
 
             CopyDataToBuffer(bufferHolder.GetDataStorage(0, bufferDataLength), data);
 
@@ -997,7 +1052,8 @@ namespace Ryujinx.Graphics.Vulkan
             int x,
             int y,
             int width,
-            int height)
+            int height,
+            int bufferOffset = 0)
         {
             ImageAspectFlags aspectFlags = Info.Format.ConvertAspectFlags();
 
@@ -1019,7 +1075,7 @@ namespace Ryujinx.Graphics.Vulkan
             }
 
             BufferImageCopy region = new(
-                0,
+                (ulong)bufferOffset,
                 (uint)AlignUpNpot(width, rowLengthAlignment),
                 (uint)AlignUpNpot(height, Info.BlockHeight),
                 sl,

@@ -28,7 +28,8 @@ namespace LibKenjinx.Android
             ("updateProgress", "(JF)V"),
             ("getSurfacePtr", "()J"),
             ("getWindowHandle", "()J"),
-            ("onHostLowMemory", "()V")
+            ("onHostLowMemory", "()V"),
+            ("vibrate", "(IFF)V")
         ];
 
         internal static void Initialize(JEnvRef jniEnv)
@@ -125,6 +126,14 @@ namespace LibKenjinx.Android
         public static void OnHostLowMemory()
         {
             CallVoidMethod("onHostLowMemory", "()V");
+        }
+
+        public static void Vibrate(int player, float low, float high)
+        {
+            CallVoidMethod("vibrate", "(IFF)V",
+                JValue.Create(player.AsBytes()),
+                JValue.Create(low.AsBytes()),
+                JValue.Create(high.AsBytes()));
         }
 
         public static void FrameEnded(double time)

@@ -11,8 +11,8 @@ android {
         applicationId "org.kenjinx.android"
         minSdk 29
         targetSdk 37
-        versionCode 20139
-        versionName '0.0.25'
+        versionCode 20144
+        versionName '0.0.26'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 

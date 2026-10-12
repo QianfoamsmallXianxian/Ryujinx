@@ -163,6 +163,10 @@ namespace LibKenjinx
 
         public static void SetVsyncState(Ryujinx.Common.Configuration.VSyncMode vSyncMode)
         {
+            if (vSyncMode == Ryujinx.Common.Configuration.VSyncMode.Unbounded)
+            {
+                vSyncMode = Ryujinx.Common.Configuration.VSyncMode.Switch;
+            }
             Switch device = SwitchDevice!.EmulationContext!;
             device.VSyncMode = vSyncMode;
             device.Gpu.Renderer.Window.ChangeVSyncMode((Ryujinx.Graphics.GAL.VSyncMode)vSyncMode);

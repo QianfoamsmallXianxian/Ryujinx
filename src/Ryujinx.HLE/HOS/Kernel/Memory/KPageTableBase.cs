@@ -182,6 +182,9 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
             ulong stackAndTlsIoStart;
             ulong stackAndTlsIoEnd;
 
+            // NEOV2-REGION1: see the host-reserved address space branch below.
+            bool packRegions = false;
+
             AliasRegionExtraSize = 0;
 
             // Limit heap for games that crash or won't load with extended heaps
@@ -248,6 +251,21 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
                         };
                         stackRegion.Size = 1UL << (addressSpaceWidth - 8);
                         tlsIoRegion.Size = 1UL << (addressSpaceWidth - 3);
+
+                        // NEOV2-REGION1: the ASLR offsets come from a Mersenne Twister with a fixed seed (see
+                        // GetRandomValue), so the layout is a fixed function of the reserved size. With the 120 GiB
+                        // Android reserve it happened to leave a 62 GiB hole; with 88 GiB the alias, heap, stack and
+                        // TLS/IO regions land in the middle of the free band and no 62 GiB range remains. Unreal Engine
+                        // 4.27 titles (Dragon Quest DOLL, Hogwarts Legacy) ask for a contiguous GSwitchVirtualAddressSpaceSize
+                        // of 62 GiB and abort with ResultOutOfVirtualAddressSpace. Below 120 GiB, pack the four regions
+                        // back to back at the start of the band (no ASLR offsets) and cap TLS/IO at 4 GiB, so the rest
+                        // of the reserve stays one contiguous free range. Reserves of 120 GiB and above are unchanged.
+                        if (reservedAddressSpaceSize < 0x1E00000000UL)
+                        {
+                            packRegions = true;
+                            tlsIoRegion.Size = Math.Min(tlsIoRegion.Size, 0x100000000UL);
+                        }
+
                         CodeRegionStart = BitUtils.AlignDown(address, RegionAlignment);
                         codeRegionSize = BitUtils.AlignUp(endAddr, RegionAlignment) - CodeRegionStart;
                         stackAndTlsIoStart = 0;
@@ -364,7 +382,15 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
                 return KernelResult.OutOfMemory;
             }
 
-            if (aslrEnabled)
+            if (packRegions)
+            {
+                // NEOV2-REGION1: all offsets stay 0, which lays the regions out back to back from mapBaseAddress.
+                ulong freeAfterRegions = mapBaseAddress == CodeRegionEnd ? addrSpaceEnd - (mapBaseAddress + mapTotalSize) : mapAvailableSize - mapTotalSize;
+
+                Ryujinx.Common.Logging.Logger.Info?.Print(Ryujinx.Common.Logging.LogClass.Kernel,
+                    $"[NEOV2-REGION1] Regions packed (aslr={aslrEnabled}): base=0x{mapBaseAddress:X} regions=0x{mapTotalSize:X} (alias=0x{aliasRegion.Size:X} heap=0x{heapRegion.Size:X} stack=0x{stackRegion.Size:X} tlsIo=0x{tlsIoRegion.Size:X}) contiguous free after regions=0x{freeAfterRegions:X}");
+            }
+            else if (aslrEnabled)
             {
                 aliasRegion.AslrOffset = GetRandomValue(0, aslrMaxOffset / RegionAlignment) * RegionAlignment;
                 heapRegion.AslrOffset = GetRandomValue(0, aslrMaxOffset / RegionAlignment) * RegionAlignment;

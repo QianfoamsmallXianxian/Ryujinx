@@ -399,6 +399,7 @@ class MainActivity : BaseActivity() {
 
     override fun onStop() {
         super.onStop()
+        KenjinxNative.cancelVibration()
         if (isGameRunning) {
             setAudioForegroundState(false)
             handler.removeCallbacks(reattachWindowWhenReady)
@@ -496,6 +497,7 @@ class MainActivity : BaseActivity() {
             handler.postDelayed({ try { mainViewModel?.gameHost?.postReattachKicks(rot) } catch (_: Throwable) {} }, 200L)
             handler.postDelayed(enablePresentWhenReady, 450L)
         } else {
+            KenjinxNative.cancelVibration()
             setAudioForegroundState(false)
             setPresentEnabled(false, "focus lost")
             try { KenjinxNative.detachWindow() } catch (_: Throwable) {}
@@ -506,6 +508,7 @@ class MainActivity : BaseActivity() {
     override fun onPause() {
         super.onPause()
         isActive = false
+        KenjinxNative.cancelVibration()
         setAudioForegroundState(false)
 
         handler.removeCallbacks(reattachWindowWhenReady)
@@ -695,6 +698,7 @@ class MainActivity : BaseActivity() {
     }
 
     override fun onDestroy() {
+        KenjinxNative.cancelVibration()
         handler.removeCallbacks(enablePresentWhenReady)
         handler.removeCallbacks(reattachWindowWhenReady)
         // If the activity dies → the binding is guaranteed to be released

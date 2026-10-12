@@ -179,7 +179,8 @@ namespace LibKenjinx
                 {
                     StrongRumble = 1f,
                     WeakRumble = 1f,
-                    EnableRumble = false
+                    EnableRumble = true,
+                    UseHDRumble = true
                 }
             };
         }
@@ -445,9 +446,15 @@ namespace LibKenjinx
             IdInt = id;
         }
 
-        public void Dispose() { }
+        public void Dispose()
+        {
+            if (IdInt == 0)
+            {
+                Android.Interop.Vibrate(0, 0f, 0f);
+            }
+        }
 
-        public GamepadFeaturesFlag Features { get; } = GamepadFeaturesFlag.Motion;
+        public GamepadFeaturesFlag Features { get; } = GamepadFeaturesFlag.Motion | GamepadFeaturesFlag.Rumble;
         public string Id { get; }
 
         internal readonly int IdInt;
@@ -497,12 +504,16 @@ namespace LibKenjinx
 
         public bool HDRumble(VibrationValue left, VibrationValue right)
         {
-            throw new NotImplementedException();
+            float low = Math.Clamp(Math.Max(left.AmplitudeLow, right.AmplitudeLow), 0f, 1f);
+            float high = Math.Clamp(Math.Max(left.AmplitudeHigh, right.AmplitudeHigh), 0f, 1f);
+            Android.Interop.Vibrate(IdInt, low, high);
+            return true;
         }
 
         public bool Rumble(float lowFrequency, float highFrequency, uint durationMs)
         {
-            throw new NotImplementedException();
+            Android.Interop.Vibrate(IdInt, Math.Clamp(lowFrequency, 0f, 1f), Math.Clamp(highFrequency, 0f, 1f));
+            return true;
         }
 
         public GamepadStateSnapshot GetMappedStateSnapshot()

@@ -13,12 +13,14 @@ namespace Ryujinx.HLE.HOS.Services.Hid
         {
             return obj is VibrationValue value &&
                    AmplitudeLow == value.AmplitudeLow &&
-                   AmplitudeHigh == value.AmplitudeHigh;
+                   AmplitudeHigh == value.AmplitudeHigh &&
+                   FrequencyLow == value.FrequencyLow &&
+                   FrequencyHigh == value.FrequencyHigh;
         }
 
         public readonly override int GetHashCode()
         {
-            return HashCode.Combine(AmplitudeLow, AmplitudeHigh);
+            return HashCode.Combine(AmplitudeLow, AmplitudeHigh, FrequencyLow, FrequencyHigh);
         }
 
         public static bool operator ==(VibrationValue left, VibrationValue right)

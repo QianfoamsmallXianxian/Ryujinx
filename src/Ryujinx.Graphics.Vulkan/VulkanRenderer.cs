@@ -47,6 +47,7 @@ namespace Ryujinx.Graphics.Vulkan
         internal KhrPushDescriptor PushDescriptorApi { get; private set; }
         internal ExtTransformFeedback TransformFeedbackApi { get; private set; }
         internal KhrDrawIndirectCount DrawIndirectCountApi { get; private set; }
+        internal KhrPipelineExecutableProperties PipelineExecutablePropertiesApi { get; private set; }
         internal ExtAttachmentFeedbackLoopDynamicState DynamicFeedbackLoopApi { get; private set; }
 
         internal uint QueueFamilyIndex { get; private set; }
@@ -66,6 +67,7 @@ namespace Ryujinx.Graphics.Vulkan
         internal bool SupportsTimelineSemaphore { get; private set; }
         internal CommandBufferPool CommandBufferPool { get; private set; }
         internal PipelineLayoutCache PipelineLayoutCache { get; private set; }
+        internal PipelineLibraryCache PipelineLibrary { get; private set; }
         internal BackgroundResources BackgroundResources { get; private set; }
         internal Action<Action> InterruptAction { get; private set; }
         internal SyncManager SyncManager { get; private set; }
@@ -114,8 +116,9 @@ namespace Ryujinx.Graphics.Vulkan
         internal bool IsQualcommProprietary { get; private set; }
         internal bool IsTurnip { get; private set; }
 
-        // NEOV2 CONDRENDER1: Eden skips waiting for conditional rendering values on these drivers.
+        // NEOV2 CONDRENDER1
         public bool PreferUnconditionalRenderingOverReadback => (IsTurnip || IsQualcommProprietary) && NeoGraphicsSettings.ConditionalRenderNoWaitEnabled;
+
         internal bool IsMoltenVk { get; private set; }
         internal bool IsTBDR { get; private set; }
         internal bool IsSharedMemory { get; private set; }
@@ -181,6 +184,11 @@ namespace Ryujinx.Graphics.Vulkan
             if (Api.TryGetDeviceExtension(_instance.Instance, _device, out KhrDrawIndirectCount drawIndirectCountApi))
             {
                 DrawIndirectCountApi = drawIndirectCountApi;
+            }
+
+            if (Api.TryGetDeviceExtension(_instance.Instance, _device, out KhrPipelineExecutableProperties pipelineExecutablePropertiesApi))
+            {
+                PipelineExecutablePropertiesApi = pipelineExecutablePropertiesApi;
             }
 
             if (Api.TryGetDeviceExtension(_instance.Instance, _device, out ExtAttachmentFeedbackLoopDynamicState dynamicFeedbackLoopApi))
@@ -260,10 +268,9 @@ namespace Ryujinx.Graphics.Vulkan
                 properties2.PNext = &propertiesPushDescriptor;
             }
 
-            // NEOV2 TEXBUF-ALIGN1: drivers que expıem VK_EXT_texel_buffer_alignment com alinhamento
-            // de um ˙nico texel (ex.: Turnip) aceitam o offset exato da view de texture buffer.
-            // Nesses drivers a view n„o pode ser deslocada para frente, sen„o o shader lÍ o dado errado.
-            bool supportsTexelBufferAlignment = _physicalDevice.IsDeviceExtensionPresent("VK_EXT_texel_buffer_alignment");
+            // NEOV2 TEXBUF-ALIGN1: Turnip pode aceitar offset exato de texture buffer.
+            bool supportsTexelBufferAlignment =
+                _physicalDevice.IsDeviceExtensionPresent("VK_EXT_texel_buffer_alignment");
 
             PhysicalDeviceTexelBufferAlignmentPropertiesEXT propertiesTexelBufferAlignment = new()
             {
@@ -469,7 +476,8 @@ namespace Ryujinx.Graphics.Vulkan
                 properties.Limits.MinTexelBufferOffsetAlignment
             );
 
-            bool texelBufferSingleTexelAlignment = supportsTexelBufferAlignment &&
+            bool texelBufferSingleTexelAlignment =
+                supportsTexelBufferAlignment &&
                 propertiesTexelBufferAlignment.UniformTexelBufferOffsetSingleTexelAlignment &&
                 propertiesTexelBufferAlignment.StorageTexelBufferOffsetSingleTexelAlignment &&
                 NeoGraphicsSettings.TexelBufferExactOffsetEnabled;
@@ -531,10 +539,12 @@ namespace Ryujinx.Graphics.Vulkan
             Api.TryGetDeviceExtension(_instance.Instance, _device, out ExtExternalMemoryHost hostMemoryApi);
             HostMemoryAllocator = new HostMemoryAllocator(MemoryAllocator, Api, hostMemoryApi, _device);
 
-            // NEOV2 TURNIP-FENCE1: no Turnip (kgsl) a timeline e emulada pelo Mesa. Cada consulta ou espera
-            // faz uma chamada ao kernel segurando uma trava unica da timeline, que serializa backend, submit
-            // e GPU thread. O Eden desliga timeline no Turnip (Device::HasTimelineSemaphore) e usa VkFence.
-            bool useTimelineSemaphore = SupportsTimelineSemaphore && !(IsTurnip && NeoGraphicsSettings.TurnipFenceEnabled);
+            // NEOV2 TURNIP-FENCE1:
+            // o Turnip usa VkFence para completion em vez da timeline emulada pelo KGSL.
+            // NEOV2 GLOBAL-TIMELINE-BATCH1: use timeline completion and submit batching by
+            // default on Turnip. Per-game profiles can still disable it for compatibility.
+            bool useTimelineSemaphore =
+                SupportsTimelineSemaphore && !(IsTurnip && NeoGraphicsSettings.TurnipFenceEnabled);
 
             QueueSubmissionWorker = new VulkanSubmissionWorker(Api, _device, Queue, QueueLock, _submissionGraphGate, useTimelineSemaphore, "Kenji Vulkan Main Submit");
             BackgroundQueueSubmissionWorker = BackgroundQueue.Handle != 0
@@ -543,9 +553,11 @@ namespace Ryujinx.Graphics.Vulkan
 
             Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-ETAPA2] Vulkan timeline semaphore completion: {(useTimelineSemaphore ? "Enabled" : (SupportsTimelineSemaphore ? "Fence fallback (Turnip, TURNIP-FENCE1)" : "Fence fallback"))}");
             Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-ETAPA4B] Turnip image view format lists: {(IsTurnip ? "Enabled" : "Disabled")}");
-            Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-TEXBUF-ALIGN1] Texel buffer view offset: {(texelBufferSingleTexelAlignment ? "exact (single texel alignment)" : $"aligned up to {minTexelBufferViewOffsetAlignment} bytes")}");
-                        // NEOV2 AUTOFLUSH1-FIX1: o teto por frame depende do modo efetivo do seletor, entao a linha
-            // nao pode mais imprimir 4 fixo.
+            Logger.Info?.Print(
+                LogClass.Gpu,
+                $"[NEOV2-TEXBUF-ALIGN1] Texel buffer view offset: {(texelBufferSingleTexelAlignment ? "exact (single texel alignment)" : $"aligned up to {minTexelBufferViewOffsetAlignment} bytes")}");
+            // NEOV2 AUTOFLUSH1-FIX1:
+            // o teto efetivo depende do seletor.
             string drawFlushCap = NeoGraphicsSettings.DrawFlushMode switch
             {
                 DrawFlushMode.Reduced => "1",
@@ -553,12 +565,15 @@ namespace Ryujinx.Graphics.Vulkan
                 _ => IsTurnip ? "4" : "unbounded",
             };
 
-            Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-FLUSH-R3] Turnip adaptive fast-flush guard: {(IsTurnip ? "Enabled" : "Not applicable")} drawFlushMode={NeoGraphicsSettings.DrawFlushMode} maxDrawFlushesPerFrame={drawFlushCap} exitThresholdMs=0.75");
+            Logger.Info?.Print(
+                LogClass.Gpu,
+                $"[NEOV2-FLUSH-R3] Turnip adaptive fast-flush guard: {(IsTurnip ? "Enabled" : "Not applicable")} drawFlushMode={NeoGraphicsSettings.DrawFlushMode} maxDrawFlushesPerFrame={drawFlushCap} exitThresholdMs=0.75");
             GezinjinxGuestStallTelemetry.Enable();
 
             CommandBufferPool = new CommandBufferPool(Api, _device, QueueSubmissionWorker, queueFamilyIndex, IsQualcommProprietary, IsTurnip);
 
             PipelineLayoutCache = new PipelineLayoutCache();
+            PipelineLibrary = PipelineLibraryCache.TryCreate(this, _device, _physicalDevice);
 
             BackgroundResources = new BackgroundResources(this, _device);
 
@@ -827,6 +842,9 @@ namespace Ryujinx.Graphics.Vulkan
 
             Api.GetPhysicalDeviceFeatures2(_physicalDevice.PhysicalDevice, &features2);
 
+            // NEOV2-FRAMEGEN1: sonda unica dos recursos exigidos pelos shaders LSFG (uma linha por sessao).
+            Logger.Notice.Print(LogClass.Gpu, $"[NEOV2-FRAMEGEN1] probe vulkanMemoryModel={(bool)featuresVk12.VulkanMemoryModel} shaderFloat16={(bool)featuresVk12.ShaderFloat16} nullDescriptor={Capabilities.SupportsNullDescriptors} adreno8xx={IsAdreno8xx}");
+
             PhysicalDeviceLimits limits = _physicalDevice.PhysicalDeviceProperties.Limits;
             QueueFamilyProperties mainQueueProperties = _physicalDevice.QueueFamilyProperties[QueueFamilyIndex];
 
@@ -918,7 +936,12 @@ namespace Ryujinx.Graphics.Vulkan
                     (IsTurnip && Environment.GetEnvironmentVariable("RYUJINX_TOTK_TURNIP_GATHER_BIAS") != "0")
                         ? (int)Capabilities.SubTexelPrecisionBits
                         : 0,
-                maximumGpuMemory: GetTotalGPUMemory());
+                maximumGpuMemory: GetTotalGPUMemory(),
+                // Turnip: sRGB/UNORM pairs share the UBWC class and are declared in the image view format list
+                // (TextureStorage.BuildTurnipViewFormatList), so they can be real views instead of copies.
+                // RYUJINX_NEO_SRGB_VIEWS=0 disables it (A/B testing).
+                supportsSrgbMismatchingViewFormat: IsTurnip &&
+                    Environment.GetEnvironmentVariable("RYUJINX_NEO_SRGB_VIEWS") != "0");
         }
 
         private ulong GetTotalGPUMemory()
@@ -1211,7 +1234,7 @@ namespace Ryujinx.Graphics.Vulkan
                 }
                 catch
                 {
-                    // retry sp‰ter
+                    // retry sp√§ter
                     return false;
                 }
             }
@@ -1314,6 +1337,7 @@ namespace Ryujinx.Graphics.Vulkan
                 return;
             }
 
+            PipelineLibrary?.StopWorkers();
             CommandBufferPool.Dispose();
             BackgroundResources.Dispose();
             _counters.Dispose();
@@ -1334,6 +1358,8 @@ namespace Ryujinx.Graphics.Vulkan
             foreach (ShaderCollection shader in Shaders) shader.Dispose();
             foreach (ITexture texture in Textures) texture.Release();
             foreach (SamplerHolder sampler in Samplers) sampler.Dispose();
+
+            PipelineLibrary?.Dispose();
 
             if (_surface.Handle != 0)
             {

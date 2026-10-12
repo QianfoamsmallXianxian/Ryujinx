@@ -1,4 +1,4 @@
-﻿namespace Ryujinx.Common.Diagnostics
+namespace Ryujinx.Common.Diagnostics
 {
     public enum DrawFlushMode
     {
@@ -124,5 +124,35 @@
         /// recompondo os cabecalhos como o Eden. Desligada por padrao; desligada, usa o decodificador em C#.
         /// </summary>
         public static bool Vp9FFmpegEnabled { get; set; }
+
+        /// <summary>NEOV2-FRAMEGEN1: chave global do framegen LSFG. Desligada por padrao.</summary>
+        public static bool FrameGenEnabled { get; set; }
+
+        /// <summary>NEOV2-FRAMEGEN1: caminho da Lossless.dll copiada para a pasta privada do app.</summary>
+        public static string FrameGenDllPath { get; set; }
+
+        private static double _frameGenPresentedFps;
+
+        /// <summary>
+        /// NEOV2-FRAMEGEN1: taxa de quadros APRESENTADOS (reais + gerados) medida pelo framegen. 0 = framegen desligado;
+        /// o contador de FPS mostra este valor no lugar do FPS real quando maior que 0.
+        /// </summary>
+        public static double FrameGenPresentedFps
+        {
+            get => System.Threading.Volatile.Read(ref _frameGenPresentedFps);
+            set => System.Threading.Volatile.Write(ref _frameGenPresentedFps, value);
+        }
+
+        private static int _guestSwapInterval = -1;
+
+        /// <summary>
+        /// NEOV2-FRAMEGEN1: intervalo de troca pedido pelo jogo ao SurfaceFlinger (1 = 60 FPS, 2 = 30 FPS).
+        /// -1 = desconhecido.
+        /// </summary>
+        public static int GuestSwapInterval
+        {
+            get => System.Threading.Volatile.Read(ref _guestSwapInterval);
+            set => System.Threading.Volatile.Write(ref _guestSwapInterval, value);
+        }
     }
 }

@@ -60,6 +60,13 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             if (isValid) preferences.edit { putInt(key("vp9FFmpegMode"), value) }
         }
 
+    /** NEOV2-FRAMEGEN1: framegen LSFG por jogo. 0: Use Global, 1: Enabled, 2: Disabled */
+    var frameGenMode: Int
+        get() = if (!isValid) 0 else preferences.getInt(key("frameGenMode"), 0)
+        set(value) {
+            if (isValid) preferences.edit { putInt(key("frameGenMode"), value) }
+        }
+
     /** NEOV2-GPUMEM1: 0: Use Global, 1: Enabled, 2: Disabled */
     var edenGpuMemoryMode: Int
         get() = if (!isValid) 0 else preferences.getInt(key("edenGpuMemoryMode"), 0)
@@ -177,6 +184,10 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             1 -> settings.enableVp9FFmpeg = true
             2 -> settings.enableVp9FFmpeg = false
         }
+        when (safeInt(key("frameGenMode"), 0)) {
+            1 -> settings.enableFrameGen = true
+            2 -> settings.enableFrameGen = false
+        }
         when (safeInt(key("relaxedDmaCopyMode"), 0)) {
             1 -> settings.enableRelaxedDmaCopy = true
             2 -> settings.enableRelaxedDmaCopy = false
@@ -221,7 +232,14 @@ class GameSettingsStore(activity: Activity, titleId: String) {
         settings.maxAnisotropy = safeFloat(key("maxAnisotropy"), settings.maxAnisotropy)
         settings.useVirtualController = safeBoolean(key("useVirtualController"), settings.useVirtualController)
         settings.enableMotion = safeBoolean(key("enableMotion"), settings.enableMotion)
-        settings.showPerformanceOverlay = safeBoolean(key("showPerformanceOverlay"), settings.showPerformanceOverlay)
+        settings.performanceOverlayLevel = when {
+            preferences.contains(key("performanceOverlayLevel")) ->
+                safeInt(key("performanceOverlayLevel"), settings.performanceOverlayLevel)
+            preferences.contains(key("showPerformanceOverlay")) ->
+                if (safeBoolean(key("showPerformanceOverlay"), false)) 3 else 0
+            else -> settings.performanceOverlayLevel
+        }.coerceIn(0, 3)
+        settings.showPerformanceOverlay = settings.performanceOverlayLevel != 0
         settings.virtualControllerPreset = enumValue(
             safeInt(key("virtualControllerPreset"), settings.virtualControllerPreset.ordinal),
             QuickSettings.VirtualControllerPreset.entries,
@@ -244,6 +262,7 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             putInt(key("vtgViaComputeMode"), vtgViaComputeMode)
             putInt(key("nceTrackingProtectionMode"), nceTrackingProtectionMode)
             putInt(key("vp9FFmpegMode"), vp9FFmpegMode)
+            putInt(key("frameGenMode"), frameGenMode)
             putInt(key("relaxedDmaCopyMode"), relaxedDmaCopyMode)
             putInt(key("edenGpuMemoryMode"), edenGpuMemoryMode)
             putInt(key("rejectUnmappedDescriptorsMode"), rejectUnmappedDescriptorsMode)
@@ -264,6 +283,7 @@ class GameSettingsStore(activity: Activity, titleId: String) {
             putBoolean(key("useVirtualController"), settings.useVirtualController)
             putBoolean(key("enableMotion"), settings.enableMotion)
             putBoolean(key("showPerformanceOverlay"), settings.showPerformanceOverlay)
+            putInt(key("performanceOverlayLevel"), settings.performanceOverlayLevel.coerceIn(0, 3))
             putInt(key("virtualControllerPreset"), settings.virtualControllerPreset.ordinal)
         }
     }

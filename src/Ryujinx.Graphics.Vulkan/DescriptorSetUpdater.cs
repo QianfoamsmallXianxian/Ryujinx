@@ -124,6 +124,20 @@ namespace Ryujinx.Graphics.Vulkan
 
         private DirtyFlags _dirty;
 
+        private ulong _uniformAssignments;
+        private ulong _uniformBindingChanges;
+        private ulong _uniformBufferChanges;
+        private ulong _uniformOffsetOnlyChanges;
+        private ulong _uniformRangeOnlyChanges;
+        private ulong _uniformOffsetRangeChanges;
+        private ulong _uniformOtherSameBufferChanges;
+        private bool _uniformPendingOffsetChange;
+        private bool _uniformPendingDescriptorChange;
+        private ulong _uniformFlushes;
+        private ulong _uniformOffsetOnlyFlushes;
+        private ulong _uniformDescriptorFlushes;
+        private ulong _uniformOtherFlushes;
+
         private readonly BufferHolder _dummyBuffer;
         private readonly TextureView _dummyTexture;
         private readonly SamplerHolder _dummySampler;
@@ -739,6 +753,7 @@ namespace Ryujinx.Graphics.Vulkan
 
             for (int i = 0; i < buffers.Length; i++)
             {
+                ulong assignments = ++_uniformAssignments;
                 BufferAssignment assignment = buffers[i];
                 BufferRange buffer = assignment.Range;
                 int index = assignment.Binding;
@@ -761,6 +776,43 @@ namespace Ryujinx.Graphics.Vulkan
 
                 if (!currentBufferRef.Equals(newRef) || currentInfo.Range != info.Range)
                 {
+                    _uniformBindingChanges++;
+
+                    bool bufferChanged = currentBufferRef.Buffer != newRef.Buffer;
+                    bool offsetChanged = currentBufferRef.Offset != newRef.Offset;
+                    bool rangeChanged = currentInfo.Range != info.Range;
+                    bool writeChanged = currentBufferRef.Write != newRef.Write;
+
+                    if (bufferChanged || rangeChanged || writeChanged)
+                    {
+                        _uniformPendingDescriptorChange = true;
+                    }
+                    else if (offsetChanged)
+                    {
+                        _uniformPendingOffsetChange = true;
+                    }
+
+                    if (bufferChanged)
+                    {
+                        _uniformBufferChanges++;
+                    }
+                    else if (offsetChanged && rangeChanged && !writeChanged)
+                    {
+                        _uniformOffsetRangeChanges++;
+                    }
+                    else if (offsetChanged && !rangeChanged && !writeChanged)
+                    {
+                        _uniformOffsetOnlyChanges++;
+                    }
+                    else if (!offsetChanged && rangeChanged && !writeChanged)
+                    {
+                        _uniformRangeOnlyChanges++;
+                    }
+                    else
+                    {
+                        _uniformOtherSameBufferChanges++;
+                    }
+
                     _uniformSet.Clear(index);
                     _uniformSetPd[index] = 0;
 
@@ -792,6 +844,21 @@ namespace Ryujinx.Graphics.Vulkan
 
             if ((_dirty & DirtyFlags.Uniform) == DirtyFlags.Uniform)
             {
+                _uniformFlushes++;
+
+                if (_uniformPendingDescriptorChange)
+                {
+                    _uniformDescriptorFlushes++;
+                }
+                else if (_uniformPendingOffsetChange)
+                {
+                    _uniformOffsetOnlyFlushes++;
+                }
+                else
+                {
+                    _uniformOtherFlushes++;
+                }
+
                 if (program.UsePushDescriptors)
                 {
                     UpdateAndBindUniformBufferPd(cbs);
@@ -807,6 +874,9 @@ namespace Ryujinx.Graphics.Vulkan
                         UpdateAndBind(cbs, program, PipelineBase.UniformSetIndex, pbp);
                     }
                 }
+
+                _uniformPendingOffsetChange = false;
+                _uniformPendingDescriptorChange = false;
             }
 
             if ((_dirty & DirtyFlags.Storage) == DirtyFlags.Storage)

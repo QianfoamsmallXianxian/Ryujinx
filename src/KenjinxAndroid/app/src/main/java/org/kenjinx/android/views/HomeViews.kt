@@ -340,7 +340,7 @@ class HomeViews {
 
         private const val HOME_LAYOUT_KEY = "neoHomeLayout"
 
-        private enum class HomeLayout { Neo, Switch }
+        private enum class HomeLayout { Neo, Switch, Covers }
 
         const val ListImageSize = 150
 
@@ -423,6 +423,34 @@ class HomeViews {
             val showError = remember { mutableStateOf("") }
 
             val selectedModel = remember { mutableStateOf(viewModel.mainViewModel?.selected) }
+            var pendingCoverTitle by remember { mutableStateOf<String?>(null) }
+            val coverPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+                val titleId = pendingCoverTitle
+                pendingCoverTitle = null
+                if (uri != null && !titleId.isNullOrBlank()) {
+                    try {
+                        val context = viewModel.activity ?: return@rememberLauncherForActivityResult
+                        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                        context.contentResolver.openInputStream(uri)?.use {
+                            BitmapFactory.decodeStream(it, null, bounds)
+                        }
+                        val sample = (maxOf(bounds.outWidth, bounds.outHeight) / 1600).coerceAtLeast(1)
+                        val bitmap = context.contentResolver.openInputStream(uri)?.use {
+                            BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample })
+                        }
+                        if (bitmap != null) {
+                            val folder = java.io.File(context.filesDir, "game_covers")
+                            folder.mkdirs()
+                            val file = java.io.File(folder, "$titleId.jpg")
+                            file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+                            bitmap.recycle()
+                            Toast.makeText(context, "Capa atualizada", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (error: Exception) {
+                        Toast.makeText(viewModel.activity, "Não foi possível importar a capa", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
 
             val query = remember { mutableStateOf("") }
 
@@ -614,15 +642,9 @@ class HomeViews {
 
                 mutableStateOf(
 
-                    if (homePreferences.getString(HOME_LAYOUT_KEY, HomeLayout.Neo.name) == HomeLayout.Switch.name) {
-
-                        HomeLayout.Switch
-
-                    } else {
-
-                        HomeLayout.Neo
-
-                    }
+                    HomeLayout.entries.firstOrNull {
+                        it.name == homePreferences.getString(HOME_LAYOUT_KEY, HomeLayout.Neo.name)
+                    } ?: HomeLayout.Neo
 
                 )
 
@@ -981,7 +1003,7 @@ class HomeViews {
 
                 Crossfade(targetState = homeLayout, animationSpec = tween(360), label = "homeLayout") { layout ->
 
-                    if (layout == HomeLayout.Switch) {
+                    if (layout == HomeLayout.Switch || layout == HomeLayout.Covers) {
 
                         SwitchHome(
 
@@ -996,10 +1018,11 @@ class HomeViews {
                             selectedModel = selectedModel,
 
                             showError = showError,
+                            largeCovers = layout == HomeLayout.Covers,
 
                             onChangeLayout = {
 
-                                homeLayout = HomeLayout.Neo
+                                homeLayout = if (layout == HomeLayout.Switch) HomeLayout.Covers else HomeLayout.Neo
 
                                 homePreferences.edit().putString(HOME_LAYOUT_KEY, homeLayout.name).apply()
 
@@ -1645,6 +1668,11 @@ class HomeViews {
 
                                 showShortcutDialog.value = true
 
+                            },
+                            onChooseCover = {
+                                pendingCoverTitle = gm.titleId
+                                showAppActions.value = false
+                                coverPicker.launch(arrayOf("image/*"))
                             },
 
                             onClearPptc = {
@@ -3572,6 +3600,7 @@ class HomeViews {
             selectedModel: MutableState<GameModel?>,
 
             showError: MutableState<String>,
+            largeCovers: Boolean,
 
             onChangeLayout: () -> Unit,
 
@@ -3639,7 +3668,7 @@ class HomeViews {
 
                             items(filteredList) { game ->
 
-                                SwitchGameItem(game, viewModel, showAppActions, showLoading, selectedModel, showError)
+                                SwitchGameItem(game, viewModel, showAppActions, showLoading, selectedModel, showError, largeCovers)
 
                             }
 
@@ -3655,7 +3684,7 @@ class HomeViews {
 
                     layoutIcon = Icons.Default.ViewModule,
 
-                    layoutDescription = "Usar visual NEO",
+                    layoutDescription = if (largeCovers) "Usar visual NEO" else "Usar capas grandes",
 
                     onChangeLayout = onChangeLayout,
 
@@ -3734,7 +3763,8 @@ class HomeViews {
 
             selectedModel: MutableState<GameModel?>,
 
-            showError: MutableState<String>
+            showError: MutableState<String>,
+            largeCovers: Boolean
 
         ) {
 
@@ -3768,13 +3798,15 @@ class HomeViews {
 
             )
 
-            val coverBitmap = remember(gameModel.titleId) {
+            val posterFile = java.io.File(context.filesDir, "game_covers/${gameModel.titleId}.jpg")
+            val coverBitmap = remember(gameModel.titleId, largeCovers, posterFile.lastModified()) {
 
                 try {
 
                     val iconFile = java.io.File(context.filesDir, "game_icons/${gameModel.titleId}.jpg")
 
-                    if (iconFile.exists()) BitmapFactory.decodeFile(iconFile.absolutePath)
+                    if (largeCovers && posterFile.exists()) BitmapFactory.decodeFile(posterFile.absolutePath)
+                    else if (iconFile.exists()) BitmapFactory.decodeFile(iconFile.absolutePath)
 
                     else if (gameModel.icon?.isNotEmpty() == true) {
 
@@ -3790,13 +3822,19 @@ class HomeViews {
 
 
 
-            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(168.dp)) {
+            val cardWidth = if (largeCovers) {
+                if (neoCompactWidth()) 168.dp else 260.dp
+            } else 168.dp
+            val cardHeight = if (largeCovers) cardWidth * 1.5f else cardWidth
+
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(cardWidth)) {
 
                 Surface(
 
                     modifier = Modifier
 
-                        .size(168.dp)
+                        .width(cardWidth)
+                        .height(cardHeight)
 
                         .graphicsLayer {
 

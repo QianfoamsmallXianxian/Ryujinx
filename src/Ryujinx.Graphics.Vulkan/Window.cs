@@ -28,6 +28,7 @@ namespace Ryujinx.Graphics.Vulkan
         private Semaphore[] _renderFinishedSemaphores;
 
         private int _frameIndex;
+        private long _lastAndroidPresentTimestamp;
 
         private int _width;
         private int _height;
@@ -113,6 +114,7 @@ namespace Ryujinx.Graphics.Vulkan
 
         private void RecreateSwapchain()
         {
+            FlushDeferredPresent();
             if (!_gd.PresentAllowed || _surface.Handle == 0 || !CanQuerySurface())
             {
                 _swapchainIsDirty = true;
@@ -387,6 +389,13 @@ namespace Ryujinx.Graphics.Vulkan
 
         private static PresentModeKHR ChooseSwapPresentMode(PresentModeKHR[] availablePresentModes, VSyncMode vSyncMode)
         {
+            // NEOV2-FRAMEGEN1: com o framegen o swapchain e FIFO; em MAILBOX o quadro gerado seria descartado pelo real.
+            if (Ryujinx.Common.Diagnostics.NeoGraphicsSettings.FrameGenEnabled &&
+                !string.IsNullOrEmpty(Ryujinx.Common.Diagnostics.NeoGraphicsSettings.FrameGenDllPath))
+            {
+                return PresentModeKHR.FifoKhr;
+            }
+
             if (vSyncMode == VSyncMode.Unbounded && availablePresentModes.Contains(PresentModeKHR.ImmediateKhr))
             {
                 return PresentModeKHR.ImmediateKhr;
@@ -410,9 +419,51 @@ namespace Ryujinx.Graphics.Vulkan
             return new Extent2D(width, height);
         }
 
+        // NEOV2-FRAMEGEN1: um intermediario elegivel e apresentado antes do quadro real.
+        // Qualquer falha cai no caminho 1:1 original.
+        private FrameGen.FrameGenRuntime _frameGen;
+        private System.Threading.Tasks.Task _deferredPresent;
+        private readonly System.Collections.Generic.List<FrameGen.FrameGenOutput> _frameGenOutputs = new();
+
+        // Espera os vkQueuePresent adiados (antes de recriar o swapchain, perder a superficie ou destruir a janela).
+        private void FlushDeferredPresent()
+        {
+            System.Threading.Tasks.Task pending = _deferredPresent;
+            try
+            {
+                pending?.Wait();
+            }
+            catch
+            {
+                // O present adiado falhou (swapchain perdido): o proximo quadro recria o swapchain.
+            }
+        }
+
         public unsafe override void Present(ITexture texture, ImageCrop crop, Action swapBuffersCallback)
         {
-            // If Surface is already new, but queries are still blocked → unblock them.
+            FrameGen.FrameGenRuntime frameGen = _frameGen ??= new FrameGen.FrameGenRuntime(_gd, _device);
+            if (frameGen.Active && _gd.PresentAllowed && _surface.Handle != 0 && _swapchain.Handle != 0 && texture is TextureView realView)
+            {
+                _gd.FlushAllCommands();
+                if (frameGen.OnRealFrame(realView, _frameGenOutputs))
+                {
+                    // O quadro real fecha cada par; nunca substitui-lo por intermediarios antigos.
+                    foreach (FrameGen.FrameGenOutput output in _frameGenOutputs)
+                    {
+                        PresentCore(output.Texture, crop, null, 0);
+                    }
+
+                    _frameGenOutputs.Clear();
+                    PresentCore(texture, crop, swapBuffersCallback, 0);
+                    return;
+                }
+            }
+
+            PresentCore(texture, crop, swapBuffersCallback, 0);
+        }
+
+        private unsafe void PresentCore(ITexture texture, ImageCrop crop, Action swapBuffersCallback, long dueTicks)
+        {            // If Surface is already new, but queries are still blocked → unblock them.
             if (!_allowSurfaceQueries && _surface.Handle != 0)
             {
                 _allowSurfaceQueries = true;
@@ -646,21 +697,78 @@ namespace Ryujinx.Graphics.Vulkan
             Semaphore[] waitSems = new[] { _imageAvailableSemaphores[semaphoreIndex] };
             PipelineStageFlags[] waitStages = new[] { PipelineStageFlags.ColorAttachmentOutputBit }; // Important on Android
             Semaphore[] signalSems = new[] { _renderFinishedSemaphores[semaphoreIndex] };
+            _frameGen?.TrackOutputUse(texture as TextureView, cbs.GetFence());
             _gd.CommandBufferPool.Return(cbs, waitSems, waitStages, signalSems);
 
             _gd.FlushAllCommands();
 
-            PresentOne(_gd, _renderFinishedSemaphores[semaphoreIndex], _swapchain, nextImage);
+            // Apresentacao: imediata, ou agendada em dueTicks. Os present adiados formam uma cadeia (ordem preservada) numa thread de
+            // pool: a thread de renderizacao nao espera, e o quadro seguinte nunca passa na frente de um adiado.
+            System.Threading.Tasks.Task previousDeferred = _deferredPresent;
+            bool pendingBefore = previousDeferred != null && !previousDeferred.IsCompleted;
+            if (dueTicks > Stopwatch.GetTimestamp() + Stopwatch.Frequency / 2000 || pendingBefore)
+            {
+                VulkanRenderer gd = _gd;
+                Semaphore signal = _renderFinishedSemaphores[semaphoreIndex];
+                SwapchainKHR swapchain = _swapchain;
+                uint image = nextImage;
 
+                _deferredPresent = (previousDeferred ?? System.Threading.Tasks.Task.CompletedTask).ContinueWith(_ =>
+                {
+                    while (true)
+                    {
+                        long remaining = dueTicks - Stopwatch.GetTimestamp();
+                        if (remaining <= 0)
+                        {
+                            break;
+                        }
+
+                        if (remaining > Stopwatch.Frequency / 500)
+                        {
+                            System.Threading.Thread.Sleep(1);
+                        }
+                        else
+                        {
+                            System.Threading.Thread.SpinWait(32);
+                        }
+                    }
+
+                    PresentOne(gd, signal, swapchain, image);
+                }, System.Threading.Tasks.TaskScheduler.Default);
+            }
+            else
+            {
+                PresentOne(_gd, _renderFinishedSemaphores[semaphoreIndex], _swapchain, nextImage);
+            }
             swapBuffersCallback?.Invoke();
         }
 
-        private static void PresentOne(
+        private void PresentOne(
             VulkanRenderer gd,
             Semaphore signal,
             SwapchainKHR swapchain,
             uint imageIndex)
         {
+            // The game clock is independent of presentation. This only caps displayed frames.
+            // Com o framegen ativo o vsync do FIFO espaca os quadros; o limitador por espera ativa so bloquearia a thread.
+            if (OperatingSystem.IsAndroid() && _frameGen?.Active != true)
+            {
+                long interval = Stopwatch.Frequency / 60;
+                long due = _lastAndroidPresentTimestamp + interval;
+                while (_lastAndroidPresentTimestamp != 0 && Stopwatch.GetTimestamp() < due)
+                {
+                    long remaining = due - Stopwatch.GetTimestamp();
+                    if (remaining > Stopwatch.Frequency / 500)
+                    {
+                        System.Threading.Thread.Sleep(1);
+                    }
+                    else
+                    {
+                        System.Threading.Thread.SpinWait(32);
+                    }
+                }
+                _lastAndroidPresentTimestamp = Stopwatch.GetTimestamp();
+            }
             // NEOV2 Etapa 1: o present entra na mesma fila FIFO do VulkanSubmissionWorker.
             // Assim ele so chega ao VkQueue depois do QueueSubmit que sinaliza "signal".
             long start = Stopwatch.GetTimestamp();
@@ -670,6 +778,7 @@ namespace Ryujinx.Graphics.Vulkan
             if (result == Result.Success || result == Result.SuboptimalKhr)
             {
                 BaselineTelemetry.RecordPresent(elapsed);
+                FrameGen.FrameGenRuntime.CountPresented();
             }
         }
 
@@ -885,6 +994,8 @@ namespace Ryujinx.Graphics.Vulkan
                     }
                 }
 
+                FlushDeferredPresent();
+                _frameGen?.Dispose();
                 _effect?.Dispose();
                 _scalingFilter?.Dispose();
             }
@@ -892,6 +1003,7 @@ namespace Ryujinx.Graphics.Vulkan
 
         public void OnSurfaceLost()
         {
+            FlushDeferredPresent();
             lock (_gd.SurfaceLock)
             {
                 // Thorough cleanup operation so that nothing "old" remains after the resume

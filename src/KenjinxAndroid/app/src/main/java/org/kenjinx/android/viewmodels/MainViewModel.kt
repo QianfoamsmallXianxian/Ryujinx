@@ -135,6 +135,7 @@ class MainViewModel(val activity: MainActivity) {
     }
 
     internal fun onEmulationStopped() {
+        org.kenjinx.android.KenjinxNative.cancelVibration()
         emulationRunning = false
         emulationClosing = false
     }
@@ -211,9 +212,9 @@ class MainViewModel(val activity: MainActivity) {
         // Opcoes por jogo "Compatibilidade grafica 2D" (MARVEL Cosmic Invasion) e "Modo sem internet" (DOOM 2016).
         val experimentalStore = GameSettingsStore(activity, game.titleId.orEmpty())
         KenjinxNative.deviceSetExperimentalGameFixes(experimentalStore.isEnabled && experimentalStore.experimentalGameFixesEnabled)
-        KenjinxNative.deviceSetNifmOffline(experimentalStore.isEnabled && experimentalStore.nifmOfflineEnabled)
+        KenjinxNative.deviceSetNifmOffline(true)
         // Opcao por jogo "Termos offline" (BioShock).
-        KenjinxNative.deviceSetWebOfflineTerms(experimentalStore.isEnabled && experimentalStore.webOfflineTermsEnabled)
+        KenjinxNative.deviceSetWebOfflineTerms(true)
 
         KenjinxNative.deviceReinitEmulation()
         MainActivity.mainViewModel?.activity?.uiHandler = UiHandler()
@@ -273,7 +274,7 @@ class MainViewModel(val activity: MainActivity) {
 
         // NEOV2 NCE-PROT1: valor efetivo ja resolvido por getSettingsForGame (global + override por jogo).
         try {
-            KenjinxNative.deviceSetNceTrackingProtection(settings.enableNceTrackingProtection)
+            KenjinxNative.deviceSetNceTrackingProtection(true)
         } catch (_: Throwable) {
         }
 
@@ -289,7 +290,13 @@ class MainViewModel(val activity: MainActivity) {
         }
         // NEOV2-VP9EDEN1: VP9 pelo FFmpeg (chave geral).
         try {
-            KenjinxNative.deviceSetVp9FFmpeg(settings.enableVp9FFmpeg)
+            KenjinxNative.deviceSetVp9FFmpeg(true)
+        } catch (_: Throwable) {
+        }
+        // NEOV2-FRAMEGEN1: chave global + DLL privada (so liga com DLL presente).
+        try {
+            val dll = java.io.File(activity.filesDir, "lossless/Lossless.dll")
+            KenjinxNative.deviceSetFrameGen(settings.enableFrameGen && dll.isFile, dll.absolutePath)
         } catch (_: Throwable) {
         }
         // NEOV2-AUDIO1: amplificacao do audio (100% a 200%).
@@ -306,19 +313,19 @@ class MainViewModel(val activity: MainActivity) {
         } catch (_: Throwable) {
         }
         // Reset the effective Hugare setting for every launch, including shortcuts.
-        KenjinxNative.deviceSetHugareOptimizations(settings.enableHugareOptimizations)
+        KenjinxNative.deviceSetHugareOptimizations(true)
 
         // Opcao "Otimizacoes de GPU", antes de criar o renderer. TEXBUF-ALIGN1 e correcao e fica sempre ligado.
         try {
-            KenjinxNative.deviceSetTurnipFence(settings.enableGpuOptimizations)
+            KenjinxNative.deviceSetTurnipFence(true)
         } catch (_: Throwable) {
         }
         try {
-            KenjinxNative.deviceSetConditionalRenderNoWait(settings.enableGpuOptimizations)
+            KenjinxNative.deviceSetConditionalRenderNoWait(true)
         } catch (_: Throwable) {
         }
         try {
-            KenjinxNative.deviceSetCommandFetchNoFlush(settings.enableGpuOptimizations)
+            KenjinxNative.deviceSetCommandFetchNoFlush(true)
         } catch (_: Throwable) {
         }
         try {
@@ -326,26 +333,26 @@ class MainViewModel(val activity: MainActivity) {
         } catch (_: Throwable) {
         }
         try {
-            KenjinxNative.deviceSetQueueHysteresis(settings.enableGpuOptimizations)
+            KenjinxNative.deviceSetQueueHysteresis(true)
         } catch (_: Throwable) {
         }
         try {
-            KenjinxNative.deviceSetTimelineLazy(settings.enableGpuOptimizations)
+            KenjinxNative.deviceSetTimelineLazy(true)
         } catch (_: Throwable) {
         }
         try {
-            KenjinxNative.deviceSetStagingBufferLock(settings.enableGpuOptimizations)
+            KenjinxNative.deviceSetStagingBufferLock(true)
         } catch (_: Throwable) {
         }
         try {
-            KenjinxNative.deviceSetTexturePoolKeepInvalid(settings.enableGpuOptimizations)
+            KenjinxNative.deviceSetTexturePoolKeepInvalid(true)
         } catch (_: Throwable) {
         }
 
         var success = KenjinxNative.graphicsInitialize(
             enableMacroHLE = settings.enableMacroHLE,
             enableShaderCache = settings.enableShaderCache,
-            enableShaderLoopSafety = settings.enableShaderLoopSafety,
+            enableShaderLoopSafety = true,
             enableTextureRecompression = settings.enableTextureRecompression,
             enableVtgViaCompute = settings.enableVtgViaCompute,
             drawFlushMode = settings.drawFlushMode,
@@ -453,11 +460,12 @@ class MainViewModel(val activity: MainActivity) {
         val settings = QuickSettings(activity)
 
         KenjinxNative.deviceSetExperimentalGameFixes(false)
-        KenjinxNative.deviceSetNifmOffline(false)
+        KenjinxNative.deviceSetNifmOffline(true)
+        KenjinxNative.deviceSetWebOfflineTerms(true)
 
         // NEOV2 NCE-PROT1: sem perfil de jogo, vale a configuracao global.
         try {
-            KenjinxNative.deviceSetNceTrackingProtection(settings.enableNceTrackingProtection)
+            KenjinxNative.deviceSetNceTrackingProtection(true)
         } catch (_: Throwable) {
         }
 
@@ -473,7 +481,13 @@ class MainViewModel(val activity: MainActivity) {
         }
         // NEOV2-VP9EDEN1: VP9 pelo FFmpeg (chave geral).
         try {
-            KenjinxNative.deviceSetVp9FFmpeg(settings.enableVp9FFmpeg)
+            KenjinxNative.deviceSetVp9FFmpeg(true)
+        } catch (_: Throwable) {
+        }
+        // NEOV2-FRAMEGEN1: chave global + DLL privada (so liga com DLL presente).
+        try {
+            val dll = java.io.File(activity.filesDir, "lossless/Lossless.dll")
+            KenjinxNative.deviceSetFrameGen(settings.enableFrameGen && dll.isFile, dll.absolutePath)
         } catch (_: Throwable) {
         }
         // NEOV2-AUDIO1: amplificacao do audio (100% a 200%).
@@ -490,19 +504,19 @@ class MainViewModel(val activity: MainActivity) {
         } catch (_: Throwable) {
         }
         // Reset the effective Hugare setting for every launch, including shortcuts.
-        KenjinxNative.deviceSetHugareOptimizations(settings.enableHugareOptimizations)
+        KenjinxNative.deviceSetHugareOptimizations(true)
 
         // Opcao "Otimizacoes de GPU", antes de criar o renderer. TEXBUF-ALIGN1 e correcao e fica sempre ligado.
         try {
-            KenjinxNative.deviceSetTurnipFence(settings.enableGpuOptimizations)
+            KenjinxNative.deviceSetTurnipFence(true)
         } catch (_: Throwable) {
         }
         try {
-            KenjinxNative.deviceSetConditionalRenderNoWait(settings.enableGpuOptimizations)
+            KenjinxNative.deviceSetConditionalRenderNoWait(true)
         } catch (_: Throwable) {
         }
         try {
-            KenjinxNative.deviceSetCommandFetchNoFlush(settings.enableGpuOptimizations)
+            KenjinxNative.deviceSetCommandFetchNoFlush(true)
         } catch (_: Throwable) {
         }
         try {
@@ -510,19 +524,19 @@ class MainViewModel(val activity: MainActivity) {
         } catch (_: Throwable) {
         }
         try {
-            KenjinxNative.deviceSetQueueHysteresis(settings.enableGpuOptimizations)
+            KenjinxNative.deviceSetQueueHysteresis(true)
         } catch (_: Throwable) {
         }
         try {
-            KenjinxNative.deviceSetTimelineLazy(settings.enableGpuOptimizations)
+            KenjinxNative.deviceSetTimelineLazy(true)
         } catch (_: Throwable) {
         }
         try {
-            KenjinxNative.deviceSetStagingBufferLock(settings.enableGpuOptimizations)
+            KenjinxNative.deviceSetStagingBufferLock(true)
         } catch (_: Throwable) {
         }
         try {
-            KenjinxNative.deviceSetTexturePoolKeepInvalid(settings.enableGpuOptimizations)
+            KenjinxNative.deviceSetTexturePoolKeepInvalid(true)
         } catch (_: Throwable) {
         }
 
@@ -532,7 +546,7 @@ class MainViewModel(val activity: MainActivity) {
         var success = KenjinxNative.graphicsInitialize(
             enableMacroHLE = settings.enableMacroHLE,
             enableShaderCache = settings.enableShaderCache,
-            enableShaderLoopSafety = settings.enableShaderLoopSafety,
+            enableShaderLoopSafety = true,
             enableTextureRecompression = settings.enableTextureRecompression,
             enableVtgViaCompute = settings.enableVtgViaCompute,
             drawFlushMode = settings.drawFlushMode,

@@ -39,6 +39,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -88,7 +89,7 @@ fun GameSettingsPage(
     var docked by remember(titleId) { mutableStateOf(initial.enableDocked) }
     var virtualController by remember(titleId) { mutableStateOf(initial.useVirtualController) }
     var virtualPreset by remember(titleId) { mutableStateOf(initial.virtualControllerPreset) }
-    var showStats by remember(titleId) { mutableStateOf(initial.showPerformanceOverlay) }
+    var statsLevel by remember(titleId) { mutableIntStateOf(initial.performanceOverlayLevel) }
     var motion by remember(titleId) { mutableStateOf(initial.enableMotion) }
     var vsync by remember(titleId) { mutableStateOf(initial.vSyncMode) }
     var resScale by remember(titleId) { mutableStateOf(initial.resScale) }
@@ -98,6 +99,7 @@ fun GameSettingsPage(
     var drawFlushMode by remember(titleId) { mutableStateOf(store.drawFlushMode) }
     var bufferReadbackMode by remember(titleId) { mutableStateOf(store.bufferReadbackMode) }
     var vp9FFmpegMode by remember(titleId) { mutableStateOf(store.vp9FFmpegMode) }
+    var frameGenMode by remember(titleId) { mutableStateOf(store.frameGenMode) }
     var relaxedDmaCopyMode by remember(titleId) { mutableStateOf(store.relaxedDmaCopyMode) }
     var edenGpuMemoryMode by remember(titleId) { mutableStateOf(store.edenGpuMemoryMode) }
     var rejectUnmappedDescriptorsMode by remember(titleId) { mutableStateOf(store.rejectUnmappedDescriptorsMode) }
@@ -130,6 +132,7 @@ fun GameSettingsPage(
             store.drawFlushMode = drawFlushMode
             store.bufferReadbackMode = bufferReadbackMode
             store.vp9FFmpegMode = vp9FFmpegMode
+            store.frameGenMode = frameGenMode
             store.relaxedDmaCopyMode = relaxedDmaCopyMode
             store.edenGpuMemoryMode = edenGpuMemoryMode
             store.rejectUnmappedDescriptorsMode = rejectUnmappedDescriptorsMode
@@ -153,7 +156,8 @@ fun GameSettingsPage(
                     this.enableDocked = docked
                     this.useVirtualController = virtualController
                     this.virtualControllerPreset = virtualPreset
-                    this.showPerformanceOverlay = showStats
+                    this.performanceOverlayLevel = statsLevel
+                    this.showPerformanceOverlay = statsLevel != 0
                     this.enableMotion = motion
                     this.vSyncMode = vsync
                     this.resScale = resScale
@@ -182,7 +186,7 @@ fun GameSettingsPage(
         docked = def.enableDocked
         virtualController = def.useVirtualController
         virtualPreset = def.virtualControllerPreset
-        showStats = def.showPerformanceOverlay
+        statsLevel = def.performanceOverlayLevel
         motion = def.enableMotion
         vsync = def.vSyncMode
         resScale = def.resScale
@@ -192,6 +196,7 @@ fun GameSettingsPage(
         drawFlushMode = 0
         bufferReadbackMode = 0
         vp9FFmpegMode = 0
+        frameGenMode = 0
         relaxedDmaCopyMode = 0
         edenGpuMemoryMode = 0
         rejectUnmappedDescriptorsMode = 0
@@ -226,8 +231,6 @@ fun GameSettingsPage(
             SwitchSetting("Execução nativa (NCE)", "Desligado usa JIT (mais lento, mais compatível).", useNce, custom) { useNce = it }
             SwitchSetting("PPTC", "Guarda o código já traduzido para abrir o jogo mais rápido.", enablePptc, custom) { enablePptc = it }
             SwitchSetting("Memory Slack (12 GiB)", "Mais memória para jogos que travam por falta dela.", memorySlack, custom) { memorySlack = it }
-            SwitchSetting("Modo sem internet", "Para jogos que travam antes do gameplay esperando a rede (ex.: DOOM 2016).", nifmOfflineEnabled, custom) { nifmOfflineEnabled = it }
-            SwitchSetting("Termos offline", "Conclui a tela de termos do navegador offline em jogos que travam nela (ex.: BioShock).", webOfflineTermsEnabled, custom) { webOfflineTermsEnabled = it }
             ChoiceSetting(
                 "Modo do console",
                 null,
@@ -265,12 +268,10 @@ fun GameSettingsPage(
                 anisotropy,
                 custom
             ) { anisotropy = it }
-            SwitchSetting("Limitar à velocidade do Switch", "Desligado deixa o jogo rodar sem limite de FPS.", vsync == VSyncMode.Switch, custom) {
-                vsync = if (it) VSyncMode.Switch else VSyncMode.Unbounded
-            }
             SwitchSetting("Esticar para tela inteira", null, stretch, custom) { stretch = it }
             SwitchSetting("Cache de shaders", "Guarda os shaders compilados para evitar engasgos.", shaderCache, custom) { shaderCache = it }
             SwitchSetting("Recompressão de texturas", "Economiza memória de vídeo em texturas grandes.", textureRecompression, custom) { textureRecompression = it }
+            ChoiceSetting("Geração de quadros (LSFG)", "Gera quadros intermediários até o teto do jogo. Exige a Lossless.dll selecionada em Configurações > Gráficos. Requer reiniciar o jogo.", globalOnOff, frameGenMode, custom) { frameGenMode = it }
         }
     }
 
@@ -292,7 +293,12 @@ fun GameSettingsPage(
                 presets,
                 custom && virtualController
             ) { virtualPreset = it }
-            SwitchSetting("Mostrar estatísticas", "FPS e tempo de quadro na tela.", showStats, custom) { showStats = it }
+            val statOptions = listOf(0 to "Desligado", 1 to "Só FPS", 2 to "FPS + quadro", 3 to "Completo")
+            SelectSetting(
+                "Estatísticas de desempenho", null,
+                statOptions.first { it.first == statsLevel }.second,
+                statOptions, custom
+            ) { statsLevel = it }
             SwitchSetting("Movimento (giroscópio)", null, motion, custom) { motion = it }
         }
     }
@@ -300,11 +306,7 @@ fun GameSettingsPage(
     val compatibilitySection: @Composable () -> Unit = {
         SettingsSection("Compatibilidade e correções") {
             SwitchSetting("Compatibilidade gráfica 2D", "Corrige tela preta e escala em jogos 2D.", experimentalGameFixesEnabled, custom) { experimentalGameFixesEnabled = it }
-            ChoiceSetting("Proteção de memória NCE", "Corrige tela preta em alguns jogos (ex.: MUA3).", globalOnOff, nceTrackingProtectionMode, custom) { nceTrackingProtectionMode = it }
-            ChoiceSetting("Otimizações de GPU", null, globalOnOff, gpuOptimizationsMode, custom) { gpuOptimizationsMode = it }
-            ChoiceSetting("Otimização do Hugare", "Pode melhorar o desempenho ou causar lentidão e travamentos, dependendo do jogo. Requer reiniciar o jogo.", globalOnOff, hugareOptimizationsMode, custom) { hugareOptimizationsMode = it }
             ChoiceSetting("VTG via Compute", null, globalOnOff, vtgViaComputeMode, custom) { vtgViaComputeMode = it }
-            ChoiceSetting("VP9 pelo FFmpeg", "Desligue se o vídeo do jogo ficar com erros (ex.: GRID Autosport).", globalOnOff, vp9FFmpegMode, custom) { vp9FFmpegMode = it }
             ChoiceSetting("Cópia DMA relaxada", "Mais desempenho em alguns jogos (ex.: Diablo II); pode causar erros gráficos.", globalOnOff, relaxedDmaCopyMode, custom) { relaxedDmaCopyMode = it }
             ChoiceSetting("Memória de GPU estilo Eden", "Libera buffers e texturas sem uso e fecha o jogo se a RAM acabar (ex.: DOOM Eternal). Desligue se aparecer erro gráfico.", globalOnOff, edenGpuMemoryMode, custom) { edenGpuMemoryMode = it }
             ChoiceSetting("Rejeitar descritores não mapeados", null, globalOnOff, rejectUnmappedDescriptorsMode, custom) { rejectUnmappedDescriptorsMode = it }

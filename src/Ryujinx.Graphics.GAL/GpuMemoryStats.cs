@@ -58,7 +58,56 @@ namespace Ryujinx.Graphics.GAL
         /// the freeze corrupted the save index).
         /// </summary>
         public static volatile bool HostRamGuardEnabled;
-        public const long HostRamGuardMinAvailableBytes = 1200L * MiB;
+
+        // NEOV2-RAMGUARD1: the minimum free RAM is no longer a fixed 1200 MB (it closed Metroid Prime 4 at 1192 MB free for a 0 MB
+        // request). Default 600 MB; ram_guard_mb=<n> in neo_flags.txt changes it and 0 turns the guard off.
+        private const long HostRamGuardDefaultMb = 600;
+        private static long _hostRamGuardMinBytes = -1;
+
+        public static long HostRamGuardMinAvailableBytes
+        {
+            get
+            {
+                long value = Volatile.Read(ref _hostRamGuardMinBytes);
+
+                if (value >= 0)
+                {
+                    return value == 0 ? long.MinValue : value;
+                }
+
+                long mb = HostRamGuardDefaultMb;
+
+                try
+                {
+                    string flagsPath = System.IO.Path.Combine(Ryujinx.Common.Configuration.AppDataManager.BaseDirPath, "neo_flags.txt");
+
+                    if (System.IO.File.Exists(flagsPath))
+                    {
+                        foreach (string rawLine in System.IO.File.ReadAllLines(flagsPath))
+                        {
+                            int separator = rawLine.IndexOf('=');
+
+                            if (separator > 0 &&
+                                rawLine[..separator].Trim().Equals("ram_guard_mb", System.StringComparison.OrdinalIgnoreCase) &&
+                                long.TryParse(rawLine[(separator + 1)..].Trim(), out long parsed) && parsed >= 0)
+                            {
+                                mb = parsed;
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                }
+
+                Volatile.Write(ref _hostRamGuardMinBytes, mb * MiB);
+                Ryujinx.Common.Logging.Logger.Notice.Print(Ryujinx.Common.Logging.LogClass.Gpu, $"[NEOV2-RAMGUARD1] min free = {mb} MB{(mb == 0 ? " (guard off)" : string.Empty)}");
+
+                // 0 disables the guard: no free-memory value can be below long.MinValue.
+                return mb == 0 ? long.MinValue : mb * MiB;
+            }
+        }
+
         public const long HostRamGuardMinAllocationBytes = 0;
 
         // NEOV2-RAMGUARD2: MemAvailable is re-read at most every 20 ms, so every allocation can be checked.

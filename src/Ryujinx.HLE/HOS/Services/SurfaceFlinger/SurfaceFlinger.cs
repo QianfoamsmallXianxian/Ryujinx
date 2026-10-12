@@ -412,6 +412,9 @@ namespace Ryujinx.HLE.HOS.Services.SurfaceFlinger
 
                 if (acquireStatus == Status.Success)
                 {
+                    // NEOV2-FRAMEGEN1: intervalo de troca pedido pelo jogo neste quadro (fonte do "jogo de 30").
+                    Ryujinx.Common.Diagnostics.NeoGraphicsSettings.GuestSwapInterval = item.SwapInterval;
+
                     if (_device.VSyncMode == VSyncMode.Unbounded)
                     {
                         if (_swapInterval != 0)

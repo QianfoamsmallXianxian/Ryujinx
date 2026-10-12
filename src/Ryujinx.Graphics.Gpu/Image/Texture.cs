@@ -1328,6 +1328,21 @@ namespace Ryujinx.Graphics.Gpu.Image
         }
 
         /// <summary>
+        /// Checks if two formats only differ by sRGB encoding (RGBA8/BGRA8).
+        /// </summary>
+        private static bool IsSrgbUnormPair(Format a, Format b)
+        {
+            static Format Linear(Format f) => f switch
+            {
+                Format.R8G8B8A8Srgb => Format.R8G8B8A8Unorm,
+                Format.B8G8R8A8Srgb => Format.B8G8R8A8Unorm,
+                _ => f,
+            };
+
+            return Linear(a) == Linear(b) && (Linear(a) == Format.R8G8B8A8Unorm || Linear(a) == Format.B8G8R8A8Unorm);
+        }
+
+        /// <summary>
         /// Check if it's possible to create a view, with the given parameters, from this texture.
         /// </summary>
         /// <param name="info">Texture view information</param>
@@ -1362,7 +1377,8 @@ namespace Ryujinx.Graphics.Gpu.Image
                     result = TextureViewCompatibility.Incompatible;
                 }
 
-                if (result == TextureViewCompatibility.Full && Info.FormatInfo.Format != info.FormatInfo.Format && !_context.Capabilities.SupportsMismatchingViewFormat)
+                if (result == TextureViewCompatibility.Full && Info.FormatInfo.Format != info.FormatInfo.Format && !_context.Capabilities.SupportsMismatchingViewFormat &&
+                    !(_context.Capabilities.SupportsSrgbMismatchingViewFormat && IsSrgbUnormPair(Info.FormatInfo.Format, info.FormatInfo.Format)))
                 {
                     // AMD and Intel have a bug where the view format is always ignored;
                     // they use the parent format instead.

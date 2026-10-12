@@ -618,23 +618,23 @@ namespace Ryujinx.HLE.HOS.Services.Hid
 
         public void UpdateRumbleQueue(PlayerIndex index, Dictionary<byte, VibrationValue> dualVibrationValues)
         {
-            if (RumbleQueues.TryGetValue(index, out ConcurrentQueue<(VibrationValue, VibrationValue)> currentQueue))
+            bool hadPrevious = LastVibrationValues.TryGetValue(index, out (VibrationValue, VibrationValue) previous);
+            if (!dualVibrationValues.TryGetValue(0, out VibrationValue leftVibrationValue))
             {
-                if (!dualVibrationValues.TryGetValue(0, out VibrationValue leftVibrationValue))
-                {
-                    leftVibrationValue = _neutralVibrationValue;
-                }
+                leftVibrationValue = hadPrevious ? previous.Item1 : _neutralVibrationValue;
+            }
 
-                if (!dualVibrationValues.TryGetValue(1, out VibrationValue rightVibrationValue))
-                {
-                    rightVibrationValue = _neutralVibrationValue;
-                }
+            if (!dualVibrationValues.TryGetValue(1, out VibrationValue rightVibrationValue))
+            {
+                rightVibrationValue = hadPrevious ? previous.Item2 : _neutralVibrationValue;
+            }
 
-                if (!LastVibrationValues.TryGetValue(index, out (VibrationValue, VibrationValue) dualVibrationValue) || !leftVibrationValue.Equals(dualVibrationValue.Item1) || !rightVibrationValue.Equals(dualVibrationValue.Item2))
+            if (!hadPrevious || !leftVibrationValue.Equals(previous.Item1) || !rightVibrationValue.Equals(previous.Item2))
+            {
+                LastVibrationValues[index] = (leftVibrationValue, rightVibrationValue);
+                if (RumbleQueues.TryGetValue(index, out ConcurrentQueue<(VibrationValue, VibrationValue)> currentQueue))
                 {
                     currentQueue.Enqueue((leftVibrationValue, rightVibrationValue));
-
-                    LastVibrationValues[index] = (leftVibrationValue, rightVibrationValue);
                 }
             }
         }
@@ -655,6 +655,10 @@ namespace Ryujinx.HLE.HOS.Services.Hid
             {
                 rumbleQueue = new ConcurrentQueue<(VibrationValue, VibrationValue)>();
                 _device.Hid.Npads.RumbleQueues[index] = rumbleQueue;
+                if (LastVibrationValues.TryGetValue(index, out (VibrationValue, VibrationValue) current))
+                {
+                    rumbleQueue.Enqueue(current);
+                }
             }
 
             return rumbleQueue;

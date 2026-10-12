@@ -1,4 +1,5 @@
 using Ryujinx.Common;
+using Ryujinx.Common.Logging;
 using Ryujinx.Graphics.GAL;
 using Ryujinx.Graphics.Gpu.Image;
 using Ryujinx.Graphics.Gpu.Shader;
@@ -40,6 +41,9 @@ namespace Ryujinx.Graphics.Gpu.Memory
         private readonly ulong[] _syncDedupSizes;
         private readonly uint[] _syncDedupEpochs;
         private uint _syncDedupEpoch;
+        private ulong _syncDedupRanges;
+        private ulong _syncDedupHits;
+        private ulong _syncDedupCommits;
 
         /// <summary>
         /// Holds shader stage buffer state and binding information.
@@ -1011,6 +1015,8 @@ namespace Ryujinx.Graphics.Gpu.Memory
         private void UpdateBuffers(BuffersPerStage[] bindings, bool deduplicate)
         {
             uint syncEpoch = 0;
+            ulong rangeCount = 0;
+            ulong hitCount = 0;
 
             if (deduplicate)
             {
@@ -1042,11 +1048,13 @@ namespace Ryujinx.Graphics.Gpu.Memory
                     {
                         MemoryRange range = bounds.Range.GetSubRange(0);
                         int hash = (int)(((range.Address >> 4) ^ range.Size ^ (range.Size >> 32)) & (SyncDedupCacheSize - 1));
+                        rangeCount++;
 
                         if (_syncDedupEpochs[hash] == syncEpoch &&
                             _syncDedupAddresses[hash] == range.Address &&
                             _syncDedupSizes[hash] == range.Size)
                         {
+                            hitCount++;
                             continue;
                         }
 
@@ -1056,6 +1064,18 @@ namespace Ryujinx.Graphics.Gpu.Memory
                     }
 
                     _channel.MemoryManager.Physical.BufferCache.SynchronizeBufferRange(bounds.Range);
+                }
+            }
+
+            if (deduplicate)
+            {
+                _syncDedupRanges += rangeCount;
+                _syncDedupHits += hitCount;
+                ulong commits = ++_syncDedupCommits;
+
+                if ((commits & 0xffff) == 0)
+                {
+                    Logger.Info?.Print(LogClass.Gpu, $"[NEOV2-BUFFER-SYNCDEDUP1] commits={commits} ranges={_syncDedupRanges} hits={_syncDedupHits}");
                 }
             }
         }

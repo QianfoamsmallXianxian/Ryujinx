@@ -246,6 +246,21 @@ namespace Ryujinx.Graphics.Vulkan
             int count = 0;
             list[count++] = format;
 
+            // sRGB/UNORM counterpart (same UBWC class): lets the GPU layer create a real view instead of a copy.
+            Format srgbPair = info.Format switch
+            {
+                Format.R8G8B8A8Unorm => Format.R8G8B8A8Srgb,
+                Format.R8G8B8A8Srgb => Format.R8G8B8A8Unorm,
+                Format.B8G8R8A8Unorm => Format.B8G8R8A8Srgb,
+                Format.B8G8R8A8Srgb => Format.B8G8R8A8Unorm,
+                _ => info.Format,
+            };
+
+            if (srgbPair != info.Format)
+            {
+                AddViewFormat(gd, srgbPair, isMsImageStorageSupported, list, ref count);
+            }
+
             switch (info.BytesPerPixel)
             {
                 case 1:

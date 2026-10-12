@@ -76,6 +76,9 @@ class QuickSettings(val activity: Activity) {
     // NEOV2-VP9EDEN1: VP9 pelo FFmpeg (como o Eden). Ligado por padrao na Current (Zelda LA); pode ser desligado por jogo.
     var enableVp9FFmpeg: Boolean
 
+    // NEOV2-FRAMEGEN1: framegen LSFG (chave global; so tem efeito com Lossless.dll valida).
+    var enableFrameGen: Boolean
+
     // NEOV2-GPUMEM1: memoria de GPU estilo Eden. Ligada por padrao; pode ser desligada por jogo.
     var enableEdenGpuMemory: Boolean
 
@@ -108,6 +111,8 @@ class QuickSettings(val activity: Activity) {
 
     var enablePerformanceMode: Boolean
     var showPerformanceOverlay: Boolean
+    // 0 = desligado, 1 = FPS, 2 = FPS + tempo de quadro, 3 = completo.
+    var performanceOverlayLevel: Int
     var controllerStickSensitivity: Float
 
     // --- Controller Scale (0.5f..1.5f, Default 1.0f)
@@ -178,14 +183,15 @@ class QuickSettings(val activity: Activity) {
         fsGlobalAccessLogMode = sharedPref.getInt("fsGlobalAccessLogMode", 0)
         ignoreMissingServices = sharedPref.getBoolean("ignoreMissingServices", false)
         enableShaderCache = sharedPref.getBoolean("enableShaderCache", true)
-        enableShaderLoopSafety = sharedPref.getBoolean("enableShaderLoopSafety", false)
+        enableShaderLoopSafety = true
         enableTextureRecompression = sharedPref.getBoolean("enableTextureRecompression", false)
         enableVtgViaCompute = sharedPref.getBoolean("enableVtgViaCompute", true)
-        enableNceTrackingProtection = sharedPref.getBoolean("enableNceTrackingProtection", false)
+        enableNceTrackingProtection = true
         enableRelaxedDmaCopy = sharedPref.getBoolean("enableRelaxedDmaCopy", false)
-        enableVp9FFmpeg = sharedPref.getBoolean("enableVp9FFmpeg", true)
+        enableVp9FFmpeg = true
+        enableFrameGen = sharedPref.getBoolean("enableFrameGen", false)
         enableEdenGpuMemory = sharedPref.getBoolean("enableEdenGpuMemory", true)
-        enableHugareOptimizations = sharedPref.getBoolean("enableHugareOptimizations", false)
+        enableHugareOptimizations = true
         audioBoost = sharedPref.getFloat("audioBoost", 1f).coerceIn(1f, 2f)
         drawFlushMode = sharedPref.getInt("drawFlushMode", 0)
         bufferReadbackMode = sharedPref.getInt("bufferReadbackMode", 0)
@@ -203,6 +209,11 @@ class QuickSettings(val activity: Activity) {
         enableMotion = sharedPref.getBoolean("enableMotion", true)
         enablePerformanceMode = sharedPref.getBoolean("enablePerformanceMode", true)
         showPerformanceOverlay = sharedPref.getBoolean("showPerformanceOverlay", false)
+        performanceOverlayLevel = sharedPref.getInt(
+            "performanceOverlayLevel",
+            if (showPerformanceOverlay) 3 else 0
+        ).coerceIn(0, 3)
+        showPerformanceOverlay = performanceOverlayLevel != 0
         controllerStickSensitivity = sharedPref.getFloat("controllerStickSensitivity", 1.0f)
 
         // --- Reload: Controller Scale
@@ -210,7 +221,7 @@ class QuickSettings(val activity: Activity) {
 
         enableRejectUnmappedDescriptors = sharedPref.getBoolean("enableRejectUnmappedDescriptors", false)
         enableAsyncLarge3DUpload = sharedPref.getBoolean("enableAsyncLarge3DUpload", true)
-        enableGpuOptimizations = sharedPref.getBoolean("enableGpuOptimizations", true)
+        enableGpuOptimizations = true
 
         if (!sharedPref.getBoolean("neoLogsDefaultOffV1", false)) {
             sharedPref.edit {
@@ -276,18 +287,19 @@ class QuickSettings(val activity: Activity) {
             putInt("fsGlobalAccessLogMode", fsGlobalAccessLogMode)
             putBoolean("ignoreMissingServices", ignoreMissingServices)
             putBoolean("enableShaderCache", enableShaderCache)
-            putBoolean("enableShaderLoopSafety", enableShaderLoopSafety)
+            putBoolean("enableShaderLoopSafety", true)
             putBoolean("enableTextureRecompression", enableTextureRecompression)
             putBoolean("enableVtgViaCompute", enableVtgViaCompute)
-            putBoolean("enableNceTrackingProtection", enableNceTrackingProtection)
+            putBoolean("enableNceTrackingProtection", true)
             putBoolean("enableRelaxedDmaCopy", enableRelaxedDmaCopy)
-            putBoolean("enableVp9FFmpeg", enableVp9FFmpeg)
+            putBoolean("enableVp9FFmpeg", true)
+            putBoolean("enableFrameGen", enableFrameGen)
             putBoolean("enableEdenGpuMemory", enableEdenGpuMemory)
-            putBoolean("enableHugareOptimizations", enableHugareOptimizations)
+            putBoolean("enableHugareOptimizations", true)
             putFloat("audioBoost", audioBoost)
             putBoolean("enableRejectUnmappedDescriptors", enableRejectUnmappedDescriptors)
             putBoolean("enableAsyncLarge3DUpload", enableAsyncLarge3DUpload)
-            putBoolean("enableGpuOptimizations", enableGpuOptimizations)
+            putBoolean("enableGpuOptimizations", true)
             putInt("drawFlushMode", drawFlushMode)
             putInt("bufferReadbackMode", bufferReadbackMode)
             putInt("strictSyncMode", strictSyncMode)
@@ -301,6 +313,7 @@ class QuickSettings(val activity: Activity) {
             putBoolean("enableMotion", enableMotion)
             putBoolean("enablePerformanceMode", enablePerformanceMode)
             putBoolean("showPerformanceOverlay", showPerformanceOverlay)
+            putInt("performanceOverlayLevel", performanceOverlayLevel.coerceIn(0, 3))
             putFloat("controllerStickSensitivity", controllerStickSensitivity)
 
             // --- Save Controller Scale

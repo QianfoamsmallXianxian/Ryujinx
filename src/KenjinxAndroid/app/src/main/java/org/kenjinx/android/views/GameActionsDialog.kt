@@ -49,6 +49,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -88,6 +89,7 @@ fun GameActionsDialog(
     onSaves: () -> Unit,
     onAmiibo: () -> Unit,
     onCreateShortcut: () -> Unit,
+    onChooseCover: () -> Unit,
     onClearPptc: () -> Unit,
     onPurgeShader: () -> Unit,
     onDeleteCache: () -> Unit,
@@ -132,6 +134,7 @@ fun GameActionsDialog(
         DialogAction(Icons.Default.Save, "Saves", "Importar ou exportar", false, false, onSaves),
         DialogAction(Icons.Default.Contactless, "Amiibo", "Configurar slots", false, false, onAmiibo),
         DialogAction(Icons.Default.AddBox, "Criar atalho", "Adicionar à tela inicial", false, false, onCreateShortcut),
+        DialogAction(Icons.Default.Image, "Escolher capa", "Imagem vertical para o visual de capas grandes", false, false, onChooseCover),
         // NSP uses compression levels; NSZ uses solid-to-block optimization.
         if (isNsp || isNsz) DialogAction(Icons.Default.Archive, "Comprimir", if (isNsz) "Otimizar NSZ para blocos" else "Converter para NSZ", false, false, { showCompressChoice = true }) else null,
         if (isNsz) DialogAction(Icons.Default.Archive, "Descompactar", "Converter NSZ para NSP", false, false, { showDecompression = true }) else null,

@@ -386,6 +386,13 @@ namespace LibKenjinx
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             double stats = SwitchDevice?.EmulationContext?.Statistics.GetGameFrameTime() ?? 0;
 
+            // NEOV2-FRAMEGEN1: com o framegen ligado o contador mostra a taxa apresentada.
+            double presented = Ryujinx.Common.Diagnostics.NeoGraphicsSettings.FrameGenPresentedFps;
+            if (presented > 0)
+            {
+                return 1000.0 / presented;
+            }
+
             return stats;
         }
 
@@ -394,6 +401,13 @@ namespace LibKenjinx
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             double stats = SwitchDevice?.EmulationContext?.Statistics.GetGameFrameRate() ?? 0;
+
+            // NEOV2-FRAMEGEN1: com o framegen ligado o contador mostra a taxa apresentada.
+            double presented = Ryujinx.Common.Diagnostics.NeoGraphicsSettings.FrameGenPresentedFps;
+            if (presented > 0)
+            {
+                return presented;
+            }
 
             return stats;
         }
@@ -1084,6 +1098,28 @@ namespace LibKenjinx
         {
             Ryujinx.Common.Diagnostics.NeoGraphicsSettings.Vp9FFmpegEnabled = enable;
             Logger.Info?.Print(LogClass.Nvdec, $"[NEOV2-VP9EDEN1] VP9 pelo FFmpeg: {(enable ? "ligado" : "desligado")}");
+        }
+
+        // NEOV2-FRAMEGEN1: chave global do framegen LSFG + caminho da Lossless.dll (pasta privada do app).
+        [UnmanagedCallersOnly(EntryPoint = "deviceSetFrameGen")]
+        public static void JniDeviceSetFrameGen(bool enable, nint dllPathPtr)
+        {
+            Ryujinx.Common.Diagnostics.NeoGraphicsSettings.FrameGenEnabled = enable;
+            Ryujinx.Common.Diagnostics.NeoGraphicsSettings.FrameGenDllPath = Marshal.PtrToStringAnsi(dllPathPtr);
+        }
+
+        // NEOV2-FRAMEGEN1: valida a DLL escolhida. Devolve LosslessStatus (0 = valida).
+        [UnmanagedCallersOnly(EntryPoint = "frameGenValidateDll")]
+        public static int JniFrameGenValidateDll(nint dllPathPtr)
+        {
+            try
+            {
+                return (int)Ryujinx.Graphics.Vulkan.FrameGen.LosslessDll.Validate(Marshal.PtrToStringAnsi(dllPathPtr) ?? "");
+            }
+            catch
+            {
+                return (int)Ryujinx.Graphics.Vulkan.FrameGen.LosslessStatus.UnreadableFile;
+            }
         }
 
         // NEOV2-NCZ2: conversor NSP -> NSZ. Bloqueante: chamar fora da thread de UI.

@@ -133,9 +133,8 @@ class GameViews {
         fun GameOverlay(mainViewModel: MainViewModel) {
             Box(modifier = Modifier.fillMaxSize()) {
                 val initialSettings = remember { mainViewModel.getSettingsForGame() }
-                val showStats = remember { mutableStateOf(initialSettings.showPerformanceOverlay) }
+                val statsLevel = remember { mutableIntStateOf(initialSettings.performanceOverlayLevel) }
                 val showController = remember { mutableStateOf(initialSettings.useVirtualController) }
-                val vSyncMode = remember { mutableStateOf(initialSettings.vSyncMode) }
                 val enableMotion = remember { mutableStateOf(initialSettings.enableMotion) }
                 val showMore = remember { mutableStateOf(false) }
                 val showBackNotice = remember { mutableStateOf(false) }
@@ -147,9 +146,10 @@ class GameViews {
                 fun qsLabel(name: String?, slot: Int): String =
                     if (name.isNullOrBlank()) "Slot $slot" else name
 
-                if (showStats.value) {
+                if (statsLevel.intValue != 0) {
                     GameStats(
                         mainViewModel,
+                        statsLevel.intValue,
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .padding(top = 8.dp, end = 10.dp)
@@ -258,16 +258,12 @@ class GameViews {
                                     }
                                 }
                                 item {
-                                    DrawerToggle("Estatísticas", showStats.value) {
-                                        showStats.value = it
-                                        mainViewModel.updateActiveGameSettings { settings -> settings.showPerformanceOverlay = it }
-                                    }
-                                }
-                                item {
-                                    DrawerToggle("VSync", vSyncMode.value == VSyncMode.Switch) { enabled ->
-                                        vSyncMode.value = if (enabled) VSyncMode.Switch else VSyncMode.Unbounded
-                                        KenjinxNative.graphicsRendererSetVsync(vSyncMode.value.ordinal)
-                                        mainViewModel.updateActiveGameSettings { settings -> settings.vSyncMode = vSyncMode.value }
+                                    DrawerToggle("Estatísticas", statsLevel.intValue != 0) {
+                                        statsLevel.intValue = if (it) 3 else 0
+                                        mainViewModel.updateActiveGameSettings { settings ->
+                                            settings.performanceOverlayLevel = statsLevel.intValue
+                                            settings.showPerformanceOverlay = it
+                                        }
                                     }
                                 }
                                 item {
@@ -432,7 +428,7 @@ class GameViews {
  }
 
  @Composable
- fun GameStats(mainViewModel: MainViewModel, modifier: Modifier = Modifier) {
+ fun GameStats(mainViewModel: MainViewModel, level: Int, modifier: Modifier = Modifier) {
  val fifo = remember { mutableDoubleStateOf(0.0) }
  val gameFps = remember { mutableDoubleStateOf(0.0) }
  val gameTime = remember { mutableDoubleStateOf(0.0) }
@@ -456,18 +452,24 @@ class GameViews {
          horizontalArrangement = Arrangement.spacedBy(8.dp),
          verticalAlignment = Alignment.CenterVertically
      ) {
-         StatMetric("CPU", cpuMode)
-         StatDivider()
+         if (level >= 3) {
+             StatMetric("CPU", cpuMode)
+             StatDivider()
+         }
          StatMetric("FPS", String.format(Locale.getDefault(), "%.1f", gameFps.doubleValue))
-         StatDivider()
-         StatMetric("QUADRO", "${String.format(Locale.getDefault(), "%.1f", frameTime)} ms")
-         StatDivider()
-         StatMetric("FIFO", "${String.format(Locale.getDefault(), "%.0f", fifo.doubleValue)}%")
-         StatDivider()
-         StatMetric(
-             "RAM",
-             "${String.format(Locale.getDefault(), "%.1f", usedRamGb)}/${String.format(Locale.getDefault(), "%.1f", totalRamGb)} GB"
-         )
+         if (level >= 2) {
+             StatDivider()
+             StatMetric("QUADRO", "${String.format(Locale.getDefault(), "%.1f", frameTime)} ms")
+         }
+         if (level >= 3) {
+             StatDivider()
+             StatMetric("FIFO", "${String.format(Locale.getDefault(), "%.0f", fifo.doubleValue)}%")
+             StatDivider()
+             StatMetric(
+                 "RAM",
+                 "${String.format(Locale.getDefault(), "%.1f", usedRamGb)}/${String.format(Locale.getDefault(), "%.1f", totalRamGb)} GB"
+             )
+         }
      }
  }
 

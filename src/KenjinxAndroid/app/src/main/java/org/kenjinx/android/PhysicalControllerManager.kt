@@ -23,6 +23,7 @@ class PhysicalControllerManager(val activity: MainActivity) {
 
         val id = getGamePadButtonInputId(event.keyCode)
         if (id != GamePadButtonInputId.None) {
+            KenjinxNative.setRumbleInputDeviceId(event.deviceId)
             val isNotFallback = (event.flags and KeyEvent.FLAG_FALLBACK) == 0
             if (isNotFallback) {
                 when (event.action) {
@@ -37,6 +38,7 @@ class PhysicalControllerManager(val activity: MainActivity) {
 
     fun onMotionEvent(ev: MotionEvent) {
         if (ev.action != MotionEvent.ACTION_MOVE) return
+        KenjinxNative.setRumbleInputDeviceId(ev.deviceId)
 
         if (controllerId == -1) {
             controllerId = KenjinxNative.inputConnectGamepad(0)
@@ -145,6 +147,7 @@ class PhysicalControllerManager(val activity: MainActivity) {
     }
 
     fun disconnect() {
+        KenjinxNative.setRumbleInputDeviceId(-1)
         controllerId = -1
         // If a trigger got "stuck" during the disconnect, release it as a precaution
         if (leftTriggerPressed) {
