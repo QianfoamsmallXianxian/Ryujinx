@@ -1,15 +1,24 @@
 # Ryujinx Neo Current — changelog e funcionalidades
 
-- **Versão no código:** Android 0.0.25 (`versionCode 20139`)
+- **Versão no código:** Android 0.0.26 (`versionCode 20144`)
 - **Branch analisada:** [`neo-v2-nce2`](https://github.com/Sunshinin11/Ryujinx_Neo/tree/neo-v2-nce2)
-- **Estado remoto do código:** mudanças funcionais publicadas até 11/10/2026 na branch GitHub
-- **Último commit de código publicado:** [`cbf1e6b73`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/cbf1e6b733c585bc0a42cf7581b7458e3800a736), de 11/10/2026
+- **Estado remoto do código:** mudanças funcionais publicadas até 12/10/2026 na branch GitHub
+- **Último commit de código publicado:** [`a3759eab7`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/a3759eab774c8e1f98aeb31aff19ae158f0f9cdc), de 12/10/2026
 - **Mudanças funcionais de 28/09:** publicadas em cinco commits integrados à branch [`neo-v2-nce2`](https://github.com/Sunshinin11/Ryujinx_Neo/tree/neo-v2-nce2)
-- **Data da revisão:** 11/10/2026
+- **Data da revisão:** 12/10/2026
 
-Este texto cobre **somente a linha Ryujinx Neo Current em `neo-v2-nce2`**. A linha histórica `neo-v2-fase1` e o trabalho Linux ARM64 do Hugare não fazem parte deste changelog. A análise combinou o histórico publicado, o [relatório técnico](docs/RELATORIO_COMPLETO_RYUJINX_NEO.md) e os commits de código até `cbf1e6b73`. Esta revisão descreve o estado publicado da Current no GitHub.
+Este texto cobre **somente a linha Ryujinx Neo Current em `neo-v2-nce2`**. A linha histórica `neo-v2-fase1` e o trabalho Linux ARM64 do Hugare não fazem parte deste changelog. A análise combinou o histórico publicado, o [relatório técnico](docs/RELATORIO_COMPLETO_RYUJINX_NEO.md) e os commits de código até `a3759eab7`. Esta revisão descreve o estado publicado da Current no GitHub.
 
 ## Changelog do Neo Current
+
+### 12 de outubro — FrameGen LSFG, pipelines Vulkan, vibração e memória
+
+- **Geração de quadros LSFG:** nova opção global e por jogo, desligada por padrão, que lê os shaders de uma `Lossless.dll` fornecida pelo próprio usuário e validada antes da instalação. O caminho Vulkan preserva o quadro real, pode inserir no máximo um quadro intermediário por quadro real, respeita o teto solicitado pelo jogo e usa FIFO para impedir o descarte do quadro gerado. Falhas desativam o recurso apenas durante a sessão e devolvem a apresentação ao caminho normal. [Commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/a3759eab774c8e1f98aeb31aff19ae158f0f9cdc)
+- **Pipeline Library Cache:** integração de `VK_EXT_graphics_pipeline_library` e `VK_KHR_pipeline_library` em GPUs compatíveis com fast linking. O pipeline é dividido em quatro bibliotecas reutilizáveis; a primeira ligação usa o caminho rápido e uma versão com otimização de link pode ser preparada em segundo plano. O recurso não é usado em MoltenVK nem em Adreno 8xx. [Commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/a3759eab774c8e1f98aeb31aff19ae158f0f9cdc)
+- **Vibração no Android:** preservação independente dos canais esquerdo e direito quando o jogo atualiza apenas um deles, reaplicação do último estado ao criar a fila e encaminhamento do identificador `Handheld` ao controle virtual do jogador 1. Também foram mantidos os ajustes dos seis controladores Android e a permissão de vibração do aplicativo. [Commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/a3759eab774c8e1f98aeb31aff19ae158f0f9cdc)
+- **Regiões de memória contíguas:** em reservas de endereço menores que 120 GiB, as regiões de alias, heap, pilha e TLS/IO são posicionadas em sequência, com TLS/IO limitado a 4 GiB. Isso preserva uma faixa contígua grande para títulos Unreal Engine 4.27 que solicitam 62 GiB, incluindo os casos citados no código para *Dragon Quest DOLL* e *Hogwarts Legacy*. [Commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/a3759eab774c8e1f98aeb31aff19ae158f0f9cdc)
+- **Interface e padrões:** a biblioteca recebe o modo de capas grandes. O caminho VP9 por FFmpeg e a Otimização do Hugare passam a ser mantidos ligados pelo aplicativo, enquanto a geração de quadros permanece configurável globalmente e por jogo. [Commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/a3759eab774c8e1f98aeb31aff19ae158f0f9cdc)
+- **Android 0.0.26:** versão no código atualizada para `0.0.26`, com `versionCode 20144`. [Commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/a3759eab774c8e1f98aeb31aff19ae158f0f9cdc)
 
 ### 11 de outubro — correção de corrupção gráfica no MUA3
 
