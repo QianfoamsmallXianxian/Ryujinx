@@ -246,6 +246,15 @@ namespace Ryujinx.Graphics.Vulkan
             int count = 0;
             list[count++] = format;
 
+            // R8 formats have no shared UBWC class on Turnip. Declare both view formats
+            // instead of filtering R8Uint out or omitting the format list entirely.
+            if (info.Format is Format.R8Unorm or Format.R8Snorm or Format.R8Uint or Format.R8Sint)
+            {
+                AddViewFormat(gd, Format.R8Unorm, isMsImageStorageSupported, list, ref count);
+                AddViewFormat(gd, Format.R8Uint, isMsImageStorageSupported, list, ref count);
+                return count;
+            }
+
             // sRGB/UNORM counterpart (same UBWC class): lets the GPU layer create a real view instead of a copy.
             Format srgbPair = info.Format switch
             {

@@ -306,7 +306,9 @@ fun GameSettingsPage(
     val compatibilitySection: @Composable () -> Unit = {
         SettingsSection("Compatibilidade e correções") {
             SwitchSetting("Compatibilidade gráfica 2D", "Corrige tela preta e escala em jogos 2D.", experimentalGameFixesEnabled, custom) { experimentalGameFixesEnabled = it }
+            ChoiceSetting("Otimizações de GPU", null, globalOnOff, gpuOptimizationsMode, custom) { gpuOptimizationsMode = it }
             ChoiceSetting("VTG via Compute", null, globalOnOff, vtgViaComputeMode, custom) { vtgViaComputeMode = it }
+            ChoiceSetting("VP9 pelo FFmpeg", "Desligue se o vídeo do jogo ficar com erros (ex.: GRID Autosport).", globalOnOff, vp9FFmpegMode, custom) { vp9FFmpegMode = it }
             ChoiceSetting("Cópia DMA relaxada", "Mais desempenho em alguns jogos (ex.: Diablo II); pode causar erros gráficos.", globalOnOff, relaxedDmaCopyMode, custom) { relaxedDmaCopyMode = it }
             ChoiceSetting("Memória de GPU estilo Eden", "Libera buffers e texturas sem uso e fecha o jogo se a RAM acabar (ex.: DOOM Eternal). Desligue se aparecer erro gráfico.", globalOnOff, edenGpuMemoryMode, custom) { edenGpuMemoryMode = it }
             ChoiceSetting("Rejeitar descritores não mapeados", null, globalOnOff, rejectUnmappedDescriptorsMode, custom) { rejectUnmappedDescriptorsMode = it }

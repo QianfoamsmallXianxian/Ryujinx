@@ -290,7 +290,7 @@ class MainViewModel(val activity: MainActivity) {
         }
         // NEOV2-VP9EDEN1: VP9 pelo FFmpeg (chave geral).
         try {
-            KenjinxNative.deviceSetVp9FFmpeg(true)
+            KenjinxNative.deviceSetVp9FFmpeg(settings.enableVp9FFmpeg)
         } catch (_: Throwable) {
         }
         // NEOV2-FRAMEGEN1: chave global + DLL privada (so liga com DLL presente).
@@ -317,15 +317,15 @@ class MainViewModel(val activity: MainActivity) {
 
         // Opcao "Otimizacoes de GPU", antes de criar o renderer. TEXBUF-ALIGN1 e correcao e fica sempre ligado.
         try {
-            KenjinxNative.deviceSetTurnipFence(true)
+            KenjinxNative.deviceSetTurnipFence(settings.enableGpuOptimizations)
         } catch (_: Throwable) {
         }
         try {
-            KenjinxNative.deviceSetConditionalRenderNoWait(true)
+            KenjinxNative.deviceSetConditionalRenderNoWait(settings.enableGpuOptimizations)
         } catch (_: Throwable) {
         }
         try {
-            KenjinxNative.deviceSetCommandFetchNoFlush(true)
+            KenjinxNative.deviceSetCommandFetchNoFlush(settings.enableGpuOptimizations)
         } catch (_: Throwable) {
         }
         try {
@@ -333,19 +333,19 @@ class MainViewModel(val activity: MainActivity) {
         } catch (_: Throwable) {
         }
         try {
-            KenjinxNative.deviceSetQueueHysteresis(true)
+            KenjinxNative.deviceSetQueueHysteresis(settings.enableGpuOptimizations)
         } catch (_: Throwable) {
         }
         try {
-            KenjinxNative.deviceSetTimelineLazy(true)
+            KenjinxNative.deviceSetTimelineLazy(settings.enableGpuOptimizations)
         } catch (_: Throwable) {
         }
         try {
-            KenjinxNative.deviceSetStagingBufferLock(true)
+            KenjinxNative.deviceSetStagingBufferLock(settings.enableGpuOptimizations)
         } catch (_: Throwable) {
         }
         try {
-            KenjinxNative.deviceSetTexturePoolKeepInvalid(true)
+            KenjinxNative.deviceSetTexturePoolKeepInvalid(settings.enableGpuOptimizations)
         } catch (_: Throwable) {
         }
 
@@ -481,7 +481,7 @@ class MainViewModel(val activity: MainActivity) {
         }
         // NEOV2-VP9EDEN1: VP9 pelo FFmpeg (chave geral).
         try {
-            KenjinxNative.deviceSetVp9FFmpeg(true)
+            KenjinxNative.deviceSetVp9FFmpeg(settings.enableVp9FFmpeg)
         } catch (_: Throwable) {
         }
         // NEOV2-FRAMEGEN1: chave global + DLL privada (so liga com DLL presente).
@@ -508,15 +508,15 @@ class MainViewModel(val activity: MainActivity) {
 
         // Opcao "Otimizacoes de GPU", antes de criar o renderer. TEXBUF-ALIGN1 e correcao e fica sempre ligado.
         try {
-            KenjinxNative.deviceSetTurnipFence(true)
+            KenjinxNative.deviceSetTurnipFence(settings.enableGpuOptimizations)
         } catch (_: Throwable) {
         }
         try {
-            KenjinxNative.deviceSetConditionalRenderNoWait(true)
+            KenjinxNative.deviceSetConditionalRenderNoWait(settings.enableGpuOptimizations)
         } catch (_: Throwable) {
         }
         try {
-            KenjinxNative.deviceSetCommandFetchNoFlush(true)
+            KenjinxNative.deviceSetCommandFetchNoFlush(settings.enableGpuOptimizations)
         } catch (_: Throwable) {
         }
         try {
@@ -524,19 +524,19 @@ class MainViewModel(val activity: MainActivity) {
         } catch (_: Throwable) {
         }
         try {
-            KenjinxNative.deviceSetQueueHysteresis(true)
+            KenjinxNative.deviceSetQueueHysteresis(settings.enableGpuOptimizations)
         } catch (_: Throwable) {
         }
         try {
-            KenjinxNative.deviceSetTimelineLazy(true)
+            KenjinxNative.deviceSetTimelineLazy(settings.enableGpuOptimizations)
         } catch (_: Throwable) {
         }
         try {
-            KenjinxNative.deviceSetStagingBufferLock(true)
+            KenjinxNative.deviceSetStagingBufferLock(settings.enableGpuOptimizations)
         } catch (_: Throwable) {
         }
         try {
-            KenjinxNative.deviceSetTexturePoolKeepInvalid(true)
+            KenjinxNative.deviceSetTexturePoolKeepInvalid(settings.enableGpuOptimizations)
         } catch (_: Throwable) {
         }
 

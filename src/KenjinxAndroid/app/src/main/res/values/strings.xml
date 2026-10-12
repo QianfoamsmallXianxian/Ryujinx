@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">Ryujinx Neo Experimental</string>
-    <string name="app_name_optimized">Ryujinx Neo Experimental</string>
+    <string name="app_name">Ryujinx Neo</string>
+    <string name="app_name_optimized">Ryujinx Neo</string>
 </resources>

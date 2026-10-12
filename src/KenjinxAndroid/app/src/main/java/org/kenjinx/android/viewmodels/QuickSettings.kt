@@ -188,7 +188,7 @@ class QuickSettings(val activity: Activity) {
         enableVtgViaCompute = sharedPref.getBoolean("enableVtgViaCompute", true)
         enableNceTrackingProtection = true
         enableRelaxedDmaCopy = sharedPref.getBoolean("enableRelaxedDmaCopy", false)
-        enableVp9FFmpeg = true
+        enableVp9FFmpeg = sharedPref.getBoolean("enableVp9FFmpeg", true)
         enableFrameGen = sharedPref.getBoolean("enableFrameGen", false)
         enableEdenGpuMemory = sharedPref.getBoolean("enableEdenGpuMemory", true)
         enableHugareOptimizations = true
@@ -221,7 +221,7 @@ class QuickSettings(val activity: Activity) {
 
         enableRejectUnmappedDescriptors = sharedPref.getBoolean("enableRejectUnmappedDescriptors", false)
         enableAsyncLarge3DUpload = sharedPref.getBoolean("enableAsyncLarge3DUpload", true)
-        enableGpuOptimizations = true
+        enableGpuOptimizations = sharedPref.getBoolean("enableGpuOptimizations", true)
 
         if (!sharedPref.getBoolean("neoLogsDefaultOffV1", false)) {
             sharedPref.edit {
@@ -292,14 +292,14 @@ class QuickSettings(val activity: Activity) {
             putBoolean("enableVtgViaCompute", enableVtgViaCompute)
             putBoolean("enableNceTrackingProtection", true)
             putBoolean("enableRelaxedDmaCopy", enableRelaxedDmaCopy)
-            putBoolean("enableVp9FFmpeg", true)
+            putBoolean("enableVp9FFmpeg", enableVp9FFmpeg)
             putBoolean("enableFrameGen", enableFrameGen)
             putBoolean("enableEdenGpuMemory", enableEdenGpuMemory)
             putBoolean("enableHugareOptimizations", true)
             putFloat("audioBoost", audioBoost)
             putBoolean("enableRejectUnmappedDescriptors", enableRejectUnmappedDescriptors)
             putBoolean("enableAsyncLarge3DUpload", enableAsyncLarge3DUpload)
-            putBoolean("enableGpuOptimizations", true)
+            putBoolean("enableGpuOptimizations", enableGpuOptimizations)
             putInt("drawFlushMode", drawFlushMode)
             putInt("bufferReadbackMode", bufferReadbackMode)
             putInt("strictSyncMode", strictSyncMode)

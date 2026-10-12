@@ -1461,6 +1461,17 @@ class SettingViews {
                                             }
                                         )
                                         HighContrastToggle(
+                                            title = "VP9 pelo FFmpeg (Eden)",
+                                            description = "Vídeos VP9 dos jogos (ex.: abertura do Zelda: Link's Awakening) passam a ser decodificados pelo FFmpeg, como no Eden, em vez do decodificador interno. Ligado por padrão. Se o vídeo de algum jogo ficar com erros (ex.: GRID Autosport), desligue nas configurações daquele jogo. (Requer reiniciar o jogo)",
+                                            checked = enableVp9FFmpeg.value,
+                                            onCheckedChange = {
+                                                enableVp9FFmpeg.value = it
+                                                val qsVp9 = QuickSettings(mainViewModel.activity)
+                                                qsVp9.enableVp9FFmpeg = it
+                                                qsVp9.save()
+                                            }
+                                        )
+                                        HighContrastToggle(
                                             title = "Geração de quadros (LSFG)",
                                             description = "Gera no máximo um quadro intermediário por quadro real, com teto de 60 FPS. Jogos de 30 FPS continuam em 30. Exige uma Lossless.dll sua (não vai no app). Status: ${frameGenDllStatus.value}. (Requer reiniciar o jogo)",
                                             checked = enableFrameGen.value && frameGenDllValid.value,
