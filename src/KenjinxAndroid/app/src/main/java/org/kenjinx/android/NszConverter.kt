@@ -50,7 +50,7 @@ object NszConverter {
         val main = Handler(Looper.getMainLooper())
 
         if (running.value) {
-            main.post { onFinished(false, "Já existe uma conversão em andamento.") }
+            main.post { onFinished(false, tr("Já existe uma conversão em andamento.")) }
             return
         }
 
@@ -67,27 +67,27 @@ object NszConverter {
             var message: String
 
             try {
-                val name = source.name ?: throw IllegalStateException("Nome de arquivo inválido.")
+                val name = source.name ?: throw IllegalStateException(tr("Nome de arquivo inválido."))
 
                 if (!name.lowercase(Locale.ROOT).endsWith(".nsp")) {
-                    throw IllegalStateException("Somente arquivos NSP podem ser comprimidos.")
+                    throw IllegalStateException(tr("Somente arquivos NSP podem ser comprimidos."))
                 }
 
                 val parent = source.parentFile
-                    ?: throw IllegalStateException("Não foi possível acessar a pasta do jogo.")
+                    ?: throw IllegalStateException(tr("Não foi possível acessar a pasta do jogo."))
 
                 val baseName = name.substring(0, name.length - 4)
                 val outName = "$baseName.nsz"
                 val partName = "$outName.part"
 
                 if (parent.findFile(outName) != null) {
-                    throw IllegalStateException("Já existe \"$outName\" nessa pasta.")
+                    throw IllegalStateException(tr("Já existe \"{0}\" nessa pasta.", outName))
                 }
 
                 parent.findFile(partName)?.delete()
 
                 part = parent.createFile("application/octet-stream", partName)
-                    ?: throw IllegalStateException("Não foi possível criar o arquivo temporário.")
+                    ?: throw IllegalStateException(tr("Não foi possível criar o arquivo temporário."))
 
                 val sourceSize = source.length()
                 val resolver = context.contentResolver
@@ -96,7 +96,7 @@ object NszConverter {
                 resolver.openFileDescriptor(source.uri, "rw").use { inPfd ->
                     resolver.openFileDescriptor(part!!.uri, "rw").use { outPfd ->
                         if (inPfd == null || outPfd == null) {
-                            throw IllegalStateException("Não foi possível abrir os arquivos.")
+                            throw IllegalStateException(tr("Não foi possível abrir os arquivos."))
                         }
 
                         val stat = Os.fstatvfs(outPfd.fileDescriptor)
@@ -104,7 +104,7 @@ object NszConverter {
 
                         if (free < sourceSize) {
                             throw IllegalStateException(
-                                "Espaço insuficiente: são necessários ${sourceSize / (1024 * 1024)} MB livres, há ${free / (1024 * 1024)} MB."
+                                tr("Espaço insuficiente: são necessários {0} MB livres, há {1} MB.", sourceSize / (1024 * 1024), free / (1024 * 1024))
                             )
                         }
 
@@ -135,10 +135,10 @@ object NszConverter {
                     0 -> {
                         val candidateSize = part!!.length()
                         if (candidateSize <= 0L || candidateSize >= sourceSize) {
-                            throw IllegalStateException("Não houve redução de tamanho. O NSP original foi mantido.")
+                            throw IllegalStateException(tr("Não houve redução de tamanho. O NSP original foi mantido."))
                         }
                         if (!part!!.renameTo(outName)) {
-                            throw IllegalStateException("Não foi possível renomear o arquivo comprimido. O original foi mantido.")
+                            throw IllegalStateException(tr("Não foi possível renomear o arquivo comprimido. O original foi mantido."))
                         }
 
                         part = null
@@ -147,19 +147,19 @@ object NszConverter {
                         val sizes = "${sourceSize / (1024 * 1024)} MB → ${newSize / (1024 * 1024)} MB"
 
                         message = if (source.delete()) {
-                            "Jogo comprimido ($sizes). O NSP original foi excluído."
+                            tr("Jogo comprimido ({0}). O NSP original foi excluído.", sizes)
                         } else {
-                            "Jogo comprimido ($sizes), mas não foi possível excluir o NSP original."
+                            tr("Jogo comprimido ({0}), mas não foi possível excluir o NSP original.", sizes)
                         }
 
                         success = true
                     }
-                    2 -> message = "Conversão cancelada. O arquivo original foi mantido."
-                    3 -> message = "Não houve redução de tamanho. O NSP original foi mantido."
-                    else -> message = "Falha na conversão. O arquivo original foi mantido."
+                    2 -> message = tr("Conversão cancelada. O arquivo original foi mantido.")
+                    3 -> message = tr("Não houve redução de tamanho. O NSP original foi mantido.")
+                    else -> message = tr("Falha na conversão. O arquivo original foi mantido.")
                 }
             } catch (t: Throwable) {
-                message = t.message ?: "Falha na conversão. O arquivo original foi mantido."
+                message = t.message ?: tr("Falha na conversão. O arquivo original foi mantido.")
             } finally {
                 if (!success) {
                     try {
@@ -180,7 +180,7 @@ object NszConverter {
     fun decompress(context: Context, source: DocumentFile, folder: DocumentFile, onFinished: (Boolean, String) -> Unit) {
         val main = Handler(Looper.getMainLooper())
         if (running.value) {
-            onFinished(false, "Já existe uma conversão em andamento.")
+            onFinished(false, tr("Já existe uma conversão em andamento."))
             return
         }
         running.value = true
@@ -196,26 +196,26 @@ object NszConverter {
             var success = false
             var message: String
             try {
-                val name = source.name ?: error("Nome de arquivo inválido.")
+                val name = source.name ?: error(tr("Nome de arquivo inválido."))
                 val extension = name.substringAfterLast('.', "").lowercase(Locale.ROOT)
-                require(extension == "nsz" || extension == "ncz") { "Selecione um arquivo NSZ ou NCZ." }
-                require(folder.isDirectory && folder.canWrite()) { "A pasta de destino precisa permitir gravação." }
+                require(extension == "nsz" || extension == "ncz") { tr("Selecione um arquivo NSZ ou NCZ.") }
+                require(folder.isDirectory && folder.canWrite()) { tr("A pasta de destino precisa permitir gravação.") }
                 val outputName = name.dropLast(4) + if (extension == "nsz") ".nsp" else ".nca"
-                require(folder.findFile(outputName) == null) { "Já existe \"$outputName\" no destino. Selecione outra pasta." }
+                require(folder.findFile(outputName) == null) { tr("Já existe \"{0}\" no destino. Selecione outra pasta.", outputName) }
                 val standalone = if (extension == "ncz") 1 else 0
                 val resolver = appContext.contentResolver
                 val expected = resolver.openFileDescriptor(source.uri, "r").use { input ->
-                    requireNotNull(input) { "Não foi possível abrir a origem." }
+                    requireNotNull(input) { tr("Não foi possível abrir a origem.") }
                     val expected = KenjinxNative.deviceDecompressSize(input.fd, standalone)
-                    require(expected > 0) { "O arquivo é inválido ou não pode ser descompactado. Consulte o log." }
-                    if (cancelDecompression.get()) error("Descompactação cancelada. O original foi mantido.")
+                    require(expected > 0) { tr("O arquivo é inválido ou não pode ser descompactado. Consulte o log.") }
+                    if (cancelDecompression.get()) error(tr("Descompactação cancelada. O original foi mantido."))
                     part = folder.createFile("application/octet-stream", "$outputName.${UUID.randomUUID()}.part")
-                        ?: error("Não foi possível criar o arquivo temporário.")
+                        ?: error(tr("Não foi possível criar o arquivo temporário."))
                     resolver.openFileDescriptor(part!!.uri, "rw").use { output ->
-                        requireNotNull(output) { "Não foi possível abrir o destino para gravação e verificação." }
+                        requireNotNull(output) { tr("Não foi possível abrir o destino para gravação e verificação.") }
                         val stat = Os.fstatvfs(output.fileDescriptor)
                         val free = Math.multiplyExact(stat.f_bavail, stat.f_bsize)
-                        require(free >= expected) { "Espaço insuficiente: precisa de ${expected / (1024 * 1024)} MB, há ${free / (1024 * 1024)} MB livres." }
+                        require(free >= expected) { tr("Espaço insuficiente: precisa de {0} MB, há {1} MB livres.", expected / (1024 * 1024), free / (1024 * 1024)) }
                         val polling = AtomicBoolean(true)
                         val poller = thread(name = "NczDecompressionProgress") {
                             while (polling.get()) {
@@ -235,31 +235,31 @@ object NszConverter {
                             polling.set(false)
                             poller.join()
                         }
-                        if (result == 2 || cancelDecompression.get()) error("Descompactação cancelada. O original foi mantido.")
-                        require(result == 0) { "Falha na descompactação ou na verificação. O original foi mantido." }
+                        if (result == 2 || cancelDecompression.get()) error(tr("Descompactação cancelada. O original foi mantido."))
+                        require(result == 0) { tr("Falha na descompactação ou na verificação. O original foi mantido.") }
                         Os.fsync(output.fileDescriptor)
                     }
                     expected
                 }
                 // Close both descriptors before publication/deletion, including on restrictive providers.
-                require(part!!.length() == expected) { "O tamanho do destino não corresponde ao esperado." }
-                if (cancelDecompression.get()) error("Descompactação cancelada. O original foi mantido.")
+                require(part!!.length() == expected) { tr("O tamanho do destino não corresponde ao esperado.") }
+                if (cancelDecompression.get()) error(tr("Descompactação cancelada. O original foi mantido."))
                 // Recheck after a long conversion; never intentionally replace an existing destination.
-                require(folder.findFile(outputName) == null) { "O destino apareceu durante a conversão. O original foi mantido." }
-                require(part!!.renameTo(outputName)) { "Não foi possível publicar o arquivo. O original foi mantido." }
+                require(folder.findFile(outputName) == null) { tr("O destino apareceu durante a conversão. O original foi mantido.") }
+                require(part!!.renameTo(outputName)) { tr("Não foi possível publicar o arquivo. O original foi mantido.") }
                 val published = folder.findFile(outputName)
-                require(published != null && published.length() == expected && part!!.name == outputName) { "O provedor não confirmou o nome/tamanho do arquivo final." }
+                require(published != null && published.length() == expected && part!!.name == outputName) { tr("O provedor não confirmou o nome/tamanho do arquivo final.") }
                 part = null
-                if (cancelDecompression.get()) error("Descompactação cancelada. O original foi mantido; $outputName também está disponível e verificado.")
+                if (cancelDecompression.get()) error(tr("Descompactação cancelada. O original foi mantido; {0} também está disponível e verificado.", outputName))
                 val removed = runCatching { source.delete() }.getOrDefault(false)
                 success = true
                 message = if (removed) {
-                    "Descompactado para $outputName. O arquivo compactado original foi excluído."
+                    tr("Descompactado para {0}. O arquivo compactado original foi excluído.", outputName)
                 } else {
-                    "Descompactado para $outputName, mas não foi possível excluir o original. Os dois arquivos foram mantidos."
+                    tr("Descompactado para {0}, mas não foi possível excluir o original. Os dois arquivos foram mantidos.", outputName)
                 }
             } catch (exception: Throwable) {
-                message = exception.message ?: "Falha na descompactação. O original foi mantido."
+                message = exception.message ?: tr("Falha na descompactação. O original foi mantido.")
             } finally {
                 if (!success) runCatching { part?.delete() }
             }
@@ -282,7 +282,7 @@ object NszConverter {
     fun optimizeBlocks(context: Context, source: DocumentFile, onFinished: (Boolean, String) -> Unit) {
         val main = Handler(Looper.getMainLooper())
         if (running.value) {
-            main.post { onFinished(false, "Já existe uma conversão em andamento.") }
+            main.post { onFinished(false, tr("Já existe uma conversão em andamento.")) }
             return
         }
         running.value = true
@@ -298,28 +298,28 @@ object NszConverter {
             var success = false
             var message: String
             try {
-                val name = source.name ?: error("Nome de arquivo inválido.")
-                require(name.lowercase(Locale.ROOT).endsWith(".nsz")) { "Selecione um arquivo NSZ." }
-                val folder = source.parentFile ?: error("Não foi possível acessar a pasta do jogo.")
-                require(folder.isDirectory && folder.canWrite()) { "A pasta do jogo precisa permitir gravação." }
+                val name = source.name ?: error(tr("Nome de arquivo inválido."))
+                require(name.lowercase(Locale.ROOT).endsWith(".nsz")) { tr("Selecione um arquivo NSZ.") }
+                val folder = source.parentFile ?: error(tr("Não foi possível acessar a pasta do jogo."))
+                require(folder.isDirectory && folder.canWrite()) { tr("A pasta do jogo precisa permitir gravação.") }
                 val outputName = name.dropLast(4) + ".blocks.nsz"
-                require(folder.findFile(outputName) == null) { "Já existe \"$outputName\" nessa pasta. O original foi mantido." }
+                require(folder.findFile(outputName) == null) { tr("Já existe \"{0}\" nessa pasta. O original foi mantido.", outputName) }
                 val resolver = appContext.contentResolver
                 var required = 0L
                 val originalSize = source.length()
                 resolver.openFileDescriptor(source.uri, "r").use { input ->
-                    requireNotNull(input) { "Não foi possível abrir a origem." }
+                    requireNotNull(input) { tr("Não foi possível abrir a origem.") }
                     required = KenjinxNative.deviceOptimizeNszSize(input.fd)
-                    require(required != 0L) { "Este arquivo já está otimizado. O original foi mantido." }
-                    require(required > 0L) { "O NSZ é inválido ou não pode ser otimizado. Consulte o log." }
-                    if (cancelOptimization.get()) error("Otimização cancelada. O original foi mantido.")
+                    require(required != 0L) { tr("Este arquivo já está otimizado. O original foi mantido.") }
+                    require(required > 0L) { tr("O NSZ é inválido ou não pode ser otimizado. Consulte o log.") }
+                    if (cancelOptimization.get()) error(tr("Otimização cancelada. O original foi mantido."))
                     part = folder.createFile("application/octet-stream", "$outputName.${UUID.randomUUID()}.part")
-                        ?: error("Não foi possível criar o arquivo temporário.")
+                        ?: error(tr("Não foi possível criar o arquivo temporário."))
                     resolver.openFileDescriptor(part!!.uri, "rw").use { output ->
-                        requireNotNull(output) { "Não foi possível abrir o destino para gravação e verificação." }
+                        requireNotNull(output) { tr("Não foi possível abrir o destino para gravação e verificação.") }
                         val stat = Os.fstatvfs(output.fileDescriptor)
                         val free = Math.multiplyExact(stat.f_bavail, stat.f_bsize)
-                        require(free >= required) { "Espaço insuficiente: precisa de até ${required / (1024 * 1024)} MB livres, há ${free / (1024 * 1024)} MB." }
+                        require(free >= required) { tr("Espaço insuficiente: precisa de até {0} MB livres, há {1} MB.", required / (1024 * 1024), free / (1024 * 1024)) }
                         val polling = AtomicBoolean(true)
                         val poller = thread(name = "NszBlockOptimizationProgress") {
                             while (polling.get()) {
@@ -334,27 +334,27 @@ object NszConverter {
                         }
                         val result = try { KenjinxNative.deviceOptimizeNsz(input.fd, output.fd) }
                             finally { polling.set(false); poller.join() }
-                        if (result == 2 || cancelOptimization.get()) error("Otimização cancelada. O original foi mantido.")
-                        require(result == 0) { "Falha na otimização ou na verificação. O original foi mantido." }
+                        if (result == 2 || cancelOptimization.get()) error(tr("Otimização cancelada. O original foi mantido."))
+                        require(result == 0) { tr("Falha na otimização ou na verificação. O original foi mantido.") }
                         Os.fsync(output.fileDescriptor)
                     }
                 }
                 val newSize = part!!.length()
-                require(newSize > 0L && newSize <= required) { "O tamanho do destino é inválido. O original foi mantido." }
-                if (cancelOptimization.get()) error("Otimização cancelada. O original foi mantido.")
-                require(folder.findFile(outputName) == null) { "O destino apareceu durante a conversão. O original foi mantido." }
-                require(part!!.renameTo(outputName)) { "Não foi possível publicar o arquivo. O original foi mantido." }
+                require(newSize > 0L && newSize <= required) { tr("O tamanho do destino é inválido. O original foi mantido.") }
+                if (cancelOptimization.get()) error(tr("Otimização cancelada. O original foi mantido."))
+                require(folder.findFile(outputName) == null) { tr("O destino apareceu durante a conversão. O original foi mantido.") }
+                require(part!!.renameTo(outputName)) { tr("Não foi possível publicar o arquivo. O original foi mantido.") }
                 val published = folder.findFile(outputName)
-                require(published != null && published.length() == newSize && part!!.name == outputName) { "O provedor não confirmou o arquivo final. O original foi mantido." }
+                require(published != null && published.length() == newSize && part!!.name == outputName) { tr("O provedor não confirmou o arquivo final. O original foi mantido.") }
                 part = null
-                if (cancelOptimization.get()) error("Otimização cancelada. O original foi mantido; $outputName também está disponível e verificado.")
+                if (cancelOptimization.get()) error(tr("Otimização cancelada. O original foi mantido; {0} também está disponível e verificado.", outputName))
                 val removed = runCatching { source.delete() }.getOrDefault(false)
                 val sizes = "${originalSize / (1024 * 1024)} MB → ${newSize / (1024 * 1024)} MB"
                 success = true
-                message = if (removed) "NSZ otimizado para blocos ($sizes). O original foi excluído."
-                    else "NSZ otimizado para blocos ($sizes), mas não foi possível excluir o original. Os dois arquivos foram mantidos."
+                message = if (removed) tr("NSZ otimizado para blocos ({0}). O original foi excluído.", sizes)
+                    else tr("NSZ otimizado para blocos ({0}), mas não foi possível excluir o original. Os dois arquivos foram mantidos.", sizes)
             } catch (exception: Throwable) {
-                message = exception.message ?: "Falha na otimização. O original foi mantido."
+                message = exception.message ?: tr("Falha na otimização. O original foi mantido.")
             } finally {
                 if (!success) runCatching { part?.delete() }
             }

@@ -58,6 +58,7 @@ import org.kenjinx.android.MainActivity
 import org.kenjinx.android.viewmodels.TitleUpdateViewModel
 import java.io.File
 import java.util.Base64
+import org.kenjinx.android.tr
 
 class TitleUpdateViews {
     companion object {
@@ -86,7 +87,7 @@ class TitleUpdateViews {
             return when {
                 name.isNotBlank() && versionText != null -> "$name (v$versionText)"
                 name.isNotBlank() -> name
-                versionText != null -> "Atualização v$versionText"
+                versionText != null -> tr("Atualização v{0}", versionText)
                 else -> fileName
             }
         }
@@ -168,7 +169,7 @@ class TitleUpdateViews {
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = name.ifBlank { "Atualizações do jogo" },
+                            text = name.ifBlank { tr("Atualizações do jogo") },
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
@@ -176,9 +177,9 @@ class TitleUpdateViews {
                         )
                         val subtitle = buildList {
                             if (titleId.isNotBlank()) add(titleId.uppercase())
-                            add("Atualizações")
-                            if (selectedIndex == 0) add("Versão base ativa")
-                            else add("Atualização $selectedIndex ativa")
+                            add(tr("Atualizações"))
+                            if (selectedIndex == 0) add(tr("Versão base ativa"))
+                            else add(tr("Atualização {0} ativa", selectedIndex))
                         }.joinToString(" • ")
 
                         Text(
@@ -191,7 +192,7 @@ class TitleUpdateViews {
                     }
 
                     IconButton(onClick = { openDialog.value = false }) {
-                        Icon(Icons.Default.Close, contentDescription = "Fechar")
+                        Icon(Icons.Default.Close, contentDescription = tr("Fechar"))
                     }
                 }
 
@@ -221,14 +222,14 @@ class TitleUpdateViews {
                             )
                             Spacer(Modifier.height(10.dp))
                             Text(
-                                text = "Nenhuma atualização instalada",
+                                text = tr("Nenhuma atualização instalada"),
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                text = "O jogo está rodando em sua versão base original. Adicione um arquivo de atualização para aplicar patches e correções.",
+                                text = tr("O jogo está rodando em sua versão base original. Adicione um arquivo de atualização para aplicar patches e correções."),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center,
@@ -277,13 +278,13 @@ class TitleUpdateViews {
                                 Spacer(Modifier.width(12.dp))
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = "Versão base (1.0.0)",
+                                        text = tr("Versão base (1.0.0)"),
                                         style = MaterialTheme.typography.bodyMedium,
                                         fontWeight = FontWeight.SemiBold,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
-                                        text = "Sem pacote de atualização aplicado",
+                                        text = tr("Sem pacote de atualização aplicado"),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -340,7 +341,7 @@ class TitleUpdateViews {
                                                 overflow = TextOverflow.Ellipsis
                                             )
                                             Text(
-                                                text = if (isSelected) "Ativa atualmente" else "Disponível",
+                                                text = if (isSelected) tr("Ativa atualmente") else tr("Disponível"),
                                                 style = MaterialTheme.typography.labelSmall,
                                                 color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                             )
@@ -353,7 +354,7 @@ class TitleUpdateViews {
                                         ) {
                                             Icon(
                                                 imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                                contentDescription = if (isExpanded) "Ocultar detalhes" else "Ver detalhes",
+                                                contentDescription = if (isExpanded) tr("Ocultar detalhes") else tr("Ver detalhes"),
                                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
@@ -365,7 +366,7 @@ class TitleUpdateViews {
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Delete,
-                                                contentDescription = "Excluir atualização",
+                                                contentDescription = tr("Excluir atualização"),
                                                 tint = MaterialTheme.colorScheme.error
                                             )
                                         }
@@ -380,13 +381,13 @@ class TitleUpdateViews {
                                         ) {
                                             Column(modifier = Modifier.padding(8.dp)) {
                                                 Text(
-                                                    text = "Arquivo: ${file.name}",
+                                                    text = tr("Arquivo: {0}", file.name),
                                                     style = MaterialTheme.typography.bodySmall,
                                                     color = MaterialTheme.colorScheme.onSurface
                                                 )
                                                 Spacer(Modifier.height(2.dp))
                                                 Text(
-                                                    text = "Caminho: $path",
+                                                    text = tr("Caminho: {0}", path),
                                                     style = MaterialTheme.typography.labelSmall,
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                                 )
@@ -412,13 +413,13 @@ class TitleUpdateViews {
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Adicionar atualização")
+                        Text(tr("Adicionar atualização"))
                     }
 
                     Spacer(modifier = Modifier.weight(1f))
 
                     OutlinedButton(onClick = { openDialog.value = false }) {
-                        Text("Cancelar")
+                        Text(tr("Cancelar"))
                     }
 
                     Button(
@@ -434,7 +435,7 @@ class TitleUpdateViews {
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Salvar")
+                        Text(tr("Salvar"))
                     }
                 }
             }
@@ -442,13 +443,13 @@ class TitleUpdateViews {
             // Delete Confirmation Dialog
             indexToDelete?.let { targetIdx ->
                 val targetFile = validFiles.firstOrNull { it.first == targetIdx }
-                val targetName = targetFile?.third?.name?.let { cleanUpdateTitle(it, name) } ?: "esta atualização"
+                val targetName = targetFile?.third?.name?.let { cleanUpdateTitle(it, name) } ?: tr("esta atualização")
 
                 AlertDialog(
                     onDismissRequest = { indexToDelete = null },
-                    title = { Text("Excluir atualização") },
+                    title = { Text(tr("Excluir atualização")) },
                     text = {
-                        Text("Deseja remover \"$targetName\"? O arquivo será desvinculado deste jogo.")
+                        Text(tr("Deseja remover \"{0}\"? O arquivo será desvinculado deste jogo.", targetName))
                     },
                     confirmButton = {
                         TextButton(
@@ -462,12 +463,12 @@ class TitleUpdateViews {
                                 indexToDelete = null
                             }
                         ) {
-                            Text("Excluir", color = MaterialTheme.colorScheme.error)
+                            Text(tr("Excluir"), color = MaterialTheme.colorScheme.error)
                         }
                     },
                     dismissButton = {
                         TextButton(onClick = { indexToDelete = null }) {
-                            Text("Cancelar")
+                            Text(tr("Cancelar"))
                         }
                     }
                 )

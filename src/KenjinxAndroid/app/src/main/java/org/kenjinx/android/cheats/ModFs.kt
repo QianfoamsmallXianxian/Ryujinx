@@ -11,6 +11,7 @@ import java.io.File
 import java.util.Locale
 import java.util.UUID
 import java.util.zip.ZipInputStream
+import org.kenjinx.android.tr
 
 /* -------- Paths -------- */
 
@@ -87,22 +88,22 @@ fun importModsFolder(
     val published = mutableListOf<File>()
     try {
         val id = titleId.trim().uppercase(Locale.ROOT)
-        require(id.matches(Regex("[0-9A-F]{16}"))) { "Identificador de jogo inválido." }
-        requireNotNull(activity.getExternalFilesDir(null)) { "O armazenamento do aplicativo está indisponível." }
+        require(id.matches(Regex("[0-9A-F]{16}"))) { tr("Identificador de jogo inválido.") }
+        requireNotNull(activity.getExternalFilesDir(null)) { tr("O armazenamento do aplicativo está indisponível.") }
         val selected = DocumentFile.fromTreeUri(activity, treeUri)
-            ?: error("Não foi possível acessar a pasta selecionada.")
-        require(selected.isDirectory && selected.canRead()) { "A pasta selecionada não pode ser lida." }
+            ?: error(tr("Não foi possível acessar a pasta selecionada."))
+        require(selected.isDirectory && selected.canRead()) { tr("A pasta selecionada não pode ser lida.") }
         // DocumentFile.listFiles can turn a provider error into an empty directory.
         // Query explicitly so incomplete listings fail rather than silently installing a partial mod.
         fun children(directory: DocumentFile): List<DocumentFile> {
             val id = DocumentsContract.getDocumentId(directory.uri)
             val uri = DocumentsContract.buildChildDocumentsUriUsingTree(directory.uri, id)
             return activity.contentResolver.query(uri, arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID), null, null, null).use { cursor ->
-                requireNotNull(cursor) { "Não foi possível listar ${directory.name}." }
+                requireNotNull(cursor) { tr("Não foi possível listar {0}.", directory.name) }
                 buildList {
                     while (cursor.moveToNext()) {
                         val childUri = DocumentsContract.buildDocumentUriUsingTree(directory.uri, cursor.getString(0))
-                        add(DocumentFile.fromSingleUri(activity, childUri) ?: error("Documento inválido na pasta."))
+                        add(DocumentFile.fromSingleUri(activity, childUri) ?: error(tr("Documento inválido na pasta.")))
                     }
                 }
             }
@@ -113,41 +114,41 @@ fun importModsFolder(
                 (it.isFile && name in ModFolderRules.payloadFiles)
         }
         val folders = if (isMod(selected)) listOf(selected) else children(selected).filter { isMod(it) }
-        require(folders.isNotEmpty()) { "Selecione a pasta do mod que contém romfs, exefs ou cheats, ou uma pasta com vários mods." }
-        val names = folders.map { it.name ?: error("Uma pasta está sem nome.") }
+        require(folders.isNotEmpty()) { tr("Selecione a pasta do mod que contém romfs, exefs ou cheats, ou uma pasta com vários mods.") }
+        val names = folders.map { it.name ?: error(tr("Uma pasta está sem nome.")) }
         require(names.all(ModFolderRules::isSafeName) && names.map { it.lowercase(Locale.ROOT) }.distinct().size == names.size) {
-            "Há nomes de mod inválidos ou repetidos."
+            tr("Há nomes de mod inválidos ou repetidos.")
         }
         val destinationRoot = modsTitleDir(activity, id)
         val existing = destinationRoot.listFiles()?.map { it.name.lowercase(Locale.ROOT) }.orEmpty().toSet()
         val conflict = names.firstOrNull { it.lowercase(Locale.ROOT) in existing }
-        require(conflict == null) { "O mod \"$conflict\" já existe. Remova-o no gerenciador ou renomeie a pasta antes de importar." }
+        require(conflict == null) { tr("O mod \"{0}\" já existe. Remova-o no gerenciador ou renomeie a pasta antes de importar.", conflict) }
         staging = File(modsRootExternal(activity).parentFile, ".mod-import-${UUID.randomUUID()}")
-        require(staging.mkdirs()) { "Não foi possível preparar a importação." }
+        require(staging.mkdirs()) { tr("Não foi possível preparar a importação.") }
         var bytes = 0L
         var files = 0
         var lastProgress = 0L
         val visited = mutableSetOf<String>()
         fun copy(directory: DocumentFile, target: File, depth: Int, payload: Boolean = false): Int {
-            require(depth <= 64 && visited.add(directory.uri.toString())) { "A pasta é muito profunda ou contém um ciclo." }
-            require(directory.canRead() && (target.isDirectory || target.mkdirs())) { "Não foi possível copiar a pasta ${directory.name}." }
+            require(depth <= 64 && visited.add(directory.uri.toString())) { tr("A pasta é muito profunda ou contém um ciclo.") }
+            require(directory.canRead() && (target.isDirectory || target.mkdirs())) { tr("Não foi possível copiar a pasta {0}.", directory.name) }
             val childNames = mutableSetOf<String>()
             var payloadFiles = 0
             for (child in children(directory)) {
-                val rawName = child.name ?: error("Arquivo sem nome na pasta selecionada.")
-                require(ModFolderRules.isSafeName(rawName)) { "Nome de arquivo inválido: $rawName" }
+                val rawName = child.name ?: error(tr("Arquivo sem nome na pasta selecionada."))
+                require(ModFolderRules.isSafeName(rawName)) { tr("Nome de arquivo inválido: {0}", rawName) }
                 val normalized = if (depth == 0 && rawName.lowercase(Locale.ROOT) in
                     (ModFolderRules.payloadDirectories + ModFolderRules.payloadFiles)) rawName.lowercase(Locale.ROOT) else rawName
-                require(childNames.add(normalized.lowercase(Locale.ROOT))) { "Nomes de arquivo repetidos: $normalized" }
+                require(childNames.add(normalized.lowercase(Locale.ROOT))) { tr("Nomes de arquivo repetidos: {0}", normalized) }
                 val output = File(target, normalized)
                 val inPayload = payload || (depth == 0 && normalized in ModFolderRules.payloadDirectories)
                 if (child.isDirectory) payloadFiles += copy(child, output, depth + 1, inPayload)
                 else {
-                    require(child.isFile && child.canRead()) { "Não foi possível ler $rawName." }
+                    require(child.isFile && child.canRead()) { tr("Não foi possível ler {0}.", rawName) }
                     val expected = child.length()
                     var copied = 0L
                     activity.contentResolver.openInputStream(child.uri).use { input ->
-                        requireNotNull(input) { "Não foi possível abrir $rawName." }
+                        requireNotNull(input) { tr("Não foi possível abrir {0}.", rawName) }
                         output.outputStream().use { stream ->
                             val buffer = ByteArray(64 * 1024)
                             while (true) {
@@ -166,7 +167,7 @@ fun importModsFolder(
                             stream.fd.sync()
                         }
                     }
-                    require(expected <= 0 || expected == copied) { "Cópia incompleta de $rawName." }
+                    require(expected <= 0 || expected == copied) { tr("Cópia incompleta de {0}.", rawName) }
                     files++
                     if (inPayload || (depth == 0 && normalized in ModFolderRules.payloadFiles)) payloadFiles++
                 }
@@ -174,20 +175,20 @@ fun importModsFolder(
             return payloadFiles
         }
         folders.zip(names).forEach { (folder, name) ->
-            require(copy(folder, File(staging, name), 0) > 0) { "O mod \"$name\" não contém arquivos em romfs, exefs ou cheats." }
+            require(copy(folder, File(staging, name), 0) > 0) { tr("O mod \"{0}\" não contém arquivos em romfs, exefs ou cheats.", name) }
         }
-        require(destinationRoot.isDirectory || destinationRoot.mkdirs()) { "Não foi possível criar a pasta de mods do jogo." }
+        require(destinationRoot.isDirectory || destinationRoot.mkdirs()) { tr("Não foi possível criar a pasta de mods do jogo.") }
         names.forEach { name ->
             val destination = File(destinationRoot, name)
-            require(!destination.exists() && File(staging, name).renameTo(destination)) { "Não foi possível instalar \"$name\"; nenhum mod existente foi substituído." }
+            require(!destination.exists() && File(staging, name).renameTo(destination)) { tr("Não foi possível instalar \"{0}\"; nenhum mod existente foi substituído.", name) }
             published += destination
         }
-        onProgress(ImportProgress(bytes, bytes, "$files arquivos copiados"))
+        onProgress(ImportProgress(bytes, bytes, tr("{0} arquivos copiados", files)))
         return ImportModsResult(names, true)
     } catch (exception: Exception) {
         published.forEach { it.safeDeleteRecursively() }
         Log.w("ModFs", "Folder import failed", exception)
-        return ImportModsResult(emptyList(), false, exception.message ?: "Não foi possível importar a pasta.")
+        return ImportModsResult(emptyList(), false, exception.message ?: tr("Não foi possível importar a pasta."))
     } finally {
         staging?.safeDeleteRecursively()
     }

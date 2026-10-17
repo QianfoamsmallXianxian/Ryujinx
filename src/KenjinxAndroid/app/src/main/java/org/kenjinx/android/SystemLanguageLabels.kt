@@ -2,22 +2,22 @@ package org.kenjinx.android
 
 val SystemLanguage.displayName: String
     get() = when (this) {
-        SystemLanguage.Japanese -> "Japonês"
-        SystemLanguage.AmericanEnglish -> "Inglês (EUA)"
-        SystemLanguage.French -> "Francês"
-        SystemLanguage.German -> "Alemão"
-        SystemLanguage.Italian -> "Italiano"
-        SystemLanguage.Spanish -> "Espanhol (Espanha)"
-        SystemLanguage.Chinese -> "Chinês"
-        SystemLanguage.Korean -> "Coreano"
-        SystemLanguage.Dutch -> "Holandês"
-        SystemLanguage.Portuguese -> "Português (Portugal)"
-        SystemLanguage.Russian -> "Russo"
-        SystemLanguage.Taiwanese -> "Chinês (Taiwan)"
-        SystemLanguage.BritishEnglish -> "Inglês (Reino Unido)"
-        SystemLanguage.CanadianFrench -> "Francês (Canadá)"
-        SystemLanguage.LatinAmericanSpanish -> "Espanhol (América Latina)"
-        SystemLanguage.SimplifiedChinese -> "Chinês simplificado"
-        SystemLanguage.TraditionalChinese -> "Chinês tradicional"
-        SystemLanguage.BrazilianPortuguese -> "Português (Brasil)"
+        SystemLanguage.Japanese -> tr("Japonês")
+        SystemLanguage.AmericanEnglish -> tr("Inglês (EUA)")
+        SystemLanguage.French -> tr("Francês")
+        SystemLanguage.German -> tr("Alemão")
+        SystemLanguage.Italian -> tr("Italiano")
+        SystemLanguage.Spanish -> tr("Espanhol (Espanha)")
+        SystemLanguage.Chinese -> tr("Chinês")
+        SystemLanguage.Korean -> tr("Coreano")
+        SystemLanguage.Dutch -> tr("Holandês")
+        SystemLanguage.Portuguese -> tr("Português (Portugal)")
+        SystemLanguage.Russian -> tr("Russo")
+        SystemLanguage.Taiwanese -> tr("Chinês (Taiwan)")
+        SystemLanguage.BritishEnglish -> tr("Inglês (Reino Unido)")
+        SystemLanguage.CanadianFrench -> tr("Francês (Canadá)")
+        SystemLanguage.LatinAmericanSpanish -> tr("Espanhol (América Latina)")
+        SystemLanguage.SimplifiedChinese -> tr("Chinês simplificado")
+        SystemLanguage.TraditionalChinese -> tr("Chinês tradicional")
+        SystemLanguage.BrazilianPortuguese -> tr("Português (Brasil)")
     }

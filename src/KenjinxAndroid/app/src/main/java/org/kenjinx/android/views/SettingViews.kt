@@ -220,6 +220,8 @@ import org.kenjinx.android.viewmodels.QuickSettings
 import org.kenjinx.android.viewmodels.SettingsViewModel
 
 import org.kenjinx.android.viewmodels.VSyncMode
+import org.kenjinx.android.I18n
+import org.kenjinx.android.tr
 
 
 
@@ -375,7 +377,7 @@ class SettingViews {
             val enableRelaxedDmaCopy = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableRelaxedDmaCopy) }
             val enableVp9FFmpeg = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableVp9FFmpeg) }
             val enableFrameGen = remember { mutableStateOf(QuickSettings(mainViewModel.activity).enableFrameGen) }
-            val frameGenDllStatus = remember { mutableStateOf(if (java.io.File(mainViewModel.activity.filesDir, "lossless/Lossless.dll").isFile) "DLL instalada" else "Nenhuma DLL selecionada") }
+            val frameGenDllStatus = remember { mutableStateOf(if (java.io.File(mainViewModel.activity.filesDir, "lossless/Lossless.dll").isFile) tr("DLL instalada") else tr("Nenhuma DLL selecionada")) }
             val frameGenDllValid = remember { mutableStateOf(java.io.File(mainViewModel.activity.filesDir, "lossless/Lossless.dll").isFile && KenjinxNative.frameGenValidateDll(java.io.File(mainViewModel.activity.filesDir, "lossless/Lossless.dll").absolutePath) == 0) }
             val frameGenPicker = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
                 if (uri != null) {
@@ -388,19 +390,19 @@ class SettingViews {
                             val dest = java.io.File(dir, "Lossless.dll")
                             dest.delete(); tmp.renameTo(dest)
                             frameGenDllValid.value = true
-                            frameGenDllStatus.value = "DLL válida instalada"
+                            frameGenDllStatus.value = tr("DLL válida instalada")
                         } else {
                             tmp.delete()
                             frameGenDllStatus.value = when (status) {
-                                3 -> "Erro: o arquivo não é uma DLL do Windows válida"
-                                4 -> "Erro: a DLL não contém os shaders do Lossless Scaling esperados"
-                                2 -> "Erro: não foi possível ler o arquivo"
-                                else -> "Erro: falha ao preparar os shaders da DLL"
+                                3 -> tr("Erro: o arquivo não é uma DLL do Windows válida")
+                                4 -> tr("Erro: a DLL não contém os shaders do Lossless Scaling esperados")
+                                2 -> tr("Erro: não foi possível ler o arquivo")
+                                else -> tr("Erro: falha ao preparar os shaders da DLL")
                             }
                         }
                     } catch (e: Throwable) {
                         tmp.delete()
-                        frameGenDllStatus.value = "Erro ao copiar a DLL"
+                        frameGenDllStatus.value = tr("Erro ao copiar a DLL")
                     }
                 }
             }
@@ -874,7 +876,7 @@ class SettingViews {
 
                                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
 
-                                            contentDescription = "Voltar",
+                                            contentDescription = tr("Voltar"),
 
                                             tint = MaterialTheme.colorScheme.onBackground
 
@@ -884,7 +886,7 @@ class SettingViews {
 
                                     Text(
 
-                                        "Configurações",
+                                        tr("Configurações"),
 
                                         fontWeight = FontWeight.Bold,
 
@@ -926,7 +928,7 @@ class SettingViews {
 
                                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
 
-                                            contentDescription = "Voltar às Configurações",
+                                            contentDescription = tr("Voltar às Configurações"),
 
                                             tint = MaterialTheme.colorScheme.onBackground
 
@@ -938,7 +940,7 @@ class SettingViews {
 
                                         Text(
 
-                                            text = activeCat.title,
+                                            text = tr(activeCat.title),
 
                                             fontWeight = FontWeight.Bold,
 
@@ -954,7 +956,7 @@ class SettingViews {
 
                                         Text(
 
-                                            text = activeCat.description,
+                                            text = tr(activeCat.description),
 
                                             fontSize = 12.sp,
 
@@ -990,7 +992,7 @@ class SettingViews {
 
                                     Spacer(Modifier.width(6.dp))
 
-                                    Text("Salvar", fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+                                    Text(tr("Salvar"), fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
 
                                 }
 
@@ -1096,17 +1098,17 @@ class SettingViews {
 
                                     SettingsCategory.Geral -> {
 
-                                        SectionTitle("Orientação da Tela")
+                                        SectionTitle(tr("Orientação da Tela"))
 
                                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
 
                                             listOf<Pair<OrientationPreference, String>>(
 
-                                                OrientationPreference.SensorLandscape to "Horizontal",
+                                                OrientationPreference.SensorLandscape to tr("Horizontal"),
 
-                                                OrientationPreference.SensorPortrait to "Vertical",
+                                                OrientationPreference.SensorPortrait to tr("Vertical"),
 
-                                                OrientationPreference.Sensor to "Sensor"
+                                                OrientationPreference.Sensor to tr("Sensor")
 
                                             ).forEach { (pref, label) ->
 
@@ -1132,12 +1134,12 @@ class SettingViews {
 
 
 
-                                        SectionTitle("Estatísticas de desempenho")
+                                        SectionTitle(tr("Estatísticas de desempenho"))
                                         val statisticsOptions = listOf(
-                                            0 to "Desligado",
-                                            1 to "Só FPS",
-                                            2 to "FPS + quadro",
-                                            3 to "Completo"
+                                            0 to tr("Desligado"),
+                                            1 to tr("Só FPS"),
+                                            2 to tr("FPS + quadro"),
+                                            3 to tr("Completo")
                                         )
                                         CompactSelect(
                                             selectedLabel = statisticsOptions.first { it.first == performanceOverlayLevel.intValue }.second,
@@ -1155,9 +1157,9 @@ class SettingViews {
 
                                         HighContrastToggle(
 
-                                            title = "Modo de alto desempenho",
+                                            title = tr("Modo de alto desempenho"),
 
-                                            description = "Solicita maior prioridade de execução para reduzir quedas de desempenho",
+                                            description = tr("Solicita maior prioridade de execução para reduzir quedas de desempenho"),
 
                                             checked = enablePerformanceMode.value,
 
@@ -1171,13 +1173,13 @@ class SettingViews {
 
                                     SettingsCategory.Emulacao -> {
 
-                                        SectionTitle("Execução da CPU")
+                                        SectionTitle(tr("Execução da CPU"))
 
                                         HighContrastToggle(
 
-                                            title = "Usar execução nativa (NCE)",
+                                            title = tr("Usar execução nativa (NCE)"),
 
-                                            description = "Ativado usa NCE; desativado usa compilação dinâmica JIT",
+                                            description = tr("Ativado usa NCE; desativado usa compilação dinâmica JIT"),
 
                                             checked = useNce.value,
 
@@ -1187,9 +1189,9 @@ class SettingViews {
 
                                         HighContrastToggle(
 
-                                            title = "Cache PPTC (Compilação em Perfil)",
+                                            title = tr("Cache PPTC (Compilação em Perfil)"),
 
-                                            description = "Salva código traduzido em disco para reduzir o tempo de inicialização futura",
+                                            description = tr("Salva código traduzido em disco para reduzir o tempo de inicialização futura"),
 
                                             checked = enablePptc.value,
 
@@ -1201,9 +1203,9 @@ class SettingViews {
 
                                         HighContrastToggle(
 
-                                            title = "PPTC de baixo consumo",
+                                            title = tr("PPTC de baixo consumo"),
 
-                                            description = "Reduz o consumo de bateria limitando threads de compilação em segundo plano",
+                                            description = tr("Reduz o consumo de bateria limitando threads de compilação em segundo plano"),
 
                                             checked = enableLowPowerPptc.value,
 
@@ -1215,9 +1217,9 @@ class SettingViews {
 
                                         HighContrastToggle(
 
-                                            title = "Limpeza de cache do JIT",
+                                            title = tr("Limpeza de cache do JIT"),
 
-                                            description = "Descarta periodicamente blocos de tradução órfãos na memória",
+                                            description = tr("Descarta periodicamente blocos de tradução órfãos na memória"),
 
                                             checked = enableJitCacheEviction.value,
 
@@ -1229,9 +1231,9 @@ class SettingViews {
 
                                         HighContrastToggle(
 
-                                            title = "Memory Slack de 12 GiB",
+                                            title = tr("Memory Slack de 12 GiB"),
 
-                                            description = "Amplia o espaço de endereçamento reservado; desativado usa 0 GiB adicional",
+                                            description = tr("Amplia o espaço de endereçamento reservado; desativado usa 0 GiB adicional"),
 
                                             checked = memorySlackEnabled.value,
 
@@ -1243,9 +1245,9 @@ class SettingViews {
 
                                         HighContrastToggle(
 
-                                            title = "Gerenciador de memória seguro",
+                                            title = tr("Gerenciador de memória seguro"),
 
-                                            description = "Ativado usa tabela de páginas por software; desativado usa host mapeado, mais rápido",
+                                            description = tr("Ativado usa tabela de páginas por software; desativado usa host mapeado, mais rápido"),
 
                                             checked = memoryManagerMode.value == MemoryManagerMode.SoftwarePageTable,
 
@@ -1259,17 +1261,17 @@ class SettingViews {
 
 
 
-                                        SectionTitle("Tamanho da DRAM")
+                                        SectionTitle(tr("Tamanho da DRAM"))
 
                                         val dramOptions = listOf<Pair<MemoryConfiguration, String>>(
 
-                                            MemoryConfiguration.MemoryConfiguration4GiB to "4 GiB (Padrão)",
+                                            MemoryConfiguration.MemoryConfiguration4GiB to tr("4 GiB (Padrão)"),
 
-                                            MemoryConfiguration.MemoryConfiguration6GiB to "6 GiB",
+                                            MemoryConfiguration.MemoryConfiguration6GiB to tr("6 GiB"),
 
-                                            MemoryConfiguration.MemoryConfiguration8GiB to "8 GiB",
+                                            MemoryConfiguration.MemoryConfiguration8GiB to tr("8 GiB"),
 
-                                            MemoryConfiguration.MemoryConfiguration12GiB to "12 GiB"
+                                            MemoryConfiguration.MemoryConfiguration12GiB to tr("12 GiB")
 
                                         )
 
@@ -1289,15 +1291,15 @@ class SettingViews {
 
                                     SettingsCategory.Graficos -> {
 
-                                        SectionTitle("Driver Vulkan")
+                                        SectionTitle(tr("Driver Vulkan"))
 
                                         ActionButtonRow(
 
-                                            title = "Selecionar Driver Gráfico",
+                                            title = tr("Selecionar Driver Gráfico"),
 
-                                            description = "Gerenciar drivers Vulkan personalizados e do sistema",
+                                            description = tr("Gerenciar drivers Vulkan personalizados e do sistema"),
 
-                                            buttonText = "Configurar driver"
+                                            buttonText = tr("Configurar driver")
 
                                         ) { isDriverSelectorOpen.value = true }
 
@@ -1306,7 +1308,7 @@ class SettingViews {
 
 
 
-                                        SectionTitle("Escala de Resolução")
+                                        SectionTitle(tr("Escala de Resolução"))
 
                                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
 
@@ -1328,11 +1330,11 @@ class SettingViews {
 
 
 
-                                        SectionTitle("Filtro Anisotrópico")
+                                        SectionTitle(tr("Filtro Anisotrópico"))
 
                                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
 
-                                            listOf<Pair<Float, String>>(-1.0f to "Automático", 4.0f to "4x", 8.0f to "8x", 16.0f to "16x").forEach { (aniso, label) ->
+                                            listOf<Pair<Float, String>>(-1.0f to tr("Automático"), 4.0f to "4x", 8.0f to "8x", 16.0f to "16x").forEach { (aniso, label) ->
 
                                                 ChoiceCard(
 
@@ -1352,9 +1354,9 @@ class SettingViews {
 
                                         HighContrastToggle(
 
-                                            title = "Modo Docked (TV)",
+                                            title = tr("Modo Docked (TV)"),
 
-                                            description = "Aumenta resolução interna para perfil docked quando suportado",
+                                            description = tr("Aumenta resolução interna para perfil docked quando suportado"),
 
                                             checked = enableDocked.value,
 
@@ -1366,9 +1368,9 @@ class SettingViews {
 
                                         HighContrastToggle(
 
-                                            title = "Cache de Shaders",
+                                            title = tr("Cache de Shaders"),
 
-                                            description = "Reutiliza shaders compilados para reduzir recompilações e engasgos",
+                                            description = tr("Reutiliza shaders compilados para reduzir recompilações e engasgos"),
 
                                             checked = enableShaderCache.value,
 
@@ -1380,9 +1382,9 @@ class SettingViews {
 
                                         HighContrastToggle(
 
-                                            title = "Recompressão de Texturas",
+                                            title = tr("Recompressão de Texturas"),
 
-                                            description = "Reduz o uso de VRAM recomprimindo formatos pesados de textura",
+                                            description = tr("Reduz o uso de VRAM recomprimindo formatos pesados de textura"),
 
                                             checked = enableTextureRecompression.value,
 
@@ -1391,8 +1393,8 @@ class SettingViews {
                                         )
 
                                         HighContrastToggle(
-                                            title = "VTG via Compute",
-                                            description = "Executa determinados caminhos de Vertex/Geometry através de Compute para melhorar compatibilidade com shaders que dependem de semânticas não preservadas corretamente pelo caminho gráfico nativo. (Requer reiniciar o jogo)",
+                                            title = tr("VTG via Compute"),
+                                            description = tr("Executa determinados caminhos de Vertex/Geometry através de Compute para melhorar compatibilidade com shaders que dependem de semânticas não preservadas corretamente pelo caminho gráfico nativo. (Requer reiniciar o jogo)"),
                                             checked = enableVtgViaCompute.value,
                                             onCheckedChange = {
                                                 enableVtgViaCompute.value = it
@@ -1402,12 +1404,12 @@ class SettingViews {
                                             }
                                         )
 
-                                        SectionTitle("Sincronização rápida de Draw")
+                                        SectionTitle(tr("Sincronização rápida de Draw"))
 
                                         val drawFlushOptions = listOf<Pair<Int, String>>(
-                                            0 to "Padrão",
-                                            1 to "Reduzido",
-                                            2 to "Desativado"
+                                            0 to tr("Padrão"),
+                                            1 to tr("Reduzido"),
+                                            2 to tr("Desativado")
                                         )
 
                                         CompactSelect(
@@ -1421,11 +1423,11 @@ class SettingViews {
                                             }
                                         )
 
-                                        SectionTitle("Leitura de Buffer da GPU")
+                                        SectionTitle(tr("Leitura de Buffer da GPU"))
 
                                         val bufferReadbackOptions = listOf<Pair<Int, String>>(
-                                            0 to "Padrão",
-                                            1 to "Relaxada"
+                                            0 to tr("Padrão"),
+                                            1 to tr("Relaxada")
                                         )
 
                                         CompactSelect(
@@ -1439,8 +1441,8 @@ class SettingViews {
                                             }
                                         )
                                         HighContrastToggle(
-                                            title = "Cópia DMA relaxada",
-                                            description = "Cópias DMA deixam de baixar da GPU as texturas que serão sobrescritas, como no Eden. Aumenta o desempenho em alguns jogos (ex.: Diablo II), mas pode causar erros gráficos em outros. Pode ser ajustado por jogo. (Requer reiniciar o jogo)",
+                                            title = tr("Cópia DMA relaxada"),
+                                            description = tr("Cópias DMA deixam de baixar da GPU as texturas que serão sobrescritas, como no Eden. Aumenta o desempenho em alguns jogos (ex.: Diablo II), mas pode causar erros gráficos em outros. Pode ser ajustado por jogo. (Requer reiniciar o jogo)"),
                                             checked = enableRelaxedDmaCopy.value,
                                             onCheckedChange = {
                                                 enableRelaxedDmaCopy.value = it
@@ -1450,8 +1452,8 @@ class SettingViews {
                                             }
                                         )
                                         HighContrastToggle(
-                                            title = "Memória de GPU estilo Eden",
-                                            description = "Como no Eden: buffers e texturas sem uso são liberados quando a memória de GPU passa de 1,6 GB (mais forte a partir de 3,2 GB). Se a RAM do Android acabar, o jogo é fechado em vez de travar o aparelho (ex.: DOOM Eternal). Ligado por padrão; pode ser ajustado por jogo. (Requer reiniciar o jogo)",
+                                            title = tr("Memória de GPU estilo Eden"),
+                                            description = tr("Como no Eden: buffers e texturas sem uso são liberados quando a memória de GPU passa de 1,6 GB (mais forte a partir de 3,2 GB). Se a RAM do Android acabar, o jogo é fechado em vez de travar o aparelho (ex.: DOOM Eternal). Ligado por padrão; pode ser ajustado por jogo. (Requer reiniciar o jogo)"),
                                             checked = enableEdenGpuMemory.value,
                                             onCheckedChange = {
                                                 enableEdenGpuMemory.value = it
@@ -1461,8 +1463,8 @@ class SettingViews {
                                             }
                                         )
                                         HighContrastToggle(
-                                            title = "VP9 pelo FFmpeg (Eden)",
-                                            description = "Vídeos VP9 dos jogos (ex.: abertura do Zelda: Link's Awakening) passam a ser decodificados pelo FFmpeg, como no Eden, em vez do decodificador interno. Ligado por padrão. Se o vídeo de algum jogo ficar com erros (ex.: GRID Autosport), desligue nas configurações daquele jogo. (Requer reiniciar o jogo)",
+                                            title = tr("VP9 pelo FFmpeg (Eden)"),
+                                            description = tr("Vídeos VP9 dos jogos (ex.: abertura do Zelda: Link's Awakening) passam a ser decodificados pelo FFmpeg, como no Eden, em vez do decodificador interno. Ligado por padrão. Se o vídeo de algum jogo ficar com erros (ex.: GRID Autosport), desligue nas configurações daquele jogo. (Requer reiniciar o jogo)"),
                                             checked = enableVp9FFmpeg.value,
                                             onCheckedChange = {
                                                 enableVp9FFmpeg.value = it
@@ -1472,8 +1474,8 @@ class SettingViews {
                                             }
                                         )
                                         HighContrastToggle(
-                                            title = "Geração de quadros (LSFG)",
-                                            description = "Gera no máximo um quadro intermediário por quadro real, com teto de 60 FPS. Jogos de 30 FPS continuam em 30. Exige uma Lossless.dll sua (não vai no app). Status: ${frameGenDllStatus.value}. (Requer reiniciar o jogo)",
+                                            title = tr("Geração de quadros (LSFG)"),
+                                            description = tr("Gera no máximo um quadro intermediário por quadro real, com teto de 60 FPS. Jogos de 30 FPS continuam em 30. Exige uma Lossless.dll sua (não vai no app). Status: {0}. (Requer reiniciar o jogo)", frameGenDllStatus.value),
                                             checked = enableFrameGen.value && frameGenDllValid.value,
                                             onCheckedChange = {
                                                 if (!it || frameGenDllValid.value) {
@@ -1485,11 +1487,11 @@ class SettingViews {
                                             }
                                         )
                                         androidx.compose.material3.Button(onClick = { frameGenPicker.launch(arrayOf("*/*")) }) {
-                                            androidx.compose.material3.Text("Selecionar Lossless.dll")
+                                            androidx.compose.material3.Text(tr("Selecionar Lossless.dll"))
                                         }
                                         HighContrastToggle(
-                                            title = "Rejeitar descritores não mapeados",
-                                            description = "Descritores de textura com endereço não mapeado são descartados antes de ler o formato. Desligado por padrão global. Pode ser ajustado por jogo. (Requer reiniciar o jogo)",
+                                            title = tr("Rejeitar descritores não mapeados"),
+                                            description = tr("Descritores de textura com endereço não mapeado são descartados antes de ler o formato. Desligado por padrão global. Pode ser ajustado por jogo. (Requer reiniciar o jogo)"),
                                             checked = enableRejectUnmappedDescriptors.value,
                                             onCheckedChange = {
                                                 enableRejectUnmappedDescriptors.value = it
@@ -1499,8 +1501,8 @@ class SettingViews {
                                             }
                                         )
                                         HighContrastToggle(
-                                            title = "Upload assíncrono de texturas 3D (estilo Eden)",
-                                            description = "Texturas 3D grandes (4 MB ou mais) são convertidas em segundo plano e enviadas à GPU num frame seguinte. Ativado por padrão global. Pode ser ajustado por jogo. (Requer reiniciar o jogo)",
+                                            title = tr("Upload assíncrono de texturas 3D (estilo Eden)"),
+                                            description = tr("Texturas 3D grandes (4 MB ou mais) são convertidas em segundo plano e enviadas à GPU num frame seguinte. Ativado por padrão global. Pode ser ajustado por jogo. (Requer reiniciar o jogo)"),
                                             checked = enableAsyncLarge3DUpload.value,
                                             onCheckedChange = {
                                                 enableAsyncLarge3DUpload.value = it
@@ -1510,11 +1512,11 @@ class SettingViews {
                                             }
                                         )
 
-                                        SectionTitle("Sincronização estrita da GPU")
+                                        SectionTitle(tr("Sincronização estrita da GPU"))
 
                                         val strictSyncOptions = listOf<Pair<Int, String>>(
-                                            0 to "Padrão",
-                                            1 to "Imediata"
+                                            0 to tr("Padrão"),
+                                            1 to tr("Imediata")
                                         )
 
                                         CompactSelect(
@@ -1532,9 +1534,9 @@ class SettingViews {
 
                                         HighContrastToggle(
 
-                                            title = "Macro HLE",
+                                            title = tr("Macro HLE"),
 
-                                            description = "Acelera operações gráficas através de emulação de alto nível",
+                                            description = tr("Acelera operações gráficas através de emulação de alto nível"),
 
                                             checked = enableMacroHLE.value,
 
@@ -1546,9 +1548,9 @@ class SettingViews {
 
                                         HighContrastToggle(
 
-                                            title = "Esticar para Tela Inteira",
+                                            title = tr("Esticar para Tela Inteira"),
 
-                                            description = "Preenche as bordas da tela ignorando a proporção 16:9",
+                                            description = tr("Preenche as bordas da tela ignorando a proporção 16:9"),
 
                                             checked = stretchToFullscreen.value,
 
@@ -1560,9 +1562,9 @@ class SettingViews {
 
                                         HighContrastToggle(
 
-                                            title = "Renderização em Múltiplas Threads",
+                                            title = tr("Renderização em Múltiplas Threads"),
 
-                                            description = "Processa comandos gráficos em uma thread dedicada; pode melhorar fluidez ou compatibilidade",
+                                            description = tr("Processa comandos gráficos em uma thread dedicada; pode melhorar fluidez ou compatibilidade"),
 
                                             checked = !disableThreadedRendering.value,
 
@@ -1584,9 +1586,9 @@ class SettingViews {
 
                                         HighContrastToggle(
 
-                                            title = "Controle Virtual na Tela",
+                                            title = tr("Controle Virtual na Tela"),
 
-                                            description = "Exibe os botões virtuais sobre a tela do jogo",
+                                            description = tr("Exibe os botões virtuais sobre a tela do jogo"),
 
                                             checked = useVirtualController.value,
 
@@ -1596,21 +1598,21 @@ class SettingViews {
 
 
 
-                                        SectionTitle("Layout Predefinido do Controle")
+                                        SectionTitle(tr("Layout Predefinido do Controle"))
 
                                         val controllerLayouts = listOf<Pair<QuickSettings.VirtualControllerPreset, String>>(
 
-                                            QuickSettings.VirtualControllerPreset.Default to "Padrão",
+                                            QuickSettings.VirtualControllerPreset.Default to tr("Padrão"),
 
-                                            QuickSettings.VirtualControllerPreset.Layout2 to "Layout 2",
+                                            QuickSettings.VirtualControllerPreset.Layout2 to tr("Layout 2"),
 
-                                            QuickSettings.VirtualControllerPreset.Layout3 to "Layout 3",
+                                            QuickSettings.VirtualControllerPreset.Layout3 to tr("Layout 3"),
 
-                                            QuickSettings.VirtualControllerPreset.Layout4 to "Layout 4",
+                                            QuickSettings.VirtualControllerPreset.Layout4 to tr("Layout 4"),
 
-                                            QuickSettings.VirtualControllerPreset.Layout5 to "Layout 5",
+                                            QuickSettings.VirtualControllerPreset.Layout5 to tr("Layout 5"),
 
-                                            QuickSettings.VirtualControllerPreset.Layout6 to "Layout 6"
+                                            QuickSettings.VirtualControllerPreset.Layout6 to tr("Layout 6")
 
                                         )
 
@@ -1634,9 +1636,9 @@ class SettingViews {
 
                                         HighContrastToggle(
 
-                                            title = "Inverter A/B e X/Y (Layout Switch)",
+                                            title = tr("Inverter A/B e X/Y (Layout Switch)"),
 
-                                            description = "Troca a posição física dos botões; desativado por padrão",
+                                            description = tr("Troca a posição física dos botões; desativado por padrão"),
 
                                             checked = useSwitchLayout.value,
 
@@ -1648,9 +1650,9 @@ class SettingViews {
 
                                         HighContrastToggle(
 
-                                            title = "Giroscópio / Sensor de Movimento",
+                                            title = tr("Giroscópio / Sensor de Movimento"),
 
-                                            description = "Utiliza os sensores do aparelho como sensor de movimento dos Joy-Cons",
+                                            description = tr("Utiliza os sensores do aparelho como sensor de movimento dos Joy-Cons"),
 
                                             checked = enableMotion.value,
 
@@ -1659,13 +1661,13 @@ class SettingViews {
                                         )
 
                                         // NEOV2-HOTKEY2: o proprio usuario define o botao ou a combinacao que fecha o emulador.
-                                        SectionTitle("Atalho para voltar à lista de jogos")
+                                        SectionTitle(tr("Atalho para voltar à lista de jogos"))
 
                                         val exitHotkeyKeys = remember { mutableStateOf(org.kenjinx.android.ExitHotkey.load(mainViewModel.activity)) }
                                         val capturingExitHotkey = remember { mutableStateOf(false) }
 
                                         Text(
-                                            text = "Atual: " + org.kenjinx.android.ExitHotkey.describe(exitHotkeyKeys.value),
+                                            text = tr("Atual: ") + org.kenjinx.android.ExitHotkey.describe(exitHotkeyKeys.value),
                                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                                         )
 
@@ -1708,8 +1710,8 @@ class SettingViews {
                                             }
 
                                             Text(
-                                                text = "Aperte e segure no controle o botão ou a combinação (até 4 botões) e depois solte. " +
-                                                    "Capturado: " + org.kenjinx.android.ExitHotkey.describe(capturedKeys.value),
+                                                text = tr("Aperte e segure no controle o botão ou a combinação (até 4 botões) e depois solte. ") +
+                                                    tr("Capturado: ") + org.kenjinx.android.ExitHotkey.describe(capturedKeys.value),
                                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                                             )
 
@@ -1717,7 +1719,7 @@ class SettingViews {
                                                 onClick = { capturingExitHotkey.value = false },
                                                 modifier = Modifier.padding(horizontal = 8.dp)
                                             ) {
-                                                Text("Cancelar")
+                                                Text(tr("Cancelar"))
                                             }
                                         } else {
                                             Row(
@@ -1727,7 +1729,7 @@ class SettingViews {
                                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                                             ) {
                                                 Button(onClick = { capturingExitHotkey.value = true }) {
-                                                    Text("Definir atalho")
+                                                    Text(tr("Definir atalho"))
                                                 }
 
                                                 OutlinedButton(
@@ -1736,14 +1738,14 @@ class SettingViews {
                                                         exitHotkeyKeys.value = emptyList()
                                                     }
                                                 ) {
-                                                    Text("Remover")
+                                                    Text(tr("Remover"))
                                                 }
                                             }
                                         }
 
 
 
-                                        SectionTitle("Sensibilidade dos Analógicos: %.2fx".format(controllerStickSensitivity.floatValue))
+                                        SectionTitle(tr("Sensibilidade dos Analógicos: %.2fx").format(controllerStickSensitivity.floatValue))
 
                                         Slider(
 
@@ -1761,7 +1763,7 @@ class SettingViews {
 
 
 
-                                        SectionTitle("Escala dos Botões Touch: %.2fx".format(controllerScale.floatValue))
+                                        SectionTitle(tr("Escala dos Botões Touch: %.2fx").format(controllerScale.floatValue))
 
                                         Slider(
 
@@ -1789,8 +1791,26 @@ class SettingViews {
 
                                     SettingsCategory.Sistema -> {
 
+                                        // I18N1: idioma do aplicativo (Seguir o sistema ou escolha manual).
+                                        SectionTitle(tr("Idioma do aplicativo"))
+                                        val appLanguagePref = I18n.currentPreference()
+                                        val followSystemLabel = tr("Seguir o sistema")
+                                        val appLanguageOptions = listOf<Pair<String, String>>(I18n.SYSTEM to followSystemLabel) +
+                                            I18n.languages.map { it.tag to it.nativeName }
+                                        val activeLanguageName = I18n.languages.firstOrNull { it.tag == I18n.currentTag() }?.nativeName ?: ""
+                                        CompactSelect(
+                                            selectedLabel = if (appLanguagePref == I18n.SYSTEM) {
+                                                "$followSystemLabel · $activeLanguageName"
+                                            } else {
+                                                appLanguageOptions.firstOrNull { it.first == appLanguagePref }?.second ?: followSystemLabel
+                                            },
+                                            options = appLanguageOptions,
+                                            onSelected = { I18n.setPreference(it) }
+                                        )
+
+
                                         // NEOV2-AUDIO1: amplificacao do audio (na aba Sistema).
-                                        SectionTitle("Volume do áudio: %d%%".format((audioBoost.floatValue * 100).toInt()))
+                                        SectionTitle(tr("Volume do áudio: %d%%").format((audioBoost.floatValue * 100).toInt()))
                                         Slider(
                                             value = audioBoost.floatValue,
                                             onValueChange = {
@@ -1809,33 +1829,33 @@ class SettingViews {
                                         )
 
 
-                                        SectionTitle("Idioma do Sistema")
+                                        SectionTitle(tr("Idioma do console"))
 
                                         val langList = listOf<Pair<SystemLanguage, String>>(
 
-                                            SystemLanguage.BrazilianPortuguese to "Português (Brasil)",
+                                            SystemLanguage.BrazilianPortuguese to tr("Português (Brasil)"),
 
-                                            SystemLanguage.AmericanEnglish to "English (US)",
+                                            SystemLanguage.AmericanEnglish to tr("English (US)"),
 
-                                            SystemLanguage.LatinAmericanSpanish to "Español (LatAm)",
+                                            SystemLanguage.LatinAmericanSpanish to tr("Español (LatAm)"),
 
-                                            SystemLanguage.Portuguese to "Português (Portugal)",
+                                            SystemLanguage.Portuguese to tr("Português (Portugal)"),
 
-                                            SystemLanguage.BritishEnglish to "English (UK)",
+                                            SystemLanguage.BritishEnglish to tr("English (UK)"),
 
-                                            SystemLanguage.Spanish to "Español (Espanha)",
+                                            SystemLanguage.Spanish to tr("Español (Espanha)"),
 
-                                            SystemLanguage.Japanese to "Japonês",
+                                            SystemLanguage.Japanese to tr("Japonês"),
 
-                                            SystemLanguage.French to "Français",
+                                            SystemLanguage.French to tr("Français"),
 
-                                            SystemLanguage.German to "Deutsch",
+                                            SystemLanguage.German to tr("Deutsch"),
 
-                                            SystemLanguage.Italian to "Italiano",
+                                            SystemLanguage.Italian to tr("Italiano"),
 
-                                            SystemLanguage.Russian to "Russo",
+                                            SystemLanguage.Russian to tr("Russo"),
 
-                                            SystemLanguage.SimplifiedChinese to "Chinês (Simplificado)"
+                                            SystemLanguage.SimplifiedChinese to tr("Chinês (Simplificado)")
 
                                         )
 
@@ -1851,7 +1871,7 @@ class SettingViews {
 
 
 
-                                        SectionTitle("Região do Console")
+                                        SectionTitle(tr("Região do Console"))
 
                                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
 
@@ -1859,11 +1879,11 @@ class SettingViews {
 
                                                 RegionCode.USA to "EUA",
 
-                                                RegionCode.Europe to "Europa",
+                                                RegionCode.Europe to tr("Europa"),
 
-                                                RegionCode.Japan to "Japão",
+                                                RegionCode.Japan to tr("Japão"),
 
-                                                RegionCode.Australia to "Austrália"
+                                                RegionCode.Australia to tr("Austrália")
 
                                             ).forEach { (reg, label) ->
 
@@ -1883,15 +1903,15 @@ class SettingViews {
 
 
 
-                                        SectionTitle("Instalação de Chaves e Firmware")
+                                        SectionTitle(tr("Instalação de Chaves e Firmware"))
 
                                         ActionButtonRow(
 
-                                            title = "Instalar Chaves (prod.keys)",
+                                            title = tr("Instalar Chaves (prod.keys)"),
 
-                                            description = "Chaves decodificadoras necessárias para carregar os jogos",
+                                            description = tr("Chaves decodificadoras necessárias para carregar os jogos"),
 
-                                            buttonText = "Instalar chaves"
+                                            buttonText = tr("Instalar chaves")
 
                                         ) { showKeyDialog.value = true }
 
@@ -1899,11 +1919,11 @@ class SettingViews {
 
                                         ActionButtonRow(
 
-                                            title = "Instalar Firmware",
+                                            title = tr("Instalar Firmware"),
 
-                                            description = "Versão atual: ${firmwareVersion.value.ifBlank { "Nenhum instalado" }}",
+                                            description = tr("Versão atual: {0}", firmwareVersion.value.ifBlank { tr("Nenhum instalado") }),
 
-                                            buttonText = "Instalar firmware"
+                                            buttonText = tr("Instalar firmware")
 
                                         ) { showFirwmareDialog.value = true }
 
@@ -1912,22 +1932,22 @@ class SettingViews {
 
 
                                     SettingsCategory.Jogos -> {
-                                        SectionTitle("Conversão de arquivos")
+                                        SectionTitle(tr("Conversão de arquivos"))
                                         ActionButtonRow(
-                                            title = "Descompactar NSZ ou NCZ",
-                                            description = "Gerar NSP ou NCA e excluir o original após verificação",
-                                            buttonText = "Descompactar"
+                                            title = tr("Descompactar NSZ ou NCZ"),
+                                            description = tr("Gerar NSP ou NCA e excluir o original após verificação"),
+                                            buttonText = tr("Descompactar")
                                         ) { showDecompressionDialog.value = true }
 
-                                        SectionTitle("Diretórios de Jogos")
+                                        SectionTitle(tr("Diretórios de Jogos"))
 
                                         ActionButtonRow(
 
-                                            title = "Adicionar Pasta de Jogos",
+                                            title = tr("Adicionar Pasta de Jogos"),
 
-                                            description = "Selecione o diretório onde suas ROMs estão armazenadas",
+                                            description = tr("Selecione o diretório onde suas ROMs estão armazenadas"),
 
-                                            buttonText = "Adicionar pasta"
+                                            buttonText = tr("Adicionar pasta")
 
                                         ) { settingsViewModel.openGameFolder() }
 
@@ -1935,25 +1955,25 @@ class SettingViews {
 
                                         ActionButtonRow(
 
-                                            title = "Pasta de Atualizações e DLCs",
+                                            title = tr("Pasta de Atualizações e DLCs"),
 
-                                            description = "Diretório de patches e expansões instaladas",
+                                            description = tr("Diretório de patches e expansões instaladas"),
 
-                                            buttonText = "Selecionar pasta"
+                                            buttonText = tr("Selecionar pasta")
 
                                         ) { settingsViewModel.openUpdatesFolder() }
 
 
 
-                                        SectionTitle("Gerenciamento de Dados")
+                                        SectionTitle(tr("Gerenciamento de Dados"))
 
                                         ActionButtonRow(
 
-                                            title = "Abrir Pasta de Dados",
+                                            title = tr("Abrir Pasta de Dados"),
 
-                                            description = "Acessar arquivos internos do emulador no gerenciador de arquivos",
+                                            description = tr("Acessar arquivos internos do emulador no gerenciador de arquivos"),
 
-                                            buttonText = "Abrir"
+                                            buttonText = tr("Abrir")
 
                                         ) {
 
@@ -1989,11 +2009,11 @@ class SettingViews {
 
                                         ActionButtonRow(
 
-                                            title = "Importar Dados (ZIP)",
+                                            title = tr("Importar Dados (ZIP)"),
 
-                                            description = "Restaurar saves, configurações e firmware de um backup",
+                                            description = tr("Restaurar saves, configurações e firmware de um backup"),
 
-                                            buttonText = "Importar"
+                                            buttonText = tr("Importar")
 
                                         ) { showDataImportDialog.value = true }
 
@@ -2001,11 +2021,11 @@ class SettingViews {
 
                                         ActionButtonRow(
 
-                                            title = "Redefinir Dados da Aplicação",
+                                            title = tr("Redefinir Dados da Aplicação"),
 
-                                            description = "Limpar todos os dados e restaurar o emulador para os padrões de fábrica",
+                                            description = tr("Limpar todos os dados e restaurar o emulador para os padrões de fábrica"),
 
-                                            buttonText = "Redefinir"
+                                            buttonText = tr("Redefinir")
 
                                         ) { showDataResetDialog.value = true }
 
@@ -2017,9 +2037,9 @@ class SettingViews {
 
                                         HighContrastToggle(
 
-                                            title = "Integridade do sistema de arquivos",
+                                            title = tr("Integridade do sistema de arquivos"),
 
-                                            description = "Valida a integridade dos arquivos de conteúdo durante o carregamento",
+                                            description = tr("Valida a integridade dos arquivos de conteúdo durante o carregamento"),
 
                                             checked = enableFsIntegrityChecks.value,
 
@@ -2031,9 +2051,9 @@ class SettingViews {
 
                                         HighContrastToggle(
 
-                                            title = "Ignorar Serviços Ausentes",
+                                            title = tr("Ignorar Serviços Ausentes"),
 
-                                            description = "Permite continuar quando um jogo solicita serviços ainda não implementados; pode causar erros",
+                                            description = tr("Permite continuar quando um jogo solicita serviços ainda não implementados; pode causar erros"),
 
                                             checked = ignoreMissingServices.value,
 
@@ -2043,15 +2063,15 @@ class SettingViews {
 
 
 
-                                        SectionTitle("Registros de Log e Diagnóstico")
+                                        SectionTitle(tr("Registros de Log e Diagnóstico"))
 
                                         ActionButtonRow(
 
-                                            title = "Compartilhar logs",
+                                            title = tr("Compartilhar logs"),
 
-                                            description = "Compacta os registros disponíveis e abre o menu de compartilhamento do Android",
+                                            description = tr("Compacta os registros disponíveis e abre o menu de compartilhamento do Android"),
 
-                                            buttonText = "Compartilhar"
+                                            buttonText = tr("Compartilhar")
 
                                         ) { mainViewModel.logging.requestExport() }
 
@@ -2059,9 +2079,9 @@ class SettingViews {
 
                                         HighContrastToggle(
 
-                                            title = "Logs de Stub",
+                                            title = tr("Logs de Stub"),
 
-                                            description = "Registra chamadas a funções não implementadas",
+                                            description = tr("Registra chamadas a funções não implementadas"),
 
                                             checked = enableStubLogs.value,
 
@@ -2071,9 +2091,9 @@ class SettingViews {
 
                                         HighContrastToggle(
 
-                                            title = "Logs de Informações (Info)",
+                                            title = tr("Logs de Informações (Info)"),
 
-                                            description = "Registros gerais do processo de emulação",
+                                            description = tr("Registros gerais do processo de emulação"),
 
                                             checked = enableInfoLogs.value,
 
@@ -2083,9 +2103,9 @@ class SettingViews {
 
                                         HighContrastToggle(
 
-                                            title = "Logs de Avisos (Warning)",
+                                            title = tr("Logs de Avisos (Warning)"),
 
-                                            description = "Alertas de operações inesperadas",
+                                            description = tr("Alertas de operações inesperadas"),
 
                                             checked = enableWarningLogs.value,
 
@@ -2095,9 +2115,9 @@ class SettingViews {
 
                                         HighContrastToggle(
 
-                                            title = "Logs de Erros (Error)",
+                                            title = tr("Logs de Erros (Error)"),
 
-                                            description = "Falhas críticas durante a execução",
+                                            description = tr("Falhas críticas durante a execução"),
 
                                             checked = enableErrorLogs.value,
 
@@ -2107,9 +2127,9 @@ class SettingViews {
 
                                         HighContrastToggle(
 
-                                            title = "Logs de Trace",
+                                            title = tr("Logs de Trace"),
 
-                                            description = "Registra cada chamada de sistema e de serviço. Muito pesado: use só para diagnóstico",
+                                            description = tr("Registra cada chamada de sistema e de serviço. Muito pesado: use só para diagnóstico"),
 
                                             checked = enableTraceLogs.value,
 
@@ -2119,9 +2139,9 @@ class SettingViews {
 
                                         HighContrastToggle(
 
-                                            title = "Logs de Gráficos (Graphics)",
+                                            title = tr("Logs de Gráficos (Graphics)"),
 
-                                            description = "Depuração avançada do pipeline Vulkan",
+                                            description = tr("Depuração avançada do pipeline Vulkan"),
 
                                             checked = enableGraphicsLogs.value,
 
@@ -2130,15 +2150,15 @@ class SettingViews {
                                         )
 
                                         HighContrastToggle(
-                                            title = "Logs do jogo (Guest)",
-                                            description = "Mensagens que o próprio jogo escreve no log do sistema. Útil para descobrir por que um jogo falha",
+                                            title = tr("Logs do jogo (Guest)"),
+                                            description = tr("Mensagens que o próprio jogo escreve no log do sistema. Útil para descobrir por que um jogo falha"),
                                             checked = enableGuestLogs.value,
                                             onCheckedChange = { enableGuestLogs.value = it }
                                         )
 
                                         HighContrastToggle(
-                                            title = "Logs de Debug",
-                                            description = "Detalhes internos do emulador. Pesado: use só para diagnóstico",
+                                            title = tr("Logs de Debug"),
+                                            description = tr("Detalhes internos do emulador. Pesado: use só para diagnóstico"),
                                             checked = enableDebugLogs.value,
                                             onCheckedChange = { enableDebugLogs.value = it }
                                         )
@@ -2195,7 +2215,7 @@ class SettingViews {
 
                                                 Text(
 
-                                                    "Ryujinx Neo - Emulador de Nintendo Switch",
+                                                    tr("Ryujinx Neo - Emulador de Nintendo Switch"),
 
                                                     fontWeight = FontWeight.Bold,
 
@@ -2207,7 +2227,7 @@ class SettingViews {
 
                                                 Text(
 
-                                                    "Branch: neo-v2-nce2\nMotor NCE Armv8.2-A nativo com proteção de loop de shader e memória Slack.",
+                                                    tr("Branch: neo-v2-nce2\nMotor NCE Armv8.2-A nativo com proteção de loop de shader e memória Slack."),
 
                                                     fontSize = 13.sp,
 
@@ -2217,7 +2237,7 @@ class SettingViews {
 
                                                 Text(
 
-                                                    "Interface reformulada com caixinhas modulares de alto contraste e mockups de cartucho.",
+                                                    tr("Interface reformulada com caixinhas modulares de alto contraste e mockups de cartucho."),
 
                                                     fontSize = 12.sp,
 
@@ -2307,9 +2327,9 @@ class SettingViews {
 
                                 icon = Icons.Default.VpnKey,
 
-                                title = "Instalação de Chaves",
+                                title = tr("Instalação de Chaves"),
 
-                                subtitle = "Sistema • Arquivos prod.keys e title.keys",
+                                subtitle = tr("Sistema • Arquivos prod.keys e title.keys"),
 
                                 onClose = {
 
@@ -2335,7 +2355,7 @@ class SettingViews {
 
                                     Text(
 
-                                        text = "Selecione o arquivo de chaves que deseja instalar.",
+                                        text = tr("Selecione o arquivo de chaves que deseja instalar."),
 
                                         modifier = Modifier
 
@@ -2379,7 +2399,7 @@ class SettingViews {
 
                                         ) {
 
-                                            Text(text = "Selecionar arquivo")
+                                            Text(text = tr("Selecionar arquivo"))
 
                                         }
 
@@ -2401,7 +2421,7 @@ class SettingViews {
 
                                         ) {
 
-                                            Text(text = "Cancelar")
+                                            Text(text = tr("Cancelar"))
 
                                         }
 
@@ -2413,7 +2433,7 @@ class SettingViews {
 
                                     Text(
 
-                                        text = "O arquivo de chaves será instalado. Deseja continuar?",
+                                        text = tr("O arquivo de chaves será instalado. Deseja continuar?"),
 
                                         modifier = Modifier
 
@@ -2467,7 +2487,7 @@ class SettingViews {
 
                                         ) {
 
-                                            Text(text = "Sim")
+                                            Text(text = tr("Sim"))
 
                                         }
 
@@ -2489,7 +2509,7 @@ class SettingViews {
 
                                         ) {
 
-                                            Text(text = "Não")
+                                            Text(text = tr("Não"))
 
                                         }
 
@@ -2501,7 +2521,7 @@ class SettingViews {
 
                                     Text(
 
-                                        text = "Instalando arquivo de chaves...",
+                                        text = tr("Instalando arquivo de chaves..."),
 
                                         modifier = Modifier
 
@@ -2529,7 +2549,7 @@ class SettingViews {
 
                                     Text(
 
-                                        text = "Arquivo de chaves instalado.",
+                                        text = tr("Arquivo de chaves instalado."),
 
                                         modifier = Modifier
 
@@ -2571,7 +2591,7 @@ class SettingViews {
 
                                         ) {
 
-                                            Text(text = "Fechar")
+                                            Text(text = tr("Fechar"))
 
                                         }
 
@@ -2589,7 +2609,7 @@ class SettingViews {
 
                                             Text(
 
-                                                text = "Ocorreu um erro desconhecido. Consulte os logs.",
+                                                text = tr("Ocorreu um erro desconhecido. Consulte os logs."),
 
                                                 modifier = Modifier
 
@@ -2605,7 +2625,7 @@ class SettingViews {
 
                                             Text(
 
-                                                text = "Este tipo de arquivo não é compatível.",
+                                                text = tr("Este tipo de arquivo não é compatível."),
 
                                                 modifier = Modifier
 
@@ -2623,7 +2643,7 @@ class SettingViews {
 
                                         Text(
 
-                                            text = "Este tipo de arquivo não é compatível.",
+                                            text = tr("Este tipo de arquivo não é compatível."),
 
                                             modifier = Modifier
 
@@ -2669,7 +2689,7 @@ class SettingViews {
 
                                         ) {
 
-                                            Text(text = "Fechar")
+                                            Text(text = tr("Fechar"))
 
                                         }
 
@@ -2723,9 +2743,9 @@ class SettingViews {
 
                                 icon = Icons.Default.SystemUpdate,
 
-                                title = "Instalação de Firmware",
+                                title = tr("Instalação de Firmware"),
 
-                                subtitle = "Sistema • Pacote de firmware oficial (.zip ou .xci)",
+                                subtitle = tr("Sistema • Pacote de firmware oficial (.zip ou .xci)"),
 
                                 onClose = {
 
@@ -2751,7 +2771,7 @@ class SettingViews {
 
                                     Text(
 
-                                        text = "Selecione um arquivo ZIP ou XCI que contenha o firmware.",
+                                        text = tr("Selecione um arquivo ZIP ou XCI que contenha o firmware."),
 
                                         modifier = Modifier
 
@@ -2791,7 +2811,7 @@ class SettingViews {
 
                                         ) {
 
-                                            Text(text = "Selecionar arquivo")
+                                            Text(text = tr("Selecionar arquivo"))
 
                                         }
 
@@ -2813,7 +2833,7 @@ class SettingViews {
 
                                         ) {
 
-                                            Text(text = "Cancelar")
+                                            Text(text = tr("Cancelar"))
 
                                         }
 
@@ -2825,7 +2845,7 @@ class SettingViews {
 
                                     Text(
 
-                                        text = "O firmware ${settingsViewModel.selectedFirmwareVersion} será instalado. Deseja continuar?",
+                                        text = tr("O firmware {0} será instalado. Deseja continuar?", settingsViewModel.selectedFirmwareVersion),
 
                                         modifier = Modifier
 
@@ -2875,7 +2895,7 @@ class SettingViews {
 
                                         ) {
 
-                                            Text(text = "Sim")
+                                            Text(text = tr("Sim"))
 
                                         }
 
@@ -2897,7 +2917,7 @@ class SettingViews {
 
                                         ) {
 
-                                            Text(text = "Não")
+                                            Text(text = tr("Não"))
 
                                         }
 
@@ -2909,7 +2929,7 @@ class SettingViews {
 
                                     Text(
 
-                                        text = "Verificando o arquivo selecionado...",
+                                        text = tr("Verificando o arquivo selecionado..."),
 
                                         modifier = Modifier
 
@@ -2937,7 +2957,7 @@ class SettingViews {
 
                                     Text(
 
-                                        text = "Instalando o firmware ${settingsViewModel.selectedFirmwareVersion}...",
+                                        text = tr("Instalando o firmware {0}...", settingsViewModel.selectedFirmwareVersion),
 
                                         modifier = Modifier
 
@@ -2965,7 +2985,7 @@ class SettingViews {
 
                                     Text(
 
-                                        text = "Firmware ${settingsViewModel.selectedFirmwareVersion}.",
+                                        text = tr("Firmware {0}.", settingsViewModel.selectedFirmwareVersion),
 
                                         modifier = Modifier
 
@@ -3011,7 +3031,7 @@ class SettingViews {
 
                                         ) {
 
-                                            Text(text = "Fechar")
+                                            Text(text = tr("Fechar"))
 
                                         }
 
@@ -3031,7 +3051,7 @@ class SettingViews {
 
                                                 Text(
 
-                                                    text = "Não foi possível identificar a versão no arquivo selecionado.",
+                                                    text = tr("Não foi possível identificar a versão no arquivo selecionado."),
 
                                                     modifier = Modifier
 
@@ -3047,7 +3067,7 @@ class SettingViews {
 
                                                 Text(
 
-                                                    text = "Ocorreu um erro desconhecido. Consulte os logs.",
+                                                    text = tr("Ocorreu um erro desconhecido. Consulte os logs."),
 
                                                     modifier = Modifier
 
@@ -3065,7 +3085,7 @@ class SettingViews {
 
                                             Text(
 
-                                                text = "Este tipo de arquivo não é compatível.",
+                                                text = tr("Este tipo de arquivo não é compatível."),
 
                                                 modifier = Modifier
 
@@ -3083,7 +3103,7 @@ class SettingViews {
 
                                         Text(
 
-                                            text = "Este tipo de arquivo não é compatível.",
+                                            text = tr("Este tipo de arquivo não é compatível."),
 
                                             modifier = Modifier
 
@@ -3129,7 +3149,7 @@ class SettingViews {
 
                                         ) {
 
-                                            Text(text = "Fechar")
+                                            Text(text = tr("Fechar"))
 
                                         }
 
@@ -3181,9 +3201,9 @@ class SettingViews {
 
                                 icon = Icons.Default.DeleteSweep,
 
-                                title = "Redefinir Dados do Aplicativo",
+                                title = tr("Redefinir Dados do Aplicativo"),
 
-                                subtitle = "Aviso • Redefinição para padrões de fábrica",
+                                subtitle = tr("Aviso • Redefinição para padrões de fábrica"),
 
                                 isError = true,
 
@@ -3209,7 +3229,7 @@ class SettingViews {
 
                                     Text(
 
-                                        text = "As pastas BIS, jogos, perfis e sistema serão apagadas e recriadas. Deseja continuar?",
+                                        text = tr("As pastas BIS, jogos, perfis e sistema serão apagadas e recriadas. Deseja continuar?"),
 
                                         modifier = Modifier
 
@@ -3251,7 +3271,7 @@ class SettingViews {
 
                                             Spacer(Modifier.width(6.dp))
 
-                                            Text("Cancelar")
+                                            Text(tr("Cancelar"))
 
                                         }
 
@@ -3277,7 +3297,7 @@ class SettingViews {
 
                                             Spacer(Modifier.width(6.dp))
 
-                                            Text("Redefinir")
+                                            Text(tr("Redefinir"))
 
                                         }
 
@@ -3289,7 +3309,7 @@ class SettingViews {
 
                                     Text(
 
-                                        text = "Redefinindo os dados do aplicativo...",
+                                        text = tr("Redefinindo os dados do aplicativo..."),
 
                                         modifier = Modifier
 
@@ -3317,7 +3337,7 @@ class SettingViews {
 
                                     Text(
 
-                                        text = "Os dados foram redefinidos com sucesso.",
+                                        text = tr("Os dados foram redefinidos com sucesso."),
 
                                         modifier = Modifier
 
@@ -3369,7 +3389,7 @@ class SettingViews {
 
                                         ) {
 
-                                            Text(text = "Fechar")
+                                            Text(text = tr("Fechar"))
 
                                         }
 
@@ -3423,9 +3443,9 @@ class SettingViews {
 
                                 icon = Icons.Default.CloudDownload,
 
-                                title = "Importar Dados do Aplicativo",
+                                title = tr("Importar Dados do Aplicativo"),
 
-                                subtitle = "Backup • Restauração de dados (.zip)",
+                                subtitle = tr("Backup • Restauração de dados (.zip)"),
 
                                 onClose = {
 
@@ -3451,7 +3471,7 @@ class SettingViews {
 
                                     Text(
 
-                                        text = "Selecione um arquivo ZIP com as pastas BIS, jogos, perfis e sistema de outra instalação Android.",
+                                        text = tr("Selecione um arquivo ZIP com as pastas BIS, jogos, perfis e sistema de outra instalação Android."),
 
                                         modifier = Modifier
 
@@ -3533,7 +3553,7 @@ class SettingViews {
 
                                         ) {
 
-                                            Text(text = "Selecionar arquivo")
+                                            Text(text = tr("Selecionar arquivo"))
 
                                         }
 
@@ -3557,7 +3577,7 @@ class SettingViews {
 
                                         ) {
 
-                                            Text(text = "Cancelar")
+                                            Text(text = tr("Cancelar"))
 
                                         }
 
@@ -3569,7 +3589,7 @@ class SettingViews {
 
                                     Text(
 
-                                        text = "Os dados atuais serão apagados e substituídos. Deseja continuar?",
+                                        text = tr("Os dados atuais serão apagados e substituídos. Deseja continuar?"),
 
                                         modifier = Modifier
 
@@ -3613,7 +3633,7 @@ class SettingViews {
 
                                             Spacer(Modifier.width(6.dp))
 
-                                            Text("Cancelar")
+                                            Text(tr("Cancelar"))
 
                                         }
 
@@ -3647,7 +3667,7 @@ class SettingViews {
 
                                             Spacer(Modifier.width(6.dp))
 
-                                            Text("Substituir")
+                                            Text(tr("Substituir"))
 
                                         }
 
@@ -3659,7 +3679,7 @@ class SettingViews {
 
                                     Text(
 
-                                        text = "Importando dados do aplicativo...",
+                                        text = tr("Importando dados do aplicativo..."),
 
                                         modifier = Modifier
 
@@ -3689,7 +3709,7 @@ class SettingViews {
 
                                     Text(
 
-                                        text = "Os dados foram importados com sucesso.",
+                                        text = tr("Os dados foram importados com sucesso."),
 
                                         modifier = Modifier
 
@@ -3743,7 +3763,7 @@ class SettingViews {
 
                                         ) {
 
-                                            Text(text = "Fechar")
+                                            Text(text = tr("Fechar"))
 
                                         }
 
@@ -3815,7 +3835,7 @@ class SettingViews {
 
                         )
 
-                        Icon(Icons.Default.ArrowDropDown, contentDescription = "Abrir opções", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Icon(Icons.Default.ArrowDropDown, contentDescription = tr("Abrir opções"), tint = MaterialTheme.colorScheme.onSurfaceVariant)
 
                     }
 
@@ -3949,7 +3969,7 @@ class SettingViews {
 
                 IconButton(onClick = onClose) {
 
-                    Icon(Icons.Default.Close, contentDescription = "Fechar")
+                    Icon(Icons.Default.Close, contentDescription = tr("Fechar"))
 
                 }
 
@@ -4061,7 +4081,7 @@ class SettingViews {
 
                             Text(
 
-                                text = category.title,
+                                text = tr(category.title),
 
                                 fontWeight = FontWeight.Bold,
 
@@ -4073,7 +4093,7 @@ class SettingViews {
 
                             Text(
 
-                                text = category.description,
+                                text = tr(category.description),
 
                                 fontSize = 12.sp,
 
@@ -4093,7 +4113,7 @@ class SettingViews {
 
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
 
-                        contentDescription = "Abrir",
+                        contentDescription = tr("Abrir"),
 
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
 

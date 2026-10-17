@@ -32,6 +32,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import org.kenjinx.android.views.SettingViews.Companion.EXPANSTION_TRANSITION_DURATION
+import org.kenjinx.android.tr
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -109,7 +110,7 @@ fun ExpandableView(
 
                     Icon(
                         Icons.Filled.KeyboardArrowUp,
-                        contentDescription = "Expandable Arrow",
+                        contentDescription = tr("Expandable Arrow"),
                         modifier = Modifier.rotate(arrowRotationDegree)
                     )
                 }

@@ -82,7 +82,7 @@ object ShortcutHelper {
             .build()
 
         // Custom app message (as before): Directly before the system PIN dialog
-        Toast.makeText(context, "Creating shortcut “$title”…", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, tr("Creating shortcut “{0}”…", title), Toast.LENGTH_SHORT).show()
 
         val callbackIntent = ShortcutManagerCompat.createShortcutResultIntent(context, shortcut)
         val successCallback = PendingIntent.getBroadcast(

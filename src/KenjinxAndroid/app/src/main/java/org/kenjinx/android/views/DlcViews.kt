@@ -57,6 +57,7 @@ import org.kenjinx.android.MainActivity
 import org.kenjinx.android.viewmodels.DlcItem
 import org.kenjinx.android.viewmodels.DlcViewModel
 import java.util.Base64
+import org.kenjinx.android.tr
 
 class DlcViews {
     companion object {
@@ -153,7 +154,7 @@ class DlcViews {
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = name.ifBlank { "Gerenciar DLCs" },
+                            text = name.ifBlank { tr("Gerenciar DLCs") },
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
@@ -162,7 +163,7 @@ class DlcViews {
                         val subtitle = buildList {
                             if (titleId.isNotBlank()) add(titleId.uppercase())
                             add("DLC")
-                            add("$enabledCount de $totalCount ativadas")
+                            add(tr("{0} de {1} ativadas", enabledCount, totalCount))
                         }.joinToString(" • ")
 
                         Text(
@@ -175,7 +176,7 @@ class DlcViews {
                     }
 
                     IconButton(onClick = { openDialog.value = false }) {
-                        Icon(Icons.Default.Close, contentDescription = "Fechar")
+                        Icon(Icons.Default.Close, contentDescription = tr("Fechar"))
                     }
                 }
 
@@ -205,14 +206,14 @@ class DlcViews {
                             )
                             Spacer(Modifier.height(10.dp))
                             Text(
-                                text = "Nenhuma DLC instalada",
+                                text = tr("Nenhuma DLC instalada"),
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
-                                text = "Adicione arquivos .nsp, .nsz, .xci ou .xcz para habilitar novos conteúdos no jogo.",
+                                text = tr("Adicione arquivos .nsp, .nsz, .xci ou .xcz para habilitar novos conteúdos no jogo."),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center,
@@ -290,7 +291,7 @@ class DlcViews {
                                         ) {
                                             Icon(
                                                 imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                                contentDescription = if (isExpanded) "Ocultar detalhes" else "Ver detalhes",
+                                                contentDescription = if (isExpanded) tr("Ocultar detalhes") else tr("Ver detalhes"),
                                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
@@ -302,7 +303,7 @@ class DlcViews {
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Delete,
-                                                contentDescription = "Excluir DLC",
+                                                contentDescription = tr("Excluir DLC"),
                                                 tint = MaterialTheme.colorScheme.error
                                             )
                                         }
@@ -317,14 +318,14 @@ class DlcViews {
                                         ) {
                                             Column(modifier = Modifier.padding(8.dp)) {
                                                 Text(
-                                                    text = "Arquivo: ${dlcItem.name}",
+                                                    text = tr("Arquivo: {0}", dlcItem.name),
                                                     style = MaterialTheme.typography.bodySmall,
                                                     color = MaterialTheme.colorScheme.onSurface
                                                 )
                                                 if (dlcItem.containerPath.isNotBlank() && dlcItem.containerPath != dlcItem.name) {
                                                     Spacer(Modifier.height(2.dp))
                                                     Text(
-                                                        text = "Caminho: ${dlcItem.containerPath}",
+                                                        text = tr("Caminho: {0}", dlcItem.containerPath),
                                                         style = MaterialTheme.typography.labelSmall,
                                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                                     )
@@ -351,13 +352,13 @@ class DlcViews {
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Adicionar DLC")
+                        Text(tr("Adicionar DLC"))
                     }
 
                     Spacer(modifier = Modifier.weight(1f))
 
                     OutlinedButton(onClick = { openDialog.value = false }) {
-                        Text("Cancelar")
+                        Text(tr("Cancelar"))
                     }
 
                     Button(
@@ -373,7 +374,7 @@ class DlcViews {
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Salvar")
+                        Text(tr("Salvar"))
                     }
                 }
             }
@@ -382,9 +383,9 @@ class DlcViews {
             itemToDelete?.let { target ->
                 AlertDialog(
                     onDismissRequest = { itemToDelete = null },
-                    title = { Text("Excluir DLC") },
+                    title = { Text(tr("Excluir DLC")) },
                     text = {
-                        Text("Deseja remover \"${cleanDlcTitle(target.name, name)}\"? O arquivo será desvinculado deste jogo.")
+                        Text(tr("Deseja remover \"{0}\"? O arquivo será desvinculado deste jogo.", cleanDlcTitle(target.name, name)))
                     },
                     confirmButton = {
                         TextButton(
@@ -393,12 +394,12 @@ class DlcViews {
                                 itemToDelete = null
                             }
                         ) {
-                            Text("Excluir", color = MaterialTheme.colorScheme.error)
+                            Text(tr("Excluir"), color = MaterialTheme.colorScheme.error)
                         }
                     },
                     dismissButton = {
                         TextButton(onClick = { itemToDelete = null }) {
-                            Text("Cancelar")
+                            Text(tr("Cancelar"))
                         }
                     }
                 )

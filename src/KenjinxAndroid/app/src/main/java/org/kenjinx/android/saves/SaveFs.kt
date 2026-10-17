@@ -14,6 +14,7 @@ import java.util.Locale
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
+import org.kenjinx.android.tr
 
 /* ============================= Paths ============================= */
 
@@ -121,11 +122,11 @@ fun exportSaveToZip(
 ): ExportResult {
     val tidUpper = titleId.trim().uppercase(Locale.ROOT)
     val primary = pickSaveDirWithMarker(activity, titleId)
-        ?: return ExportResult(false, "Save folder not found. Start game once.")
+        ?: return ExportResult(false, tr("Save folder not found. Start game once."))
 
     val folder0 = File(primary, "0")
     if (!folder0.exists() || !folder0.isDirectory) {
-        return ExportResult(false, "Missing '0' save folder.")
+        return ExportResult(false, tr("Missing '0' save folder."))
     }
 
     val files = folder0.walkTopDown().filter { it.isFile }.toList()
@@ -160,11 +161,11 @@ fun exportSaveToZip(
                     }
                 }
             }
-        } ?: return ExportResult(false, "Failed to open destination")
+        } ?: return ExportResult(false, tr("Failed to open destination"))
         ExportResult(true, null)
     } catch (t: Throwable) {
         Log.w("SaveFs", "exportSaveToZip failed: ${t.message}")
-        ExportResult(false, t.message ?: "Export failed")
+        ExportResult(false, t.message ?: tr("Export failed"))
     }
 }
 
@@ -242,10 +243,10 @@ fun importSaveFromZip(
             }
         }
     }.onFailure {
-        return ImportResult(false, "error importing save. invalid zip")
+        return ImportResult(false, tr("error importing save. invalid zip"))
     }
 
-    if (titleIdFromZip == null) return ImportResult(false, "error importing save. missing TITLEID folder")
+    if (titleIdFromZip == null) return ImportResult(false, tr("error importing save. missing TITLEID folder"))
     val tidZip = titleIdFromZip.lowercase(Locale.ROOT)
 
     // Sum the size only under /<TITLEID>/…
@@ -267,7 +268,7 @@ fun importSaveFromZip(
     // Goal: ONLY the marker folder
     val targetRoot = pickSaveDirWithMarker(activity, tidZip)
         ?: pickSaveDirWithMarker(activity, tidZip.uppercase(Locale.ROOT))
-        ?: return ImportResult(false, "error importing save. start game once.")
+        ?: return ImportResult(false, tr("error importing save. start game once."))
 
     // Prepare 0/1 (empty it)
     val zero = File(targetRoot, "0").apply { mkdirs() }
@@ -332,8 +333,8 @@ fun importSaveFromZip(
         false
     }
 
-    return if (ok) ImportResult(true, "save imported")
-    else ImportResult(false, "error importing save. start game once.")
+    return if (ok) ImportResult(true, tr("save imported"))
+    else ImportResult(false, tr("error importing save. start game once."))
 }
 
 /* ========================= UI Helpers ============================ */

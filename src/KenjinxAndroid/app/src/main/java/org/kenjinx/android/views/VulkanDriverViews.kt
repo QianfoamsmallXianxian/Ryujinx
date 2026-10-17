@@ -53,6 +53,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.kenjinx.android.MainActivity
 import org.kenjinx.android.viewmodels.VulkanDriverViewModel
+import org.kenjinx.android.tr
 
 class VulkanDriverViews {
     companion object {
@@ -105,15 +106,15 @@ class VulkanDriverViews {
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Drivers Vulkan",
+                            text = tr("Drivers Vulkan"),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                         val totalDrivers = drivers.size + 1
-                        val activeName = if (selectedPath.isEmpty()) "Driver do sistema" else drivers.firstOrNull { it.driverPath == selectedPath }?.let { it.name.ifBlank { it.libraryName } } ?: "Customizado"
-                        val subtitle = "Driver gráfico • $totalDrivers disponíveis • Ativo: $activeName"
+                        val activeName = if (selectedPath.isEmpty()) tr("Driver do sistema") else drivers.firstOrNull { it.driverPath == selectedPath }?.let { it.name.ifBlank { it.libraryName } } ?: tr("Customizado")
+                        val subtitle = tr("Driver gráfico • {0} disponíveis • Ativo: {1}", totalDrivers, activeName)
                         Text(
                             text = subtitle,
                             style = MaterialTheme.typography.bodySmall,
@@ -124,7 +125,7 @@ class VulkanDriverViews {
                     }
 
                     IconButton(onClick = { openDialog.value = false }) {
-                        Icon(Icons.Default.Close, contentDescription = "Fechar")
+                        Icon(Icons.Default.Close, contentDescription = tr("Fechar"))
                     }
                 }
 
@@ -141,10 +142,10 @@ class VulkanDriverViews {
                 ) {
                     item {
                         DriverCard(
-                            title = "Driver do sistema",
-                            version = "Android / fabricante do dispositivo",
-                            description = "Usa o driver Vulkan instalado no sistema.",
-                            sourceTag = "Sistema",
+                            title = tr("Driver do sistema"),
+                            version = tr("Android / fabricante do dispositivo"),
+                            description = tr("Usa o driver Vulkan instalado no sistema."),
+                            sourceTag = tr("Sistema"),
                             selected = selectedPath.isEmpty(),
                             onClick = { selectDriver("") }
                         )
@@ -186,7 +187,7 @@ class VulkanDriverViews {
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            "Adicionar",
+                            tr("Adicionar"),
                             maxLines = 1,
                             softWrap = false,
                             overflow = TextOverflow.Ellipsis
@@ -207,7 +208,7 @@ class VulkanDriverViews {
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            "Baixar",
+                            tr("Baixar"),
                             maxLines = 1,
                             softWrap = false,
                             overflow = TextOverflow.Ellipsis
@@ -229,7 +230,7 @@ class VulkanDriverViews {
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            "Excluir",
+                            tr("Excluir"),
                             color = if (selectedPath.isNotEmpty()) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                             maxLines = 1,
                             softWrap = false,
@@ -241,12 +242,12 @@ class VulkanDriverViews {
 
             // Standardized Delete Confirmation Dialog matching DlcViews
             if (showDeleteConfirm) {
-                val selectedDriverName = drivers.firstOrNull { it.driverPath == selectedPath }?.let { it.name.ifBlank { it.libraryName } } ?: "driver selecionado"
+                val selectedDriverName = drivers.firstOrNull { it.driverPath == selectedPath }?.let { it.name.ifBlank { it.libraryName } } ?: tr("driver selecionado")
                 AlertDialog(
                     onDismissRequest = { showDeleteConfirm = false },
-                    title = { Text("Excluir driver") },
+                    title = { Text(tr("Excluir driver")) },
                     text = {
-                        Text("Deseja remover \"$selectedDriverName\"? O arquivo deste driver será apagado do dispositivo.")
+                        Text(tr("Deseja remover \"{0}\"? O arquivo deste driver será apagado do dispositivo.", selectedDriverName))
                     },
                     confirmButton = {
                         TextButton(
@@ -258,12 +259,12 @@ class VulkanDriverViews {
                                 showDeleteConfirm = false
                             }
                         ) {
-                            Text("Excluir", color = MaterialTheme.colorScheme.error)
+                            Text(tr("Excluir"), color = MaterialTheme.colorScheme.error)
                         }
                     },
                     dismissButton = {
                         TextButton(onClick = { showDeleteConfirm = false }) {
-                            Text("Cancelar")
+                            Text(tr("Cancelar"))
                         }
                     }
                 )
@@ -371,7 +372,7 @@ class VulkanDriverViews {
                     ) {
                         if (selected) {
                             Text(
-                                text = "Driver selecionado",
+                                text = tr("Driver selecionado"),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.primary,
                                 maxLines = 1,
@@ -388,7 +389,7 @@ class VulkanDriverViews {
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                         ) {
                             Text(
-                                text = if (selected) "Selecionado" else "Usar este",
+                                text = if (selected) tr("Selecionado") else tr("Usar este"),
                                 maxLines = 1,
                                 softWrap = false
                             )

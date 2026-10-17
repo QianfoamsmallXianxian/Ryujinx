@@ -22,10 +22,10 @@ import android.os.Looper
 object ShortcutUtils {
 
     fun suggestLabelFromUri(uri: Uri): String {
-        val last = uri.lastPathSegment ?: return "Start Game"
+        val last = uri.lastPathSegment ?: return tr("Start Game")
         val raw = last.substringAfterLast("%2F").substringAfterLast("/")
         val decoded = Uri.decode(raw)
-        return decoded.substringBeforeLast('.').ifBlank { "Start Game" }
+        return decoded.substringBeforeLast('.').ifBlank { tr("Start Game") }
     }
 
     fun persistReadWrite(activity: Activity, uri: Uri) {

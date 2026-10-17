@@ -47,6 +47,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.documentfile.provider.DocumentFile
 import org.kenjinx.android.NszConverter
 import java.util.Locale
+import org.kenjinx.android.tr
 
 // File conversion from settings. Library games use this panel inside GameActionsDialog.
 @OptIn(ExperimentalMaterial3Api::class)
@@ -96,14 +97,14 @@ fun DecompressionDialog(
                     Spacer(Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = fileName.ifBlank { "Descompactar arquivos" },
+                            text = fileName.ifBlank { tr("Descompactar arquivos") },
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = "Descompactar NSZ ou NCZ",
+                            text = tr("Descompactar NSZ ou NCZ"),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
@@ -112,14 +113,14 @@ fun DecompressionDialog(
                     }
                     if (!busy) {
                         IconButton(onClick = onDismiss) {
-                            Icon(Icons.Default.Close, contentDescription = "Fechar")
+                            Icon(Icons.Default.Close, contentDescription = tr("Fechar"))
                         }
                     }
                 }
                 DecompressionPanel(
                     source = source,
                     modifier = Modifier.weight(1f).fillMaxWidth(),
-                    backSubtitle = "Configurações",
+                    backSubtitle = tr("Configurações"),
                     onFileSelected = { fileName = it },
                     onBack = onDismiss,
                     onFinished = { success, result ->
@@ -136,7 +137,7 @@ fun DecompressionDialog(
 internal fun DecompressionPanel(
     source: DocumentFile? = null,
     modifier: Modifier = Modifier,
-    backSubtitle: String = "Ações rápidas",
+    backSubtitle: String = tr("Ações rápidas"),
     onFileSelected: (String) -> Unit = {},
     onBack: () -> Unit,
     onFinished: (Boolean, String) -> Unit
@@ -154,7 +155,7 @@ internal fun DecompressionPanel(
                 input = file
                 message = ""
                 onFileSelected(file.name.orEmpty())
-            } else message = "Selecione um arquivo .nsz ou .ncz."
+            } else message = tr("Selecione um arquivo .nsz ou .ncz.")
         }
     }
     val chooseDestination = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
@@ -168,9 +169,9 @@ internal fun DecompressionPanel(
             val outputKind = if (ncz) "NCA" else "NSP"
             Text(
                 text = if (input == null) {
-                    "Escolha um arquivo e uma pasta de destino. Depois que o arquivo novo for verificado, o original compactado será excluído."
+                    tr("Escolha um arquivo e uma pasta de destino. Depois que o arquivo novo for verificado, o original compactado será excluído.")
                 } else {
-                    "O arquivo será convertido para $outputKind na pasta selecionada. Depois que o arquivo novo for verificado, o original compactado será excluído."
+                    tr("O arquivo será convertido para {0} na pasta selecionada. Depois que o arquivo novo for verificado, o original compactado será excluído.", outputKind)
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -184,8 +185,8 @@ internal fun DecompressionPanel(
                 item {
                     ActionCard(
                         icon = Icons.Default.Archive,
-                        title = "Descompactar",
-                        subtitle = if (input == null) "Selecione o arquivo e o destino" else "Converter para $outputKind",
+                        title = tr("Descompactar"),
+                        subtitle = if (input == null) tr("Selecione o arquivo e o destino") else tr("Converter para {0}", outputKind),
                         isPrimary = true,
                         enabled = input != null && destination != null,
                         onClick = {
@@ -200,8 +201,8 @@ internal fun DecompressionPanel(
                     item {
                         ActionCard(
                             icon = Icons.Default.InsertDriveFile,
-                            title = "Escolher arquivo",
-                            subtitle = input?.name ?: "NSZ ou NCZ",
+                            title = tr("Escolher arquivo"),
+                            subtitle = input?.name ?: tr("NSZ ou NCZ"),
                             onClick = { chooseInput.launch(arrayOf("*/*")) }
                         )
                     }
@@ -209,15 +210,15 @@ internal fun DecompressionPanel(
                 item {
                     ActionCard(
                         icon = Icons.Default.FolderOpen,
-                        title = "Pasta de destino",
-                        subtitle = destination?.name ?: "Selecione uma pasta",
+                        title = tr("Pasta de destino"),
+                        subtitle = destination?.name ?: tr("Selecione uma pasta"),
                         onClick = { chooseDestination.launch(null) }
                     )
                 }
                 item {
                     ActionCard(
                         icon = Icons.Default.KeyboardReturn,
-                        title = "Voltar",
+                        title = tr("Voltar"),
                         subtitle = backSubtitle,
                         onClick = onBack
                     )

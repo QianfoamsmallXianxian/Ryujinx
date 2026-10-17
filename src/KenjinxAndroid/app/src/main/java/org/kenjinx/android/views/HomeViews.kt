@@ -169,6 +169,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 
 import androidx.compose.ui.Alignment
 
@@ -180,6 +181,8 @@ import androidx.compose.ui.draw.shadow
 
 import androidx.compose.foundation.focusable
 
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 
 import androidx.compose.ui.geometry.Offset
@@ -331,6 +334,7 @@ import androidx.compose.material.icons.filled.FolderOpen
 // Saves
 
 import org.kenjinx.android.saves.*
+import org.kenjinx.android.tr
 
 
 
@@ -444,10 +448,10 @@ class HomeViews {
                             val file = java.io.File(folder, "$titleId.jpg")
                             file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
                             bitmap.recycle()
-                            Toast.makeText(context, "Capa atualizada", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, tr("Capa atualizada"), Toast.LENGTH_SHORT).show()
                         }
                     } catch (error: Exception) {
-                        Toast.makeText(viewModel.activity, "Não foi possível importar a capa", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(viewModel.activity, tr("Não foi possível importar a capa"), Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -536,7 +540,7 @@ class HomeViews {
 
                     saveImportProgress.floatValue = 0f
 
-                    saveImportStatus.value = "Starting…"
+                    saveImportStatus.value = tr("Starting…")
 
 
 
@@ -548,7 +552,7 @@ class HomeViews {
 
                             saveImportProgress.floatValue = frac.coerceIn(0f, 1f)
 
-                            saveImportStatus.value = "Importing: ${prog.currentEntry}"
+                            saveImportStatus.value = tr("Importing: {0}", prog.currentEntry)
 
                         }
 
@@ -586,7 +590,7 @@ class HomeViews {
 
                     saveExportProgress.floatValue = 0f
 
-                    saveExportStatus.value = "Starting…"
+                    saveExportStatus.value = tr("Starting…")
 
 
 
@@ -598,7 +602,7 @@ class HomeViews {
 
                             saveExportProgress.floatValue = frac.coerceIn(0f, 1f)
 
-                            saveExportStatus.value = "Exporting: ${prog.currentPath}"
+                            saveExportStatus.value = tr("Exporting: {0}", prog.currentPath)
 
                         }
 
@@ -610,7 +614,7 @@ class HomeViews {
 
                                 act,
 
-                                if (res.ok) "save exported" else (res.error ?: "export failed"),
+                                if (res.ok) tr("save exported") else (res.error ?: tr("export failed")),
 
                                 Toast.LENGTH_SHORT
 
@@ -694,7 +698,7 @@ class HomeViews {
 
                     qs.save()
 
-                    Toast.makeText(activity, "Amiibo saved to slot ${pendingSlot.value}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(activity, tr("Amiibo saved to slot {0}", pendingSlot.value), Toast.LENGTH_SHORT).show()
 
                 }
 
@@ -728,7 +732,7 @@ class HomeViews {
 
                     if (!okExt) {
 
-                        Toast.makeText(act, "Please select a .txt file", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(act, tr("Please select a .txt file"), Toast.LENGTH_SHORT).show()
 
                         return@rememberLauncherForActivityResult
 
@@ -740,7 +744,7 @@ class HomeViews {
 
                     if (res.isSuccess) {
 
-                        Toast.makeText(act, "Imported: ${res.getOrNull()?.name}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(act, tr("Imported: {0}", res.getOrNull()?.name), Toast.LENGTH_SHORT).show()
 
                         // Then update the list
 
@@ -748,7 +752,7 @@ class HomeViews {
 
                     } else {
 
-                        Toast.makeText(act, "Import failed: ${res.exceptionOrNull()?.message}", Toast.LENGTH_LONG).show()
+                        Toast.makeText(act, tr("Import failed: {0}", res.exceptionOrNull()?.message), Toast.LENGTH_LONG).show()
 
                     }
 
@@ -764,20 +768,20 @@ class HomeViews {
                 if (uri != null && act != null && titleId.isNotEmpty() && !modsImportBusy.value) {
                     modsImportBusy.value = true
                     modsImportProgress.floatValue = -1f
-                    modsImportStatusText.value = "Preparando a pasta…"
+                    modsImportStatusText.value = tr("Preparando a pasta…")
                     thread(name = "ModFolderImport") {
                         val result = importModsFolder(act, titleId, uri) { progress ->
                             launchOnUiThread {
                                 modsImportProgress.floatValue = if (progress.totalBytes > 0) progress.fraction else -1f
-                                modsImportStatusText.value = "Copiando: ${progress.currentEntry}"
+                                modsImportStatusText.value = tr("Copiando: {0}", progress.currentEntry)
                             }
                         }
                         val installed = listMods(act, titleId)
                         launchOnUiThread {
                             modsForSelected.value = installed
                             modsImportBusy.value = false
-                            Toast.makeText(act, if (result.ok) "Importado: ${result.imported.joinToString(", ")}"
-                                else result.error ?: "Falha ao importar a pasta", Toast.LENGTH_LONG).show()
+                            Toast.makeText(act, if (result.ok) tr("Importado: {0}", result.imported.joinToString(", "))
+                                else result.error ?: tr("Falha ao importar a pasta"), Toast.LENGTH_LONG).show()
                         }
                     }
                 }
@@ -813,7 +817,7 @@ class HomeViews {
 
                     modsImportProgress.floatValue = 0f
 
-                    modsImportStatusText.value = "Starting…"
+                    modsImportStatusText.value = tr("Starting…")
 
 
 
@@ -833,11 +837,11 @@ class HomeViews {
 
                             modsImportStatusText.value = if (prog.currentEntry.isNotEmpty())
 
-                                "Copying: ${prog.currentEntry}"
+                                tr("Copying: {0}", prog.currentEntry)
 
                             else
 
-                                "Copying… ${(prog.fraction * 100).toInt()}%"
+                                tr("Copying… {0}%", (prog.fraction * 100).toInt())
 
                         }
 
@@ -855,11 +859,11 @@ class HomeViews {
 
                             val msg = if (res.ok)
 
-                                "Imported: ${res.imported.joinToString(", ")}"
+                                tr("Imported: {0}", res.imported.joinToString(", "))
 
                             else
 
-                                "Import failed"
+                                tr("Import failed")
 
                             Toast.makeText(act, msg, Toast.LENGTH_SHORT).show()
 
@@ -897,7 +901,7 @@ class HomeViews {
 
 
 
-                    val label = shortcutName.value.ifBlank { gm.titleName ?: "Start Game" }
+                    val label = shortcutName.value.ifBlank { gm.titleName ?: tr("Start Game") }
 
                     val gameUri = resolveGameUri(gm)
 
@@ -925,7 +929,7 @@ class HomeViews {
 
                     } else {
 
-                        showError.value = "Shortcut failed (no game URI found)."
+                        showError.value = tr("Shortcut failed (no game URI found).")
 
                     }
 
@@ -1117,6 +1121,7 @@ class HomeViews {
                                     title.isNotEmpty() && (query.value.trim().isEmpty() || title.lowercase(Locale.getDefault()).contains(query.value.lowercase(Locale.getDefault())))
 
                                 }
+                                val firstGameFocus = rememberFirstGameFocus(filteredList.isNotEmpty())
 
 
 
@@ -1142,7 +1147,7 @@ class HomeViews {
 
                                         items(filteredList) { game ->
 
-                                            GridGameItem(game, viewModel, showAppActions, showLoading, selectedModel, showError)
+                                            GridGameItem(game, viewModel, showAppActions, showLoading, selectedModel, showError, focusRequester = firstGameFocus.takeIf { game == filteredList.firstOrNull() })
 
                                         }
 
@@ -1160,7 +1165,7 @@ class HomeViews {
 
                         layoutIcon = Icons.Default.ViewCarousel,
 
-                        layoutDescription = "Usar visual Switch",
+                        layoutDescription = tr("Usar visual Switch"),
 
                         onChangeLayout = {
 
@@ -1306,7 +1311,7 @@ class HomeViews {
 
                                             Text(
 
-                                                text = "Importar Amiibo",
+                                                text = tr("Importar Amiibo"),
 
                                                 style = MaterialTheme.typography.titleMedium,
 
@@ -1320,7 +1325,7 @@ class HomeViews {
 
                                             Text(
 
-                                                text = "Selecione o slot de armazenamento",
+                                                text = tr("Selecione o slot de armazenamento"),
 
                                                 style = MaterialTheme.typography.bodySmall,
 
@@ -1336,7 +1341,7 @@ class HomeViews {
 
                                         IconButton(onClick = { showAmiiboSlotDialog.value = false }) {
 
-                                            Icon(Icons.Default.Close, contentDescription = "Fechar")
+                                            Icon(Icons.Default.Close, contentDescription = tr("Fechar"))
 
                                         }
 
@@ -1346,7 +1351,7 @@ class HomeViews {
 
                                     Text(
 
-                                        text = "Escolha um slot (1 a 5) para armazenar este Amiibo:",
+                                        text = tr("Escolha um slot (1 a 5) para armazenar este Amiibo:"),
 
                                         style = MaterialTheme.typography.bodySmall,
 
@@ -1408,7 +1413,7 @@ class HomeViews {
 
                                                     Text(
 
-                                                        text = "Slot $slot",
+                                                        text = tr("Slot {0}", slot),
 
                                                         fontWeight = FontWeight.Bold,
 
@@ -1442,7 +1447,7 @@ class HomeViews {
 
                                         OutlinedButton(onClick = { showAmiiboSlotDialog.value = false }) {
 
-                                            Text("Fechar")
+                                            Text(tr("Fechar"))
 
                                         }
 
@@ -1502,7 +1507,7 @@ class HomeViews {
 
                                     if (success == -2)
 
-                                        showError.value = "Error loading update. Please re-add update file"
+                                        showError.value = tr("Error loading update. Please re-add update file")
 
                                     viewModel.mainViewModel.loadGameModel.value!!.close()
 
@@ -1562,7 +1567,7 @@ class HomeViews {
 
                                         if (success == -2)
 
-                                            showError.value = "Error loading update. Please re-add update file"
+                                            showError.value = tr("Error loading update. Please re-add update file")
 
                                         gm.close()
 
@@ -1614,7 +1619,7 @@ class HomeViews {
 
                                 } else {
 
-                                    showError.value = "No title selected."
+                                    showError.value = tr("No title selected.")
 
                                 }
 
@@ -1638,7 +1643,7 @@ class HomeViews {
 
                                 } else {
 
-                                    showError.value = "No title selected."
+                                    showError.value = tr("No title selected.")
 
                                 }
 
@@ -1679,7 +1684,7 @@ class HomeViews {
 
                                 viewModel.mainViewModel?.clearPptcCache(gm.titleId.orEmpty())
 
-                                Toast.makeText(viewModel.activity, "Cache PPTC limpo", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(viewModel.activity, tr("Cache PPTC limpo"), Toast.LENGTH_SHORT).show()
 
                             },
 
@@ -1687,7 +1692,7 @@ class HomeViews {
 
                                 viewModel.mainViewModel?.purgeShaderCache(gm.titleId.orEmpty())
 
-                                Toast.makeText(viewModel.activity, "Cache de shaders limpo", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(viewModel.activity, tr("Cache de shaders limpo"), Toast.LENGTH_SHORT).show()
 
                             },
 
@@ -1695,7 +1700,7 @@ class HomeViews {
 
                                 viewModel.mainViewModel?.deleteCache(gm.titleId.orEmpty())
 
-                                Toast.makeText(viewModel.activity, "Todos os caches excluídos", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(viewModel.activity, tr("Todos os caches excluídos"), Toast.LENGTH_SHORT).show()
 
                             },
 
@@ -1824,7 +1829,7 @@ class HomeViews {
 
                                         Text(
 
-                                            text = gm?.titleName ?: "Gerenciar Cheats",
+                                            text = gm?.titleName ?: tr("Gerenciar Cheats"),
 
                                             style = MaterialTheme.typography.titleMedium,
 
@@ -1839,8 +1844,8 @@ class HomeViews {
                                         val sub = buildList {
                                             if (titleId.isNotBlank()) add(titleId.uppercase())
                                             if (!gm?.version.isNullOrBlank()) add("v${gm?.version}")
-                                            add("Cheats")
-                                            add("$enabledCount de ${cheats.size} ativados")
+                                            add(tr("Cheats"))
+                                            add(tr("{0} de {1} ativados", enabledCount, cheats.size))
                                         }.joinToString(" • ")
                                         Text(
                                             text = sub,
@@ -1853,7 +1858,7 @@ class HomeViews {
 
                                     IconButton(onClick = { openCheatsDialog.value = false }) {
 
-                                        Icon(Icons.Default.Close, contentDescription = "Fechar")
+                                        Icon(Icons.Default.Close, contentDescription = tr("Fechar"))
 
                                     }
 
@@ -1907,7 +1912,7 @@ class HomeViews {
 
                                             Text(
 
-                                                text = "Nenhum cheat encontrado",
+                                                text = tr("Nenhum cheat encontrado"),
 
                                                 style = MaterialTheme.typography.titleSmall,
 
@@ -1921,7 +1926,7 @@ class HomeViews {
 
                                             Text(
 
-                                                text = "Importe arquivos .txt contendo códigos de trapaça para este jogo.",
+                                                text = tr("Importe arquivos .txt contendo códigos de trapaça para este jogo."),
 
                                                 style = MaterialTheme.typography.bodySmall,
 
@@ -2023,7 +2028,7 @@ class HomeViews {
 
                                                         Text(
 
-                                                            text = "Build ID: ${cheat.buildId}",
+                                                            text = tr("Build ID: {0}", cheat.buildId),
 
                                                             style = MaterialTheme.typography.labelSmall,
 
@@ -2089,7 +2094,7 @@ class HomeViews {
 
                                         Spacer(Modifier.width(6.dp))
 
-                                        Text("Importar .txt")
+                                        Text(tr("Importar .txt"))
 
                                     }
 
@@ -2103,7 +2108,7 @@ class HomeViews {
                                         onClick = { openCheatsDialog.value = false },
                                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
                                     ) {
-                                        Text("Cancelar", maxLines = 1, softWrap = false)
+                                        Text(tr("Cancelar"), maxLines = 1, softWrap = false)
                                     }
 
 
@@ -2136,7 +2141,7 @@ class HomeViews {
 
                                         Spacer(Modifier.width(6.dp))
 
-                                        Text("Salvar", fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+                                        Text(tr("Salvar"), fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
 
                                     }
 
@@ -2236,7 +2241,7 @@ class HomeViews {
 
                                         Text(
 
-                                            text = gm?.titleName ?: "Gerenciar Mods",
+                                            text = gm?.titleName ?: tr("Gerenciar Mods"),
 
                                             style = MaterialTheme.typography.titleMedium,
 
@@ -2252,7 +2257,7 @@ class HomeViews {
 
                                             if (titleId.isNotBlank()) add(titleId.uppercase())
 
-                                            add("Mods")
+                                            add(tr("Mods"))
 
                                             add("${mods.size} instalados")
 
@@ -2276,7 +2281,7 @@ class HomeViews {
 
                                     IconButton(enabled = !modsImportBusy.value, onClick = { openModsDialog.value = false }) {
 
-                                        Icon(Icons.Default.Close, contentDescription = "Fechar")
+                                        Icon(Icons.Default.Close, contentDescription = tr("Fechar"))
 
                                     }
 
@@ -2364,7 +2369,7 @@ class HomeViews {
 
                                             Text(
 
-                                                text = "Nenhum mod instalado",
+                                                text = tr("Nenhum mod instalado"),
 
                                                 style = MaterialTheme.typography.titleSmall,
 
@@ -2378,7 +2383,7 @@ class HomeViews {
 
                                             Text(
 
-                                                text = "Selecione a pasta do mod que contém romfs, exefs ou cheats, ou importe um arquivo .zip.",
+                                                text = tr("Selecione a pasta do mod que contém romfs, exefs ou cheats, ou importe um arquivo .zip."),
 
                                                 style = MaterialTheme.typography.bodySmall,
 
@@ -2498,7 +2503,7 @@ class HomeViews {
 
                                                             imageVector = Icons.Default.Delete,
 
-                                                            contentDescription = "Excluir",
+                                                            contentDescription = tr("Excluir"),
 
                                                             tint = MaterialTheme.colorScheme.error,
 
@@ -2543,7 +2548,7 @@ class HomeViews {
                                     ) {
                                         Icon(Icons.Default.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
                                         Spacer(Modifier.width(6.dp))
-                                        Text("Importar pasta")
+                                        Text(tr("Importar pasta"))
                                     }
                                     OutlinedButton(
 
@@ -2558,7 +2563,7 @@ class HomeViews {
 
                                         Spacer(Modifier.width(6.dp))
 
-                                        Text("Importar .zip")
+                                        Text(tr("Importar .zip"))
 
                                     }
 
@@ -2570,7 +2575,7 @@ class HomeViews {
 
                                     OutlinedButton(modifier = Modifier.fillMaxWidth(), enabled = !modsImportBusy.value, onClick = { openModsDialog.value = false }) {
 
-                                        Text("Fechar")
+                                        Text(tr("Fechar"))
 
                                     }
 
@@ -2666,7 +2671,7 @@ class HomeViews {
 
                                         Text(
 
-                                            text = gm?.titleName ?: "Gerenciador de Saves",
+                                            text = gm?.titleName ?: tr("Gerenciador de Saves"),
 
                                             style = MaterialTheme.typography.titleMedium,
 
@@ -2682,9 +2687,9 @@ class HomeViews {
 
                                             if (titleId.isNotBlank()) add(titleId.uppercase())
 
-                                            add("Dados salvos")
+                                            add(tr("Dados salvos"))
 
-                                            add("Backup e Restauração")
+                                            add(tr("Backup e Restauração"))
 
                                         }.joinToString(" • ")
 
@@ -2706,7 +2711,7 @@ class HomeViews {
 
                                     IconButton(onClick = { openSavesDialog.value = false }) {
 
-                                        Icon(Icons.Default.Close, contentDescription = "Fechar")
+                                        Icon(Icons.Default.Close, contentDescription = tr("Fechar"))
 
                                     }
 
@@ -2782,7 +2787,7 @@ class HomeViews {
 
                                                 Text(
 
-                                                    text = "Importar Saves (.zip)",
+                                                    text = tr("Importar Saves (.zip)"),
 
                                                     fontWeight = FontWeight.SemiBold,
 
@@ -2794,7 +2799,7 @@ class HomeViews {
 
                                                 Text(
 
-                                                    text = "Restaura arquivos de salvamento a partir de um arquivo ZIP",
+                                                    text = tr("Restaura arquivos de salvamento a partir de um arquivo ZIP"),
 
                                                     style = MaterialTheme.typography.bodySmall,
 
@@ -2872,7 +2877,7 @@ class HomeViews {
 
                                                 Text(
 
-                                                    text = "Exportar Saves (.zip)",
+                                                    text = tr("Exportar Saves (.zip)"),
 
                                                     fontWeight = FontWeight.SemiBold,
 
@@ -2884,7 +2889,7 @@ class HomeViews {
 
                                                 Text(
 
-                                                    text = "Cria um arquivo ZIP com o backup completo dos saves",
+                                                    text = tr("Cria um arquivo ZIP com o backup completo dos saves"),
 
                                                     style = MaterialTheme.typography.bodySmall,
 
@@ -2942,7 +2947,7 @@ class HomeViews {
 
                                     OutlinedButton(onClick = { openSavesDialog.value = false }) {
 
-                                        Text("Fechar")
+                                        Text(tr("Fechar"))
 
                                     }
 
@@ -3032,7 +3037,7 @@ class HomeViews {
 
                                         Text(
 
-                                            text = "Criar Atalho",
+                                            text = tr("Criar Atalho"),
 
                                             style = MaterialTheme.typography.titleMedium,
 
@@ -3046,7 +3051,7 @@ class HomeViews {
 
                                         Text(
 
-                                            text = "Adicionar jogo à tela inicial",
+                                            text = tr("Adicionar jogo à tela inicial"),
 
                                             style = MaterialTheme.typography.bodySmall,
 
@@ -3062,7 +3067,7 @@ class HomeViews {
 
                                     IconButton(onClick = { showShortcutDialog.value = false }) {
 
-                                        Icon(Icons.Default.Close, contentDescription = "Fechar")
+                                        Icon(Icons.Default.Close, contentDescription = tr("Fechar"))
 
                                     }
 
@@ -3076,7 +3081,7 @@ class HomeViews {
 
                                     onValueChange = { shortcutName.value = it },
 
-                                    label = { Text("Nome do atalho") },
+                                    label = { Text(tr("Nome do atalho")) },
 
                                     singleLine = true,
 
@@ -3092,7 +3097,7 @@ class HomeViews {
 
                                 Text(
 
-                                    text = "Escolha o ícone do atalho:",
+                                    text = tr("Escolha o ícone do atalho:"),
 
                                     style = MaterialTheme.typography.bodySmall,
 
@@ -3123,7 +3128,7 @@ class HomeViews {
                                                     if (gameUri != null) {
                                                         ShortcutUtils.persistReadWrite(activity, gameUri)
                                                         val bmp = decodeGameIcon(gm)
-                                                        val label = shortcutName.value.ifBlank { gm.titleName ?: "Iniciar Jogo" }
+                                                        val label = shortcutName.value.ifBlank { gm.titleName ?: tr("Iniciar Jogo") }
                                                         ShortcutUtils.pinShortcutForGame(
                                                             activity = activity,
                                                             gameUri = gameUri,
@@ -3143,7 +3148,7 @@ class HomeViews {
                                             Icon(Icons.Default.SportsEsports, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                                             Spacer(Modifier.width(6.dp))
                                             Text(
-                                                text = "Ícone do jogo",
+                                                text = tr("Ícone do jogo"),
                                                 fontWeight = FontWeight.SemiBold,
                                                 style = MaterialTheme.typography.bodySmall,
                                                 maxLines = 1,
@@ -3174,7 +3179,7 @@ class HomeViews {
                                             Icon(Icons.Default.Palette, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                                             Spacer(Modifier.width(6.dp))
                                             Text(
-                                                text = "Personalizado",
+                                                text = tr("Personalizado"),
                                                 fontWeight = FontWeight.SemiBold,
                                                 style = MaterialTheme.typography.bodySmall,
                                                 maxLines = 1,
@@ -3202,7 +3207,7 @@ class HomeViews {
                                         onClick = { showShortcutDialog.value = false },
                                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
                                     ) {
-                                        Text("Cancelar", maxLines = 1, softWrap = false)
+                                        Text(tr("Cancelar"), maxLines = 1, softWrap = false)
                                     }
 
                                 }
@@ -3239,7 +3244,7 @@ class HomeViews {
 
                     Text(
 
-                        "Nenhum jogo encontrado",
+                        tr("Nenhum jogo encontrado"),
 
                         style = MaterialTheme.typography.titleMedium,
 
@@ -3253,7 +3258,7 @@ class HomeViews {
 
                     Text(
 
-                        "Adicione pastas de jogos no menu de configurações.",
+                        tr("Adicione pastas de jogos no menu de configurações."),
 
                         style = MaterialTheme.typography.bodySmall,
 
@@ -3284,6 +3289,28 @@ class HomeViews {
             } else {
                 7
             }
+        }
+
+        // Foco inicial: a primeira capa da biblioteca, para o controle nao comecar na caixa de pesquisa.
+        // Pede o foco uma unica vez, depois que a lista aparece; digitar na pesquisa nao rouba o foco de volta.
+        @Composable
+        private fun rememberFirstGameFocus(hasGames: Boolean): FocusRequester {
+            val requester = remember { FocusRequester() }
+            var done by remember { mutableStateOf(false) }
+            LaunchedEffect(hasGames) {
+                if (hasGames && !done) {
+                    repeat(30) {
+                        withFrameNanos { }
+                        val result = runCatching { requester.requestFocus() }
+                        val granted = result.isSuccess && ((result.getOrNull() as? Boolean) ?: true)
+                        if (granted) {
+                            done = true
+                            return@LaunchedEffect
+                        }
+                    }
+                }
+            }
+            return requester
         }
 
         @Composable
@@ -3393,7 +3420,7 @@ class HomeViews {
 
                                     Text(
 
-                                        "Pesquisar jogos...",
+                                        tr("Pesquisar jogos..."),
 
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
 
@@ -3413,7 +3440,7 @@ class HomeViews {
 
                             Icons.Default.Search,
 
-                            contentDescription = "Pesquisar",
+                            contentDescription = tr("Pesquisar"),
 
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
 
@@ -3487,15 +3514,15 @@ class HomeViews {
                     ) {
                         SwitchRailButton(Icons.Default.Memory, "CPU", Color(0xFFE3A33B)) { onOpenSettings("Emulacao") }
 
-                        SwitchRailButton(Icons.Default.Palette, "Gráficos", Color(0xFF5DAA67)) { onOpenSettings("Graficos") }
+                        SwitchRailButton(Icons.Default.Palette, tr("Gráficos"), Color(0xFF5DAA67)) { onOpenSettings("Graficos") }
 
-                        SwitchRailButton(Icons.Default.SportsEsports, "Controles", Color(0xFF4B91D1)) { onOpenSettings("Controles") }
+                        SwitchRailButton(Icons.Default.SportsEsports, tr("Controles"), Color(0xFF4B91D1)) { onOpenSettings("Controles") }
 
-                        SwitchRailButton(Icons.Default.Folder, "Dados", Color(0xFF54A9A4)) { onOpenSettings("Jogos") }
+                        SwitchRailButton(Icons.Default.Folder, tr("Dados"), Color(0xFF54A9A4)) { onOpenSettings("Jogos") }
 
-                        SwitchRailButton(Icons.Default.Devices, "Sistema", Color(0xFF787F8A)) { onOpenSettings("Sistema") }
+                        SwitchRailButton(Icons.Default.Devices, tr("Sistema"), Color(0xFF787F8A)) { onOpenSettings("Sistema") }
 
-                        SwitchRailButton(Icons.Default.Settings, "Configurações", Color(0xFF626975)) { onOpenSettings(null) }
+                        SwitchRailButton(Icons.Default.Settings, tr("Configurações"), Color(0xFF626975)) { onOpenSettings(null) }
 
                     }
 
@@ -3507,7 +3534,7 @@ class HomeViews {
 
                     icon = if (NeoThemeState.isDark) Icons.Default.LightMode else Icons.Default.DarkMode,
 
-                    description = if (NeoThemeState.isDark) "Ativar tema claro" else "Ativar tema escuro",
+                    description = if (NeoThemeState.isDark) tr("Ativar tema claro") else tr("Ativar tema escuro"),
 
                     onClick = { NeoThemeState.toggle(context) },
 
@@ -3623,6 +3650,7 @@ class HomeViews {
                 title.isNotEmpty() && (query.value.isBlank() || title.contains(query.value.trim(), ignoreCase = true))
 
             }
+            val firstGameFocus = rememberFirstGameFocus(!isLoading.value && filteredList.isNotEmpty())
 
 
 
@@ -3668,7 +3696,7 @@ class HomeViews {
 
                             items(filteredList) { game ->
 
-                                SwitchGameItem(game, viewModel, showAppActions, showLoading, selectedModel, showError, largeCovers)
+                                SwitchGameItem(game, viewModel, showAppActions, showLoading, selectedModel, showError, largeCovers, focusRequester = firstGameFocus.takeIf { game == filteredList.firstOrNull() })
 
                             }
 
@@ -3684,7 +3712,7 @@ class HomeViews {
 
                     layoutIcon = Icons.Default.ViewModule,
 
-                    layoutDescription = if (largeCovers) "Usar visual NEO" else "Usar capas grandes",
+                    layoutDescription = if (largeCovers) tr("Usar visual NEO") else tr("Usar capas grandes"),
 
                     onChangeLayout = onChangeLayout,
 
@@ -3764,7 +3792,8 @@ class HomeViews {
             selectedModel: MutableState<GameModel?>,
 
             showError: MutableState<String>,
-            largeCovers: Boolean
+            largeCovers: Boolean,
+            focusRequester: FocusRequester? = null
 
         ) {
 
@@ -3856,6 +3885,7 @@ class HomeViews {
 
                         )
 
+                        .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
                         .onFocusChanged { isFocused = it.isFocused }
 
                         .combinedClickable(
@@ -3876,7 +3906,7 @@ class HomeViews {
 
                                     else {
 
-                                        if (success == -2) showError.value = "Erro ao carregar atualização."
+                                        if (success == -2) showError.value = tr("Erro ao carregar atualização.")
 
                                         gameModel.close()
 
@@ -3926,7 +3956,7 @@ class HomeViews {
 
                 Text(
 
-                    gameModel.titleName ?: "Jogo",
+                    gameModel.titleName ?: tr("Jogo"),
 
                     color = MaterialTheme.colorScheme.onBackground,
 
@@ -3964,7 +3994,8 @@ class HomeViews {
 
             selectedModel: MutableState<GameModel?>,
 
-            showError: MutableState<String>
+            showError: MutableState<String>,
+            focusRequester: FocusRequester? = null
 
         ) {
 
@@ -4062,6 +4093,7 @@ class HomeViews {
 
                     )
 
+                    .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
                     .onFocusChanged { isFocused = it.isFocused }
 
                     .focusable()
@@ -4104,7 +4136,7 @@ class HomeViews {
 
                                         if (success == -2)
 
-                                            showError.value = "Erro ao carregar atualização. Adicione o arquivo de atualização novamente."
+                                            showError.value = tr("Erro ao carregar atualização. Adicione o arquivo de atualização novamente.")
 
                                         gameModel.close()
 
@@ -4198,7 +4230,7 @@ class HomeViews {
 
                         Text(
 
-                            text = gameModel.titleName ?: "Jogo",
+                            text = gameModel.titleName ?: tr("Jogo"),
 
                             color = Color.White,
 

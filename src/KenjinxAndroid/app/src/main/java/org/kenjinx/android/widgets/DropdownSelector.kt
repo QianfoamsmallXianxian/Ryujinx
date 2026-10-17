@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import org.kenjinx.android.tr
 
 @Composable
 fun <T> DropdownSelector(
@@ -62,7 +63,7 @@ fun <T> DropdownSelector(
                 Text(getDisplayText(selectedValue))
                 Icon(
                     Icons.Filled.KeyboardArrowDown,
-                    contentDescription = "Expand",
+                    contentDescription = tr("Expand"),
                     modifier = Modifier.padding(start = 4.dp)
                 )
             }

@@ -277,7 +277,7 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
                 if (++c >= 1000) {
                     if (progressValue?.value == -1f) {
                         progress?.apply {
-                            this.value = "Loading ${if (mainViewModel.isMiiEditorLaunched) "Mii Editor" else game?.titleName ?: ""}"
+                            this.value = tr("Loading {0}", if (mainViewModel.isMiiEditorLaunched) "Mii Editor" else game?.titleName ?: "")
                         }
                     }
                     c = 0

@@ -60,20 +60,20 @@ class ShortcutWizardActivity : Activity() {
             val input = EditText(this).apply { setText(suggested) }
 
             AlertDialog.Builder(this)
-                .setTitle("Shortcut name")
+                .setTitle(tr("Shortcut name"))
                 .setView(input)
-                .setPositiveButton("Next (Icon)") { _, _ ->
+                .setPositiveButton(tr("Next (Icon)")) { _, _ ->
                     val label = input.text?.toString()?.takeIf { it.isNotBlank() } ?: suggested
                     pendingLabel = label
                     requestIconImage()
                 }
-                .setNeutralButton("Use app icon") { _, _ ->
+                .setNeutralButton(tr("Use app icon")) { _, _ ->
                     val label = input.text?.toString()?.takeIf { it.isNotBlank() } ?: suggested
                     // Use the grid icon (GameInfo.Icon Base64) as the shortcut icon
                     val bmp = pickedGameUri?.let { loadGridIconBitmap(it) }
                     createShortcut(label, bmp) // Fallback auf App-Icon passiert intern in ShortcutUtils, wenn bmp=null ist
                 }
-                .setNegativeButton("Cancel") { _, _ -> finish() }
+                .setNegativeButton(tr("Cancel")) { _, _ -> finish() }
                 .setCancelable(false)
                 .show()
             return
@@ -82,13 +82,13 @@ class ShortcutWizardActivity : Activity() {
         if (requestCode == REQ_PICK_ICON) {
             if (resultCode != RESULT_OK) {
                 // Cancellation → Fallback app icon (or grid icon would be optional here)
-                val label = pendingLabel ?: "Start Game"
+                val label = pendingLabel ?: tr("Start Game")
                 createShortcut(label, null)
                 return
             }
             val imageUri = data?.data
             val bmp = imageUri?.let { loadBitmap(it) }
-            val label = pendingLabel ?: "Start Game"
+            val label = pendingLabel ?: tr("Start Game")
             createShortcut(label, bmp)
             return
         }
@@ -105,7 +105,7 @@ class ShortcutWizardActivity : Activity() {
                     Intent.FLAG_GRANT_READ_URI_PERMISSION
             )
         }
-        startActivityForResult(Intent.createChooser(pickIcon, "Select icon"), REQ_PICK_ICON)
+        startActivityForResult(Intent.createChooser(pickIcon, tr("Select icon")), REQ_PICK_ICON)
     }
 
     private fun loadBitmap(uri: Uri): Bitmap? =
@@ -159,7 +159,7 @@ class ShortcutWizardActivity : Activity() {
         // No finish() here! — we're waiting for the callback
         Toast.makeText(
             this,
-            if (ok) "Shortcut “$label” created." else "Shortcut failed.",
+            if (ok) tr("Shortcut “{0}” created.", label) else tr("Shortcut failed."),
             Toast.LENGTH_SHORT
         ).show()
     }

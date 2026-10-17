@@ -41,6 +41,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.kenjinx.android.viewmodels.MainViewModel
+import org.kenjinx.android.tr
 
 class UserViews {
     companion object {
@@ -62,7 +63,7 @@ class UserViews {
                 modifier = Modifier.fillMaxSize(),
                 topBar = {
                     TopAppBar(title = {
-                        Text(text = "Users")
+                        Text(text = tr("Users"))
                     },
                         navigationIcon = {
                             IconButton(onClick = {
@@ -76,7 +77,7 @@ class UserViews {
                                     }
                                 }
                             }) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = tr("Back"))
                             }
                         })
                 }) { contentPadding ->
@@ -91,7 +92,7 @@ class UserViews {
                             .padding(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(text = "Selected user")
+                        Text(text = tr("Selected user"))
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -106,7 +107,7 @@ class UserViews {
                                         0,
                                         openUser.userPicture?.size ?: 0
                                     ).asImageBitmap(),
-                                    contentDescription = "selected image",
+                                    contentDescription = tr("selected image"),
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier
                                         .padding(4.dp)
@@ -127,13 +128,13 @@ class UserViews {
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(text = "Available Users")
+                            Text(text = tr("Available Users"))
                             IconButton(onClick = {
                                 refresh()
                             }) {
                                 Icon(
                                     imageVector = Icons.Filled.Refresh,
-                                    contentDescription = "refresh users"
+                                    contentDescription = tr("refresh users")
                                 )
                             }
                         }
@@ -155,7 +156,7 @@ class UserViews {
                                                 user.userPicture?.size ?: 0
                                             )
                                                 .asImageBitmap(),
-                                            contentDescription = "selected image",
+                                            contentDescription = tr("selected image"),
                                             contentScale = ContentScale.Crop,
                                             modifier = Modifier
                                                 .padding(4.dp)

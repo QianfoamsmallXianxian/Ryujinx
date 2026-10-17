@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import org.kenjinx.android.tr
 
 @OptIn(ExperimentalMaterial3Api::class)
 object SimpleAlertDialog {
@@ -33,7 +34,7 @@ object SimpleAlertDialog {
     @Composable
     fun Loading(
         showDialog: MutableState<Boolean>,
-        title: String = "Loading",
+        title: String = tr("Loading"),
         isDeterminate: Boolean = false,
         progress: Float = 0f,
         widthFraction: Float = 0.6f,
@@ -97,7 +98,7 @@ object SimpleAlertDialog {
         showDialog: MutableState<Boolean>,
         title: String,
         message: String,
-        confirmText: String = "Yes",
+        confirmText: String = tr("Yes"),
         dismissText: String = "No",
         widthFraction: Float = 0.6f,
         onConfirm: () -> Unit,

@@ -7,6 +7,7 @@ import com.google.gson.JsonObject
 import org.kenjinx.android.NativeHelpers
 import org.kenjinx.android.viewmodels.DriverMetadata
 import java.io.File
+import org.kenjinx.android.tr
 
 object DriverPreparationManager {
 
@@ -35,7 +36,7 @@ object DriverPreparationManager {
                 handle = 0L,
                 isFallback = false,
                 isCustomDriver = false,
-                message = "Usando driver Vulkan padrao do sistema."
+                message = tr("Usando driver Vulkan padrao do sistema.")
             )
         }
 
@@ -47,7 +48,7 @@ object DriverPreparationManager {
                     handle = 0L,
                     isFallback = true,
                     isCustomDriver = false,
-                    message = "Driver selecionado nao encontrado. Usando driver do sistema."
+                    message = tr("Driver selecionado nao encontrado. Usando driver do sistema.")
                 )
             }
 
@@ -55,7 +56,7 @@ object DriverPreparationManager {
         val driverParent = driverFile.parentFile
         if (driverParent == null || !driverParent.exists()) {
             Log.e(TAG, "[DriverLoader] Diretorio do driver nao existe: $selectedDriverPath. Fallback para sistema.")
-            return DriverLoadResult(0L, isFallback = true, isCustomDriver = false, "Diretorio do driver invalido.")
+            return DriverLoadResult(0L, isFallback = true, isCustomDriver = false, tr("Diretorio do driver invalido."))
         }
 
         val privatePath = context.filesDir
@@ -67,7 +68,7 @@ object DriverPreparationManager {
         if (!DriverSecurityValidator.isPathInside(privateDriverDir, privatePath) ||
             !DriverSecurityValidator.isPathInside(stagingDir, privatePath)) {
             Log.e(TAG, "[DriverLoader] Caminho fora de filesDir detectado.")
-            return DriverLoadResult(0L, isFallback = true, isCustomDriver = false, "Caminho de instalacao invalido.")
+            return DriverLoadResult(0L, isFallback = true, isCustomDriver = false, tr("Caminho de instalacao invalido."))
         }
 
         // Calcula ou le SHA-256 do driver
@@ -140,7 +141,7 @@ object DriverPreparationManager {
                 handle = 0L,
                 isFallback = true,
                 isCustomDriver = true,
-                message = "Falha ao carregar driver '$name'. Usando driver do sistema."
+                message = tr("Falha ao carregar driver '{0}'. Usando driver do sistema.", name)
             )
         } else {
             Log.i(
@@ -151,7 +152,7 @@ object DriverPreparationManager {
                 handle = driverHandle,
                 isFallback = false,
                 isCustomDriver = true,
-                message = "Driver '$name' carregado com sucesso."
+                message = tr("Driver '{0}' carregado com sucesso.", name)
             )
         }
     }

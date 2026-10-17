@@ -25,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
+import org.kenjinx.android.tr
 
 class DriverDownloader(
     private val context: Context?,
@@ -145,17 +146,17 @@ class DriverDownloader(
                 // 0. Validacao de seguranca de caminhos
                 if (!DriverSecurityValidator.isPathInside(tempZipFile, effectiveCacheDir) ||
                     !DriverSecurityValidator.isPathInside(stagingDir, effectiveCacheDir)) {
-                    val err = "Caminhos temporarios fora do cacheDir do aplicativo."
+                    val err = tr("Caminhos temporarios fora do cacheDir do aplicativo.")
                     stateFlow.value = DriverDownloadState.Error(err)
                     safeNotifyError(onError, err)
                     return@launch
                 }
 
                 // 1. Validar Catalogo
-                stateFlow.value = DriverDownloadState.Validating("Validando metadados do catalogo...")
+                stateFlow.value = DriverDownloadState.Validating(tr("Validando metadados do catalogo..."))
                 val catalogCheck = DriverSecurityValidator.validateCatalogEntry(entry)
                 if (catalogCheck.isFailure) {
-                    val err = catalogCheck.exceptionOrNull()?.message ?: "Falha na validacao do catalogo"
+                    val err = catalogCheck.exceptionOrNull()?.message ?: tr("Falha na validacao do catalogo")
                     stateFlow.value = DriverDownloadState.Error(err)
                     safeNotifyError(onError, err)
                     return@launch
@@ -163,7 +164,7 @@ class DriverDownloader(
 
                 coroutineContext.ensureActive()
                 if (currentDownload.isCancelled.get()) {
-                    throw CancellationException("Download cancelado pelo usuario.")
+                    throw CancellationException(tr("Download cancelado pelo usuario."))
                 }
 
                 // 2. Download com streaming continuo e calculo de SHA-256 em tempo real
@@ -183,18 +184,18 @@ class DriverDownloader(
 
                 coroutineContext.ensureActive()
                 if (currentDownload.isCancelled.get()) {
-                    throw CancellationException("Download cancelado pelo usuario.")
+                    throw CancellationException(tr("Download cancelado pelo usuario."))
                 }
 
                 // 3. Validar integridade final do ZIP baixado
-                stateFlow.value = DriverDownloadState.Validating("Validando integridade SHA-256 e formato ZIP...")
+                stateFlow.value = DriverDownloadState.Validating(tr("Validando integridade SHA-256 e formato ZIP..."))
                 val zipCheck = DriverSecurityValidator.validateDownloadedZip(
                     file = tempZipFile,
                     expectedSha256 = entry.sha256,
                     calculatedSha256DuringStream = calculatedSha
                 )
                 if (zipCheck.isFailure) {
-                    val err = zipCheck.exceptionOrNull()?.message ?: "Falha ao validar integridade do pacote"
+                    val err = zipCheck.exceptionOrNull()?.message ?: tr("Falha ao validar integridade do pacote")
                     stateFlow.value = DriverDownloadState.Error(err)
                     safeNotifyError(onError, err)
                     return@launch
@@ -202,11 +203,11 @@ class DriverDownloader(
 
                 coroutineContext.ensureActive()
                 if (currentDownload.isCancelled.get()) {
-                    throw CancellationException("Download cancelado pelo usuario.")
+                    throw CancellationException(tr("Download cancelado pelo usuario."))
                 }
 
                 // 4. Extrair para pasta de staging com protecao Zip Slip e rejeicao estrita de symlinks
-                stateFlow.value = DriverDownloadState.Validating("Descompactando pacote com seguranca...")
+                stateFlow.value = DriverDownloadState.Validating(tr("Descompactando pacote com seguranca..."))
                 stagingDir.mkdirs()
                 val extractResult = DriverSecurityValidator.safeExtractZip(
                     zipFile = tempZipFile,
@@ -214,7 +215,7 @@ class DriverDownloader(
                     isCancelled = { currentDownload.isCancelled.get() || !coroutineContext.isActive }
                 )
                 if (extractResult.isFailure) {
-                    val err = extractResult.exceptionOrNull()?.message ?: "Falha ao extrair arquivos"
+                    val err = extractResult.exceptionOrNull()?.message ?: tr("Falha ao extrair arquivos")
                     stateFlow.value = DriverDownloadState.Error(err)
                     safeNotifyError(onError, err)
                     return@launch
@@ -222,14 +223,14 @@ class DriverDownloader(
 
                 coroutineContext.ensureActive()
                 if (currentDownload.isCancelled.get()) {
-                    throw CancellationException("Download cancelado pelo usuario.")
+                    throw CancellationException(tr("Download cancelado pelo usuario."))
                 }
 
                 // 5. Validar meta.json, normalizar pasta superior e validar ELF ARM64 64-bit
-                stateFlow.value = DriverDownloadState.Validating("Validando compatibilidade ELF e meta.json...")
+                stateFlow.value = DriverDownloadState.Validating(tr("Validando compatibilidade ELF e meta.json..."))
                 val pkgValidation = DriverSecurityValidator.validateExtractedPackage(stagingDir)
                 if (pkgValidation.isFailure) {
-                    val err = pkgValidation.exceptionOrNull()?.message ?: "Pacote do driver invalido"
+                    val err = pkgValidation.exceptionOrNull()?.message ?: tr("Pacote do driver invalido")
                     stateFlow.value = DriverDownloadState.Error(err)
                     safeNotifyError(onError, err)
                     return@launch
@@ -237,7 +238,7 @@ class DriverDownloader(
 
                 coroutineContext.ensureActive()
                 if (currentDownload.isCancelled.get()) {
-                    throw CancellationException("Download cancelado pelo usuario.")
+                    throw CancellationException(tr("Download cancelado pelo usuario."))
                 }
 
                 // 6. Gravar metadados adicionais de proveniencia (.neometa.json) diretamente no staging
@@ -256,11 +257,11 @@ class DriverDownloader(
 
                 coroutineContext.ensureActive()
                 if (currentDownload.isCancelled.get()) {
-                    throw CancellationException("Download cancelado pelo usuario.")
+                    throw CancellationException(tr("Download cancelado pelo usuario."))
                 }
 
                 // 7. Instalacao transacional em drivers/<driverId>
-                stateFlow.value = DriverDownloadState.Validating("Finalizando instalacao transacional...")
+                stateFlow.value = DriverDownloadState.Validating(tr("Finalizando instalacao transacional..."))
                 val targetDir = File(driversDir, driverId)
                 val installResult = DriverSecurityValidator.transactionalDirectorySwap(
                     stagingDir = stagingDir,
@@ -268,7 +269,7 @@ class DriverDownloader(
                     allowedParent = driversDir
                 )
                 if (installResult.isFailure) {
-                    val err = installResult.exceptionOrNull()?.message ?: "Falha na instalacao transacional do driver"
+                    val err = installResult.exceptionOrNull()?.message ?: tr("Falha na instalacao transacional do driver")
                     stateFlow.value = DriverDownloadState.Error(err)
                     safeNotifyError(onError, err)
                     return@launch
@@ -276,7 +277,7 @@ class DriverDownloader(
 
                 coroutineContext.ensureActive()
                 if (currentDownload.isCancelled.get()) {
-                    throw CancellationException("Download cancelado pelo usuario.")
+                    throw CancellationException(tr("Download cancelado pelo usuario."))
                 }
 
                 logI( "Driver '${entry.name}' instalado com sucesso em: ${targetDir.absolutePath}")
@@ -295,7 +296,7 @@ class DriverDownloader(
                         println("DEBUG_DOWNLOADER_ERROR: ${e.javaClass.name}: ${e.message}")
                         e.printStackTrace()
                     }
-                    val msg = e.localizedMessage ?: "Erro desconhecido durante a instalacao."
+                    val msg = e.localizedMessage ?: tr("Erro desconhecido durante a instalacao.")
                     stateFlow.value = DriverDownloadState.Error(msg)
                     safeNotifyError(onError, msg)
                 }
@@ -354,7 +355,7 @@ class DriverDownloader(
         while (redirects < MAX_REDIRECTS) {
             coroutineContext.ensureActive()
             if (currentDownload.isCancelled.get()) {
-                throw CancellationException("Download cancelado pelo usuario.")
+                throw CancellationException(tr("Download cancelado pelo usuario."))
             }
 
             val url = URL(currentUrl)
@@ -373,7 +374,7 @@ class DriverDownloader(
                 if (code in 301..308) {
                     val location = conn.getHeaderField("Location")
                     if (location == null || !DriverSecurityValidator.isAllowedRedirect(location)) {
-                        throw SecurityException("Redirecionamento invalido ou nao autorizado para: $location")
+                        throw SecurityException(tr("Redirecionamento invalido ou nao autorizado para: {0}", location))
                     }
                     currentUrl = location
                     redirects++
@@ -381,7 +382,7 @@ class DriverDownloader(
                 }
 
                 if (code != HttpURLConnection.HTTP_OK) {
-                    throw IllegalStateException("Servidor retornou codigo HTTP $code ao baixar driver.")
+                    throw IllegalStateException(tr("Servidor retornou codigo HTTP {0} ao baixar driver.", code))
                 }
 
                 val totalBytes = conn.contentLengthLong
@@ -398,7 +399,7 @@ class DriverDownloader(
                         while (bis.read(buffer).also { read = it } != -1) {
                             coroutineContext.ensureActive()
                             if (currentDownload.isCancelled.get()) {
-                                throw CancellationException("Download cancelado pelo usuario durante a transferencia.")
+                                throw CancellationException(tr("Download cancelado pelo usuario durante a transferencia."))
                             }
 
                             fos.write(buffer, 0, read)
@@ -416,6 +417,6 @@ class DriverDownloader(
             }
         }
 
-        throw IllegalStateException("Numero excessivo de redirecionamentos HTTP ($redirects).")
+        throw IllegalStateException(tr("Numero excessivo de redirecionamentos HTTP ({0}).", redirects))
     }
 }

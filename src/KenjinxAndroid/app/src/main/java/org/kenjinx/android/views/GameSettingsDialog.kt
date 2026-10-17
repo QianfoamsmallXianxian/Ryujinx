@@ -58,6 +58,7 @@ import org.kenjinx.android.viewmodels.GameSettingsStore
 import org.kenjinx.android.viewmodels.QuickSettings
 import org.kenjinx.android.viewmodels.VSyncMode
 import org.kenjinx.android.viewmodels.VulkanDriverViewModel
+import org.kenjinx.android.tr
 
 /**
  * NEOV2-UI1: configuracoes personalizadas do jogo em uma pagina propria (antes era um segundo popup por cima
@@ -214,27 +215,27 @@ fun GameSettingsPage(
     // Voltar (gesto ou botao) sai sem salvar, igual ao "Cancelar" de antes.
     BackHandler { onBack() }
 
-    val globalOnOff = listOf(0 to "Usar global", 1 to "Ativado", 2 to "Desativado")
+    val globalOnOff = listOf(0 to tr("Usar global"), 1 to tr("Ativado"), 2 to tr("Desativado"))
 
     // Cada secao e uma funcao para poder ser colocada em 1 coluna (retrato) ou 2 colunas (paisagem).
     val systemSection: @Composable () -> Unit = {
-        SettingsSection("Sistema e CPU") {
-            val languageOptions = listOf("" to "Usar idioma global") +
+        SettingsSection(tr("Sistema e CPU")) {
+            val languageOptions = listOf("" to tr("Usar idioma global")) +
                 SystemLanguage.entries.map { it.name to it.displayName }
             SelectSetting(
-                "Idioma do jogo",
-                "Idioma informado ao jogo. Reinicie o jogo para aplicar.",
-                languageOptions.firstOrNull { it.first == languageOverride }?.second ?: "Usar idioma global",
+                tr("Idioma do jogo"),
+                tr("Idioma informado ao jogo. Reinicie o jogo para aplicar."),
+                languageOptions.firstOrNull { it.first == languageOverride }?.second ?: tr("Usar idioma global"),
                 languageOptions,
                 custom
             ) { languageOverride = it }
-            SwitchSetting("Execução nativa (NCE)", "Desligado usa JIT (mais lento, mais compatível).", useNce, custom) { useNce = it }
-            SwitchSetting("PPTC", "Guarda o código já traduzido para abrir o jogo mais rápido.", enablePptc, custom) { enablePptc = it }
-            SwitchSetting("Memory Slack (12 GiB)", "Mais memória para jogos que travam por falta dela.", memorySlack, custom) { memorySlack = it }
+            SwitchSetting(tr("Execução nativa (NCE)"), tr("Desligado usa JIT (mais lento, mais compatível)."), useNce, custom) { useNce = it }
+            SwitchSetting("PPTC", tr("Guarda o código já traduzido para abrir o jogo mais rápido."), enablePptc, custom) { enablePptc = it }
+            SwitchSetting(tr("Memory Slack (12 GiB)"), tr("Mais memória para jogos que travam por falta dela."), memorySlack, custom) { memorySlack = it }
             ChoiceSetting(
-                "Modo do console",
+                tr("Modo do console"),
                 null,
-                listOf(true to "Dock", false to "Portátil"),
+                listOf(true to tr("Dock"), false to tr("Portátil")),
                 docked,
                 custom
             ) { docked = it }
@@ -242,105 +243,105 @@ fun GameSettingsPage(
     }
 
     val graphicsSection: @Composable () -> Unit = {
-        SettingsSection("Gráficos") {
+        SettingsSection(tr("Gráficos")) {
             val driverOptions = listOf(
-                "" to "Usar driver global",
-                GameSettingsStore.SYSTEM_DRIVER to "Driver do sistema"
+                "" to tr("Usar driver global"),
+                GameSettingsStore.SYSTEM_DRIVER to tr("Driver do sistema")
             ) + availableDrivers.map { it.driverPath to "${it.name} · ${it.driverVersion}" }
             SelectSetting(
-                "Driver Vulkan",
+                tr("Driver Vulkan"),
                 null,
-                driverOptions.firstOrNull { it.first == driverOverride }?.second ?: "Usar driver global",
+                driverOptions.firstOrNull { it.first == driverOverride }?.second ?: tr("Usar driver global"),
                 driverOptions,
                 custom
             ) { driverOverride = it }
             ChoiceSetting(
-                "Escala de resolução",
+                tr("Escala de resolução"),
                 null,
                 listOf(0.5f to "0.5x", 0.75f to "0.75x", 1.0f to "1x", 2.0f to "2x", 3.0f to "3x"),
                 resScale,
                 custom
             ) { resScale = it }
             ChoiceSetting(
-                "Filtro anisotrópico",
+                tr("Filtro anisotrópico"),
                 null,
-                listOf(-1.0f to "Auto", 4.0f to "4x", 8.0f to "8x", 16.0f to "16x"),
+                listOf(-1.0f to tr("Auto"), 4.0f to "4x", 8.0f to "8x", 16.0f to "16x"),
                 anisotropy,
                 custom
             ) { anisotropy = it }
-            SwitchSetting("Esticar para tela inteira", null, stretch, custom) { stretch = it }
-            SwitchSetting("Cache de shaders", "Guarda os shaders compilados para evitar engasgos.", shaderCache, custom) { shaderCache = it }
-            SwitchSetting("Recompressão de texturas", "Economiza memória de vídeo em texturas grandes.", textureRecompression, custom) { textureRecompression = it }
-            ChoiceSetting("Geração de quadros (LSFG)", "Gera quadros intermediários até o teto do jogo. Exige a Lossless.dll selecionada em Configurações > Gráficos. Requer reiniciar o jogo.", globalOnOff, frameGenMode, custom) { frameGenMode = it }
+            SwitchSetting(tr("Esticar para tela inteira"), null, stretch, custom) { stretch = it }
+            SwitchSetting(tr("Cache de shaders"), tr("Guarda os shaders compilados para evitar engasgos."), shaderCache, custom) { shaderCache = it }
+            SwitchSetting(tr("Recompressão de texturas"), tr("Economiza memória de vídeo em texturas grandes."), textureRecompression, custom) { textureRecompression = it }
+            ChoiceSetting(tr("Geração de quadros (LSFG)"), tr("Gera quadros intermediários até o teto do jogo. Exige a Lossless.dll selecionada em Configurações > Gráficos. Requer reiniciar o jogo."), globalOnOff, frameGenMode, custom) { frameGenMode = it }
         }
     }
 
     val controlsSection: @Composable () -> Unit = {
-        SettingsSection("Controles e interface") {
-            SwitchSetting("Controle na tela", null, virtualController, custom) { virtualController = it }
+        SettingsSection(tr("Controles e interface")) {
+            SwitchSetting(tr("Controle na tela"), null, virtualController, custom) { virtualController = it }
             val presets = listOf(
-                QuickSettings.VirtualControllerPreset.Default to "Padrão",
-                QuickSettings.VirtualControllerPreset.Layout2 to "Layout 2",
-                QuickSettings.VirtualControllerPreset.Layout3 to "Layout 3",
-                QuickSettings.VirtualControllerPreset.Layout4 to "Layout 4",
-                QuickSettings.VirtualControllerPreset.Layout5 to "Layout 5",
-                QuickSettings.VirtualControllerPreset.Layout6 to "Layout 6"
+                QuickSettings.VirtualControllerPreset.Default to tr("Padrão"),
+                QuickSettings.VirtualControllerPreset.Layout2 to tr("Layout 2"),
+                QuickSettings.VirtualControllerPreset.Layout3 to tr("Layout 3"),
+                QuickSettings.VirtualControllerPreset.Layout4 to tr("Layout 4"),
+                QuickSettings.VirtualControllerPreset.Layout5 to tr("Layout 5"),
+                QuickSettings.VirtualControllerPreset.Layout6 to tr("Layout 6")
             )
             SelectSetting(
-                "Layout do controle",
+                tr("Layout do controle"),
                 null,
-                presets.firstOrNull { it.first == virtualPreset }?.second ?: "Padrão",
+                presets.firstOrNull { it.first == virtualPreset }?.second ?: tr("Padrão"),
                 presets,
                 custom && virtualController
             ) { virtualPreset = it }
-            val statOptions = listOf(0 to "Desligado", 1 to "Só FPS", 2 to "FPS + quadro", 3 to "Completo")
+            val statOptions = listOf(0 to tr("Desligado"), 1 to tr("Só FPS"), 2 to tr("FPS + quadro"), 3 to tr("Completo"))
             SelectSetting(
-                "Estatísticas de desempenho", null,
+                tr("Estatísticas de desempenho"), null,
                 statOptions.first { it.first == statsLevel }.second,
                 statOptions, custom
             ) { statsLevel = it }
-            SwitchSetting("Movimento (giroscópio)", null, motion, custom) { motion = it }
+            SwitchSetting(tr("Movimento (giroscópio)"), null, motion, custom) { motion = it }
         }
     }
 
     val compatibilitySection: @Composable () -> Unit = {
-        SettingsSection("Compatibilidade e correções") {
-            SwitchSetting("Compatibilidade gráfica 2D", "Corrige tela preta e escala em jogos 2D.", experimentalGameFixesEnabled, custom) { experimentalGameFixesEnabled = it }
-            ChoiceSetting("Otimizações de GPU", null, globalOnOff, gpuOptimizationsMode, custom) { gpuOptimizationsMode = it }
-            ChoiceSetting("VTG via Compute", null, globalOnOff, vtgViaComputeMode, custom) { vtgViaComputeMode = it }
-            ChoiceSetting("VP9 pelo FFmpeg", "Desligue se o vídeo do jogo ficar com erros (ex.: GRID Autosport).", globalOnOff, vp9FFmpegMode, custom) { vp9FFmpegMode = it }
-            ChoiceSetting("Cópia DMA relaxada", "Mais desempenho em alguns jogos (ex.: Diablo II); pode causar erros gráficos.", globalOnOff, relaxedDmaCopyMode, custom) { relaxedDmaCopyMode = it }
-            ChoiceSetting("Memória de GPU estilo Eden", "Libera buffers e texturas sem uso e fecha o jogo se a RAM acabar (ex.: DOOM Eternal). Desligue se aparecer erro gráfico.", globalOnOff, edenGpuMemoryMode, custom) { edenGpuMemoryMode = it }
-            ChoiceSetting("Rejeitar descritores não mapeados", null, globalOnOff, rejectUnmappedDescriptorsMode, custom) { rejectUnmappedDescriptorsMode = it }
-            ChoiceSetting("Upload assíncrono de texturas 3D (Eden)", null, globalOnOff, asyncLarge3DUploadMode, custom) { asyncLarge3DUploadMode = it }
+        SettingsSection(tr("Compatibilidade e correções")) {
+            SwitchSetting(tr("Compatibilidade gráfica 2D"), tr("Corrige tela preta e escala em jogos 2D."), experimentalGameFixesEnabled, custom) { experimentalGameFixesEnabled = it }
+            ChoiceSetting(tr("Otimizações de GPU"), null, globalOnOff, gpuOptimizationsMode, custom) { gpuOptimizationsMode = it }
+            ChoiceSetting(tr("VTG via Compute"), null, globalOnOff, vtgViaComputeMode, custom) { vtgViaComputeMode = it }
+            ChoiceSetting(tr("VP9 pelo FFmpeg"), tr("Desligue se o vídeo do jogo ficar com erros (ex.: GRID Autosport)."), globalOnOff, vp9FFmpegMode, custom) { vp9FFmpegMode = it }
+            ChoiceSetting(tr("Cópia DMA relaxada"), tr("Mais desempenho em alguns jogos (ex.: Diablo II); pode causar erros gráficos."), globalOnOff, relaxedDmaCopyMode, custom) { relaxedDmaCopyMode = it }
+            ChoiceSetting(tr("Memória de GPU estilo Eden"), tr("Libera buffers e texturas sem uso e fecha o jogo se a RAM acabar (ex.: DOOM Eternal). Desligue se aparecer erro gráfico."), globalOnOff, edenGpuMemoryMode, custom) { edenGpuMemoryMode = it }
+            ChoiceSetting(tr("Rejeitar descritores não mapeados"), null, globalOnOff, rejectUnmappedDescriptorsMode, custom) { rejectUnmappedDescriptorsMode = it }
+            ChoiceSetting(tr("Upload assíncrono de texturas 3D (Eden)"), null, globalOnOff, asyncLarge3DUploadMode, custom) { asyncLarge3DUploadMode = it }
         }
     }
 
     val advancedSection: @Composable () -> Unit = {
-        SettingsSection("Sincronização da GPU (avançado)") {
+        SettingsSection(tr("Sincronização da GPU (avançado)")) {
             ChoiceSetting(
-                "Sincronização rápida de Draw",
+                tr("Sincronização rápida de Draw"),
                 null,
-                listOf(0 to "Usar global", 1 to "Padrão", 2 to "Reduzido", 3 to "Desativado"),
+                listOf(0 to tr("Usar global"), 1 to tr("Padrão"), 2 to tr("Reduzido"), 3 to tr("Desativado")),
                 drawFlushMode,
                 custom
             ) { drawFlushMode = it }
             ChoiceSetting(
-                "Leitura de buffer da GPU",
+                tr("Leitura de buffer da GPU"),
                 null,
-                listOf(0 to "Usar global", 1 to "Padrão", 2 to "Relaxada"),
+                listOf(0 to tr("Usar global"), 1 to tr("Padrão"), 2 to tr("Relaxada")),
                 bufferReadbackMode,
                 custom
             ) { bufferReadbackMode = it }
             ChoiceSetting(
-                "Sincronização estrita da GPU",
+                tr("Sincronização estrita da GPU"),
                 null,
-                listOf(0 to "Usar global", 1 to "Padrão", 2 to "Imediata"),
+                listOf(0 to tr("Usar global"), 1 to tr("Padrão"), 2 to tr("Imediata")),
                 strictSyncMode,
                 custom
             ) { strictSyncMode = it }
-            SwitchSetting("Shader Loop Safety", "Evita travamento em shaders com laços infinitos.", loopSafety, custom) { loopSafety = it }
-            SwitchSetting("Macro HLE", null, macroHle, custom) { macroHle = it }
+            SwitchSetting(tr("Shader Loop Safety"), tr("Evita travamento em shaders com laços infinitos."), loopSafety, custom) { loopSafety = it }
+            SwitchSetting(tr("Macro HLE"), null, macroHle, custom) { macroHle = it }
         }
     }
 
@@ -361,7 +362,7 @@ fun GameSettingsPage(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = tr("Voltar"))
                 }
                 Surface(
                     shape = RoundedCornerShape(10.dp),
@@ -388,14 +389,14 @@ fun GameSettingsPage(
                 Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        titleName.ifBlank { "Configurações do jogo" },
+                        titleName.ifBlank { tr("Configurações do jogo") },
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        if (titleId.isNotBlank()) "${titleId.uppercase()} • Configurações do jogo" else "Configurações do jogo",
+                        if (titleId.isNotBlank()) tr("{0} • Configurações do jogo", titleId.uppercase()) else tr("Configurações do jogo"),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -403,14 +404,14 @@ fun GameSettingsPage(
                     )
                 }
                 TextButton(onClick = restoreGlobal) {
-                    Text("Restaurar global", maxLines = 1, softWrap = false)
+                    Text(tr("Restaurar global"), maxLines = 1, softWrap = false)
                 }
                 Spacer(Modifier.width(4.dp))
                 Button(onClick = {
                     save()
                     onBack()
                 }) {
-                    Text("Salvar", maxLines = 1, softWrap = false)
+                    Text(tr("Salvar"), maxLines = 1, softWrap = false)
                 }
             }
 
@@ -445,9 +446,9 @@ fun GameSettingsPage(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text("Usar configurações personalizadas", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                Text(tr("Usar configurações personalizadas"), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                                 Text(
-                                    if (custom) "Este jogo usa as opções abaixo." else "Desligado: este jogo usa as configurações globais.",
+                                    if (custom) tr("Este jogo usa as opções abaixo.") else tr("Desligado: este jogo usa as configurações globais."),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -602,7 +603,7 @@ private fun <T> SelectSetting(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Icon(Icons.Default.ArrowDropDown, contentDescription = "Abrir opções")
+                    Icon(Icons.Default.ArrowDropDown, contentDescription = tr("Abrir opções"))
                 }
             }
             DropdownMenu(

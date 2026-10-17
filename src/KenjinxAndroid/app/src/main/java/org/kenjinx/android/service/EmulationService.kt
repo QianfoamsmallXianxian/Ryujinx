@@ -16,6 +16,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicBoolean
+import org.kenjinx.android.tr
 
 /**
  * Foreground service for stable emulation in the background.
@@ -143,7 +144,7 @@ class EmulationService : Service() {
             .setOngoing(true)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(getString(R.string.app_name))
-            .setContentText("Emulation is running…")
+            .setContentText(tr("Emulation is running…"))
             .setContentIntent(pi)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setPriority(NotificationCompat.PRIORITY_LOW)

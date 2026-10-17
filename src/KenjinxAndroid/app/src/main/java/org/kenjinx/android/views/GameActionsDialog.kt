@@ -74,6 +74,7 @@ import java.io.File
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.kenjinx.android.tr
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -125,22 +126,22 @@ fun GameActionsDialog(
     }
 
     val actions = listOfNotNull(
-        DialogAction(Icons.Default.PlayArrow, "Jogar", "Iniciar emulação", true, false, onPlay),
-        DialogAction(Icons.Default.Settings, "Configurar", "Perfil deste jogo", false, false, onConfigure),
-        DialogAction(Icons.Default.SystemUpdate, "Atualizações", "Patches e versões", false, false, onUpdates),
-        DialogAction(Icons.Default.Extension, "DLCs", "Conteúdos adicionais", false, false, onDlc),
-        DialogAction(Icons.Default.ViewModule, "Mods", "Gerenciar modificações", false, false, onMods),
-        DialogAction(Icons.Default.Code, "Cheats", "Códigos de trapaça", false, false, onCheats),
-        DialogAction(Icons.Default.Save, "Saves", "Importar ou exportar", false, false, onSaves),
-        DialogAction(Icons.Default.Contactless, "Amiibo", "Configurar slots", false, false, onAmiibo),
-        DialogAction(Icons.Default.AddBox, "Criar atalho", "Adicionar à tela inicial", false, false, onCreateShortcut),
-        DialogAction(Icons.Default.Image, "Escolher capa", "Imagem vertical para o visual de capas grandes", false, false, onChooseCover),
+        DialogAction(Icons.Default.PlayArrow, tr("Jogar"), tr("Iniciar emulação"), true, false, onPlay),
+        DialogAction(Icons.Default.Settings, tr("Configurar"), tr("Perfil deste jogo"), false, false, onConfigure),
+        DialogAction(Icons.Default.SystemUpdate, tr("Atualizações"), tr("Patches e versões"), false, false, onUpdates),
+        DialogAction(Icons.Default.Extension, tr("DLCs"), tr("Conteúdos adicionais"), false, false, onDlc),
+        DialogAction(Icons.Default.ViewModule, tr("Mods"), tr("Gerenciar modificações"), false, false, onMods),
+        DialogAction(Icons.Default.Code, tr("Cheats"), tr("Códigos de trapaça"), false, false, onCheats),
+        DialogAction(Icons.Default.Save, tr("Saves"), tr("Importar ou exportar"), false, false, onSaves),
+        DialogAction(Icons.Default.Contactless, tr("Amiibo"), tr("Configurar slots"), false, false, onAmiibo),
+        DialogAction(Icons.Default.AddBox, tr("Criar atalho"), tr("Adicionar à tela inicial"), false, false, onCreateShortcut),
+        DialogAction(Icons.Default.Image, tr("Escolher capa"), tr("Imagem vertical para o visual de capas grandes"), false, false, onChooseCover),
         // NSP uses compression levels; NSZ uses solid-to-block optimization.
-        if (isNsp || isNsz) DialogAction(Icons.Default.Archive, "Comprimir", if (isNsz) "Otimizar NSZ para blocos" else "Converter para NSZ", false, false, { showCompressChoice = true }) else null,
-        if (isNsz) DialogAction(Icons.Default.Archive, "Descompactar", "Converter NSZ para NSP", false, false, { showDecompression = true }) else null,
-        DialogAction(Icons.Default.Memory, "Limpar cache PPTC", "Descarta compilações PPTC", false, false, onClearPptc),
-        DialogAction(Icons.Default.DeleteSweep, "Limpar shaders", "Descarta shaders compilados", false, false, onPurgeShader),
-        DialogAction(Icons.Default.Delete, "Excluir todo o cache", "Remove PPTC, shaders e arquivos", false, true, { showDeleteCacheConfirm = true })
+        if (isNsp || isNsz) DialogAction(Icons.Default.Archive, tr("Comprimir"), if (isNsz) tr("Otimizar NSZ para blocos") else tr("Converter para NSZ"), false, false, { showCompressChoice = true }) else null,
+        if (isNsz) DialogAction(Icons.Default.Archive, tr("Descompactar"), tr("Converter NSZ para NSP"), false, false, { showDecompression = true }) else null,
+        DialogAction(Icons.Default.Memory, tr("Limpar cache PPTC"), tr("Descarta compilações PPTC"), false, false, onClearPptc),
+        DialogAction(Icons.Default.DeleteSweep, tr("Limpar shaders"), tr("Descarta shaders compilados"), false, false, onPurgeShader),
+        DialogAction(Icons.Default.Delete, tr("Excluir todo o cache"), tr("Remove PPTC, shaders e arquivos"), false, true, { showDeleteCacheConfirm = true })
     )
 
     // NEOV2-UI1: no celular em pe o popup ocupa a largura da tela e mostra as acoes em 1 coluna.
@@ -208,7 +209,7 @@ fun GameActionsDialog(
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = game.titleName ?: "Gerenciar Jogo",
+                            text = game.titleName ?: tr("Gerenciar Jogo"),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
@@ -217,9 +218,9 @@ fun GameActionsDialog(
                         val titleIdText = game.titleId?.uppercase(Locale.ROOT) ?: ""
                         // NEOV2-NCZ2: o subtitulo acompanha o painel atual.
                         val panelName = when {
-                            showDecompression || (NszConverter.running.value && NszConverter.decompressing.value) -> "Descompactar para NSP"
-                            showCompressChoice || NszConverter.running.value -> if (isNsz || NszConverter.optimizing.value) "Otimizar NSZ para blocos" else "Comprimir para NSZ"
-                            else -> "Ações rápidas"
+                            showDecompression || (NszConverter.running.value && NszConverter.decompressing.value) -> tr("Descompactar para NSP")
+                            showCompressChoice || NszConverter.running.value -> if (isNsz || NszConverter.optimizing.value) tr("Otimizar NSZ para blocos") else tr("Comprimir para NSZ")
+                            else -> tr("Ações rápidas")
                         }
                         Text(
                             text = if (titleIdText.isNotBlank()) "$titleIdText • $panelName" else panelName,
@@ -238,7 +239,7 @@ fun GameActionsDialog(
                                 else -> onDismiss()
                             }
                         }) {
-                            Icon(Icons.Default.Close, contentDescription = "Fechar")
+                            Icon(Icons.Default.Close, contentDescription = tr("Fechar"))
                         }
                     }
                 }
@@ -265,8 +266,8 @@ fun GameActionsDialog(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
-                            text = if (isNsz) "Mantém o jogo comprimido e prepara o arquivo para leitura por blocos. O arquivo pode ficar maior. Depois da verificação, será salvo como .blocks.nsz na mesma pasta e o original será excluído."
-                                else "O jogo será convertido para NSZ na mesma pasta. Depois que o arquivo novo for verificado, o NSP original será excluído.",
+                            text = if (isNsz) tr("Mantém o jogo comprimido e prepara o arquivo para leitura por blocos. O arquivo pode ficar maior. Depois da verificação, será salvo como .blocks.nsz na mesma pasta e o original será excluído.")
+                                else tr("O jogo será convertido para NSZ na mesma pasta. Depois que o arquivo novo for verificado, o NSP original será excluído."),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -287,12 +288,12 @@ fun GameActionsDialog(
                                 item {
                                     ActionCard(
                                         icon = Icons.Default.Compress,
-                                        title = if (blockSpace == 0L) "Já otimizado" else "Otimizar NSZ para blocos",
+                                        title = if (blockSpace == 0L) tr("Já otimizado") else tr("Otimizar NSZ para blocos"),
                                         subtitle = when {
-                                            blockSpace == null -> "Verificando o formato do arquivo..."
-                                            blockSpace == 0L -> "O NSZ já usa leitura por blocos"
-                                            blockSpace!! < 0L -> "Não foi possível analisar o NSZ. Reabra este painel para tentar novamente."
-                                            else -> "Mantém o jogo comprimido • blocos de 1 MB"
+                                            blockSpace == null -> tr("Verificando o formato do arquivo...")
+                                            blockSpace == 0L -> tr("O NSZ já usa leitura por blocos")
+                                            blockSpace!! < 0L -> tr("Não foi possível analisar o NSZ. Reabra este painel para tentar novamente.")
+                                            else -> tr("Mantém o jogo comprimido • blocos de 1 MB")
                                         },
                                         isPrimary = (blockSpace ?: 0L) > 0L,
                                         enabled = (blockSpace ?: 0L) > 0L,
@@ -306,8 +307,8 @@ fun GameActionsDialog(
                                 item {
                                     ActionCard(
                                         icon = Icons.Default.Bolt,
-                                        title = "Rápido",
-                                        subtitle = "Recomendado",
+                                        title = tr("Rápido"),
+                                        subtitle = tr("Recomendado"),
                                         isPrimary = true,
                                         onClick = { startCompression(NszConverter.LEVEL_FAST) }
                                     )
@@ -315,8 +316,8 @@ fun GameActionsDialog(
                                 item {
                                     ActionCard(
                                         icon = Icons.Default.Compress,
-                                        title = "Máximo",
-                                        subtitle = "Arquivo menor, bem mais lento",
+                                        title = tr("Máximo"),
+                                        subtitle = tr("Arquivo menor, bem mais lento"),
                                         onClick = { startCompression(NszConverter.LEVEL_MAX) }
                                     )
                                 }
@@ -324,8 +325,8 @@ fun GameActionsDialog(
                             item {
                                 ActionCard(
                                     icon = Icons.Default.KeyboardReturn,
-                                    title = "Voltar",
-                                    subtitle = "Ações rápidas",
+                                    title = tr("Voltar"),
+                                    subtitle = tr("Ações rápidas"),
                                     onClick = { showCompressChoice = false }
                                 )
                             }
@@ -358,9 +359,9 @@ fun GameActionsDialog(
     if (showDeleteCacheConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteCacheConfirm = false },
-            title = { Text("Excluir cache") },
+            title = { Text(tr("Excluir cache")) },
             text = {
-                Text("Deseja excluir todo o cache de \"${game.titleName ?: "deste jogo"}\"? Os dados de PPTC, shaders compilados e arquivos temporários serão apagados.")
+                Text(tr("Deseja excluir todo o cache de \"{0}\"? Os dados de PPTC, shaders compilados e arquivos temporários serão apagados.", game.titleName ?: tr("deste jogo")))
             },
             confirmButton = {
                 TextButton(
@@ -369,12 +370,12 @@ fun GameActionsDialog(
                         showDeleteCacheConfirm = false
                     }
                 ) {
-                    Text("Excluir", color = MaterialTheme.colorScheme.error)
+                    Text(tr("Excluir"), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteCacheConfirm = false }) {
-                    Text("Cancelar", maxLines = 1, softWrap = false)
+                    Text(tr("Cancelar"), maxLines = 1, softWrap = false)
                 }
             }
         )
@@ -403,10 +404,10 @@ internal fun ConversionProgressContent() {
                 Spacer(Modifier.width(10.dp))
                 Text(
                     text = when {
-                        verifying -> if (optimizing) "Verificando o NSZ otimizado" else if (decompressing) "Verificando o arquivo descompactado" else "Verificando o arquivo comprimido"
-                        optimizing -> "Otimizando NSZ para blocos"
-                        decompressing -> "Descompactando"
-                        else -> "Comprimindo"
+                        verifying -> if (optimizing) tr("Verificando o NSZ otimizado") else if (decompressing) tr("Verificando o arquivo descompactado") else tr("Verificando o arquivo comprimido")
+                        optimizing -> tr("Otimizando NSZ para blocos")
+                        decompressing -> tr("Descompactando")
+                        else -> tr("Comprimindo")
                     },
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
@@ -440,8 +441,8 @@ internal fun ConversionProgressContent() {
 
     ActionCard(
         icon = Icons.Default.Close,
-        title = "Cancelar",
-        subtitle = "O arquivo original é mantido",
+        title = tr("Cancelar"),
+        subtitle = tr("O arquivo original é mantido"),
         isError = true,
         onClick = { NszConverter.cancel() }
     )

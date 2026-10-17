@@ -98,7 +98,7 @@ class UiHandler {
 
         fun validate(): Boolean {
             if (inputText.value.isEmpty()) {
-                validation.value = "Must be between $minLength and $maxLength characters"
+                validation.value = tr("Must be between {0} and {1} characters", minLength, maxLength)
             } else {
                 return inputText.value.length !in minLength..maxLength
             }

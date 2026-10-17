@@ -41,7 +41,7 @@ class Logging(private var viewModel: MainViewModel) {
                 intent.putExtra(Intent.EXTRA_STREAM, uri)
                 intent.setDataAndType(uri, URLConnection.guessContentTypeFromName(zip.name))
                 intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                val chooser = Intent.createChooser(intent, "Share logs")
+                val chooser = Intent.createChooser(intent, tr("Share logs"))
                 viewModel.activity.startActivity(chooser)
             } else {
                 File(zipExportPath).delete()

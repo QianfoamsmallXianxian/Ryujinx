@@ -1019,7 +1019,7 @@ fun Preview() {
     }) {
         Icon(
             imageVector = CssGgIcons.Games,
-            contentDescription = "Open Panel"
+            contentDescription = tr("Open Panel")
         )
     }
 }

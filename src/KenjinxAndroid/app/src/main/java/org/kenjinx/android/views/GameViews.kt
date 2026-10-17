@@ -62,6 +62,7 @@ import org.kenjinx.android.viewmodels.VSyncMode
 import org.kenjinx.android.widgets.SimpleAlertDialog
 import java.util.Locale
 import kotlin.math.roundToInt
+import org.kenjinx.android.tr
 
 class GameViews {
     companion object {
@@ -144,7 +145,7 @@ class GameViews {
                 val progress = remember { mutableStateOf("Loading") }
 
                 fun qsLabel(name: String?, slot: Int): String =
-                    if (name.isNullOrBlank()) "Slot $slot" else name
+                    if (name.isNullOrBlank()) tr("Slot {0}", slot) else name
 
                 if (statsLevel.intValue != 0) {
                     GameStats(
@@ -244,13 +245,13 @@ class GameViews {
                             ) {
                                 item {
                                     Text(
-                                        "Controles rápidos",
+                                        tr("Controles rápidos"),
                                         style = MaterialTheme.typography.titleLarge,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                                 item {
-                                    DrawerToggle("Controle na tela", showController.value) {
+                                    DrawerToggle(tr("Controle na tela"), showController.value) {
                                         showController.value = it
                                         KenjinxNative.inputReleaseTouchPoint()
                                         mainViewModel.controller?.setVisible(it)
@@ -258,7 +259,7 @@ class GameViews {
                                     }
                                 }
                                 item {
-                                    DrawerToggle("Estatísticas", statsLevel.intValue != 0) {
+                                    DrawerToggle(tr("Estatísticas"), statsLevel.intValue != 0) {
                                         statsLevel.intValue = if (it) 3 else 0
                                         mainViewModel.updateActiveGameSettings { settings ->
                                             settings.performanceOverlayLevel = statsLevel.intValue
@@ -267,7 +268,7 @@ class GameViews {
                                     }
                                 }
                                 item {
-                                    DrawerToggle("Movimento", enableMotion.value) {
+                                    DrawerToggle(tr("Movimento"), enableMotion.value) {
                                         enableMotion.value = it
                                         mainViewModel.updateActiveGameSettings { settings -> settings.enableMotion = it }
                                         if (it) mainViewModel.motionSensorManager?.register()
@@ -275,7 +276,7 @@ class GameViews {
                                     }
                                 }
                                 item {
-                                    Text("Amiibo", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 8.dp))
+                                    Text(tr("Amiibo"), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 8.dp))
                                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                         (1..5).chunked(3).forEach { row ->
                                             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -288,8 +289,8 @@ class GameViews {
                                         }
                                         androidx.compose.material3.TextButton(onClick = {
                                             KenjinxNative.amiiboClear()
-                                            Toast.makeText(mainViewModel.activity, "Amiibo removido", Toast.LENGTH_SHORT).show()
-                                        }) { Text("Remover Amiibo") }
+                                            Toast.makeText(mainViewModel.activity, tr("Amiibo removido"), Toast.LENGTH_SHORT).show()
+                                        }) { Text(tr("Remover Amiibo")) }
                                     }
                                 }
                                 item {
@@ -309,7 +310,7 @@ class GameViews {
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Text("Sair do jogo", color = MaterialTheme.colorScheme.error)
+                                            Text(tr("Sair do jogo"), color = MaterialTheme.colorScheme.error)
                                             Icon(Icons.Default.Close, contentDescription = null, tint = MaterialTheme.colorScheme.error)
                                         }
                                     }
@@ -318,7 +319,7 @@ class GameViews {
                                     androidx.compose.material3.Button(
                                         modifier = Modifier.fillMaxWidth(),
                                         onClick = { showMore.value = false }
-                                    ) { Text("Fechar") }
+                                    ) { Text(tr("Fechar")) }
                                 }
                             }
                         }
@@ -353,10 +354,10 @@ class GameViews {
  if (!gameExitRequested.value) {
  SimpleAlertDialog.Confirmation(
  showDialog = showBackNotice,
- title = "Sair do jogo",
-                    message = "Tem certeza de que deseja sair do jogo? Todo progresso não salvo será perdido!",
- confirmText = "Sair do jogo",
- dismissText = "Continuar jogando",
+ title = tr("Sair do jogo"),
+                    message = tr("Tem certeza de que deseja sair do jogo? Todo progresso não salvo será perdido!"),
+ confirmText = tr("Sair do jogo"),
+ dismissText = tr("Continuar jogando"),
  onConfirm = {
  // Hide the exit controls immediately; the shared gate also rejects already queued clicks.
  showMore.value = false
@@ -409,9 +410,9 @@ class GameViews {
  5 -> settings.amiibo5Uri
  else -> null
  }
- val name = amiiboName(settings, slot) ?: "Slot $slot"
+ val name = amiiboName(settings, slot) ?: tr("Slot {0}", slot)
  if (uri.isNullOrBlank()) {
- Toast.makeText(mainViewModel.activity, "Slot $slot vazio", Toast.LENGTH_SHORT).show()
+ Toast.makeText(mainViewModel.activity, tr("Slot {0} vazio", slot), Toast.LENGTH_SHORT).show()
  return
  }
  try {
@@ -419,11 +420,11 @@ class GameViews {
  val loaded = bytes != null && bytes.isNotEmpty() && KenjinxNative.amiiboLoadBin(bytes, bytes.size)
  Toast.makeText(
  mainViewModel.activity,
- if (loaded) "Carregado: $name" else "Falha ao carregar Amiibo",
+ if (loaded) tr("Carregado: {0}", name) else tr("Falha ao carregar Amiibo"),
  Toast.LENGTH_SHORT
  ).show()
  } catch (error: Throwable) {
- Toast.makeText(mainViewModel.activity, "Erro: ${error.message}", Toast.LENGTH_SHORT).show()
+ Toast.makeText(mainViewModel.activity, tr("Erro: {0}", error.message), Toast.LENGTH_SHORT).show()
  }
  }
 

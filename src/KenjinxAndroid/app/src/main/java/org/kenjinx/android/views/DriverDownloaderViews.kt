@@ -78,6 +78,7 @@ import org.kenjinx.android.driver.DriverDownloader
 import org.kenjinx.android.viewmodels.VulkanDriverViewModel
 import java.io.File
 import java.util.Locale
+import org.kenjinx.android.tr
 
 private fun showDriverToast(activity: MainActivity, message: String, duration: Int) {
     activity.runOnUiThread {
@@ -172,22 +173,22 @@ fun DriverDownloaderDialog(
 
                     val allDrivers = catalog?.drivers.orEmpty()
                     val sourceLabel = when (catalogSource) {
-                        DriverCatalogRepository.CatalogSource.REMOTE -> "Online (GitHub)"
-                        DriverCatalogRepository.CatalogSource.CACHE -> "Cache Local"
-                        DriverCatalogRepository.CatalogSource.EMBEDDED_FALLBACK -> "Fallback Embarcado"
-                        else -> "Carregando"
+                        DriverCatalogRepository.CatalogSource.REMOTE -> tr("Online (GitHub)")
+                        DriverCatalogRepository.CatalogSource.CACHE -> tr("Cache Local")
+                        DriverCatalogRepository.CatalogSource.EMBEDDED_FALLBACK -> tr("Fallback Embarcado")
+                        else -> tr("Carregando")
                     }
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Baixar Drivers Vulkan",
+                            text = tr("Baixar Drivers Vulkan"),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-                        val subtitle = "Catálogo oficial • ${allDrivers.size} drivers disponíveis • $sourceLabel"
+                        val subtitle = tr("Catálogo oficial • {0} drivers disponíveis • {1}", allDrivers.size, sourceLabel)
                         Text(
                             text = subtitle,
                             style = MaterialTheme.typography.bodySmall,
@@ -198,10 +199,10 @@ fun DriverDownloaderDialog(
                     }
 
                     IconButton(onClick = { refreshCatalog() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Atualizar Catálogo", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Icon(Icons.Default.Refresh, contentDescription = tr("Atualizar Catálogo"), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     IconButton(onClick = handleDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Fechar", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Icon(Icons.Default.Close, contentDescription = tr("Fechar"), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
 
@@ -215,7 +216,7 @@ fun DriverDownloaderDialog(
                         FilterChip(
                             selected = selectedAuthorFilter == author,
                             onClick = { selectedAuthorFilter = author },
-                            label = { Text(author) },
+                            label = { Text(tr(author)) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                                 selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -229,7 +230,7 @@ fun DriverDownloaderDialog(
                     Box(modifier = Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             CircularProgressIndicator()
-                            Text("Carregando catálogo de drivers...", style = MaterialTheme.typography.bodyMedium)
+                            Text(tr("Carregando catálogo de drivers..."), style = MaterialTheme.typography.bodyMedium)
                         }
                     }
                 } else {
@@ -265,14 +266,14 @@ fun DriverDownloaderDialog(
                                 )
                                 Spacer(Modifier.height(10.dp))
                                 Text(
-                                    text = "Nenhum driver encontrado",
+                                    text = tr("Nenhum driver encontrado"),
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Spacer(Modifier.height(4.dp))
                                 Text(
-                                    text = "Não há drivers disponíveis para o autor selecionado.",
+                                    text = tr("Não há drivers disponíveis para o autor selecionado."),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center,
@@ -304,7 +305,7 @@ fun DriverDownloaderDialog(
 
                 // Attribution discreta
                 Text(
-                    text = "Os drivers são de autoria de seus respectivos desenvolvedores e baixados diretamente do GitHub.",
+                    text = tr("Os drivers são de autoria de seus respectivos desenvolvedores e baixados diretamente do GitHub."),
                     modifier = Modifier.fillMaxWidth(),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
@@ -392,7 +393,7 @@ fun DriverCatalogCard(
                             modifier = Modifier.size(14.dp)
                         )
                         Text(
-                            text = "Recomendado para Adreno 740 / Thor",
+                            text = tr("Recomendado para Adreno 740 / Thor"),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -405,14 +406,14 @@ fun DriverCatalogCard(
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 if (entry.mesaVersion.isNotBlank()) {
                     Text(
-                        text = "Mesa: ${entry.mesaVersion}",
+                        text = tr("Mesa: {0}", entry.mesaVersion),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 if (entry.vulkanVersion.isNotBlank()) {
                     Text(
-                        text = "Vulkan: ${entry.vulkanVersion}",
+                        text = tr("Vulkan: {0}", entry.vulkanVersion),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -462,11 +463,11 @@ fun DriverCatalogCard(
                                 downloader.downloadAndInstall(
                                     entry = entry,
                                     onSuccess = {
-                                        showDriverToast(activity, "Driver '${entry.name}' instalado com sucesso!", Toast.LENGTH_SHORT)
+                                        showDriverToast(activity, tr("Driver '{0}' instalado com sucesso!", entry.name), Toast.LENGTH_SHORT)
                                         onInstalled()
                                     },
                                     onError = { err ->
-                                        showDriverToast(activity, "Erro: $err", Toast.LENGTH_LONG)
+                                        showDriverToast(activity, tr("Erro: {0}", err), Toast.LENGTH_LONG)
                                     }
                                 )
                             },
@@ -474,7 +475,7 @@ fun DriverCatalogCard(
                         ) {
                             Icon(Icons.Default.CloudDownload, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Instalar")
+                            Text(tr("Instalar"))
                         }
                     }
                 }
@@ -489,7 +490,7 @@ fun DriverCatalogCard(
                         ) {
                             val percent = (state.progress * 100).toInt()
                             Text(
-                                text = "Baixando: $percent%",
+                                text = tr("Baixando: {0}%", percent),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -507,7 +508,7 @@ fun DriverCatalogCard(
                         )
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                             TextButton(onClick = { downloader.cancelDownload(entry.id) }) {
-                                Text("Cancelar", color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+                                Text(tr("Cancelar"), color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
                             }
                         }
                     }
@@ -552,7 +553,7 @@ fun DriverCatalogCard(
                                 }
                             }
                             Text(
-                                text = "Instalado",
+                                text = tr("Instalado"),
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
@@ -564,17 +565,17 @@ fun DriverCatalogCard(
                                 downloader.downloadAndInstall(
                                     entry = entry,
                                     onSuccess = {
-                                        showDriverToast(activity, "Driver '${entry.name}' reinstalado com sucesso!", Toast.LENGTH_SHORT)
+                                        showDriverToast(activity, tr("Driver '{0}' reinstalado com sucesso!", entry.name), Toast.LENGTH_SHORT)
                                         onInstalled()
                                     },
                                     onError = { err ->
-                                        showDriverToast(activity, "Erro: $err", Toast.LENGTH_LONG)
+                                        showDriverToast(activity, tr("Erro: {0}", err), Toast.LENGTH_LONG)
                                     }
                                 )
                             },
                             contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
                         ) {
-                            Text("Reinstalar", fontSize = 12.sp)
+                            Text(tr("Reinstalar"), fontSize = 12.sp)
                         }
                     }
                 }
@@ -599,17 +600,17 @@ fun DriverCatalogCard(
                                     downloader.downloadAndInstall(
                                         entry = entry,
                                         onSuccess = {
-                                            showDriverToast(activity, "Driver '${entry.name}' instalado com sucesso!", Toast.LENGTH_SHORT)
+                                            showDriverToast(activity, tr("Driver '{0}' instalado com sucesso!", entry.name), Toast.LENGTH_SHORT)
                                             onInstalled()
                                         },
                                         onError = { err ->
-                                            showDriverToast(activity, "Erro: $err", Toast.LENGTH_LONG)
+                                            showDriverToast(activity, tr("Erro: {0}", err), Toast.LENGTH_LONG)
                                         }
                                     )
                                 },
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                             ) {
-                                Text("Tentar novamente", fontSize = 12.sp)
+                                Text(tr("Tentar novamente"), fontSize = 12.sp)
                             }
                         }
                     }

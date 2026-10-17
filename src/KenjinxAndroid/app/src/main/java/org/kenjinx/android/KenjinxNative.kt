@@ -418,7 +418,7 @@ object KenjinxNative : KenjinxNativeJna by jnaInstance {
             try {
                 android.widget.Toast.makeText(
                     vm.activity,
-                    "Memória insuficiente: o jogo foi fechado para o aparelho não travar.",
+                    tr("Memória insuficiente: o jogo foi fechado para o aparelho não travar."),
                     android.widget.Toast.LENGTH_LONG
                 ).show()
             } catch (_: Throwable) {
