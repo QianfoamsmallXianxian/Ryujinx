@@ -2,14 +2,20 @@
 
 - **Versão no código:** Android 0.0.26 (`versionCode 20144`)
 - **Branch analisada:** [`neo-v2-nce2`](https://github.com/Sunshinin11/Ryujinx_Neo/tree/neo-v2-nce2)
-- **Estado remoto do código:** mudanças funcionais publicadas até 12/10/2026 na branch GitHub
-- **Último commit de código publicado:** [`b9fd6d981`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/b9fd6d98163c6fb85f2c98e462c1d892c5713ed5), de 12/10/2026
+- **Estado remoto do código:** mudanças funcionais publicadas até 16/10/2026 na branch GitHub
+- **Último commit de código publicado:** [`c36fbcff6`](https://github.com/Sunshinin11/Ryujinx_Neo/commit/c36fbcff62e37db9aedde09a2571e89afa8b9ef2), de 16/10/2026
 - **Mudanças funcionais de 28/09:** publicadas em cinco commits integrados à branch [`neo-v2-nce2`](https://github.com/Sunshinin11/Ryujinx_Neo/tree/neo-v2-nce2)
-- **Data da revisão:** 12/10/2026
+- **Data da revisão:** 16/10/2026
 
-Este texto cobre **somente a linha Ryujinx Neo Current em `neo-v2-nce2`**. A linha histórica `neo-v2-fase1` e o trabalho Linux ARM64 do Hugare não fazem parte deste changelog. A análise combinou o histórico publicado, o [relatório técnico](docs/RELATORIO_COMPLETO_RYUJINX_NEO.md) e os commits de código até `b9fd6d981`. Esta revisão descreve o estado publicado da Current no GitHub.
+Este texto cobre **somente a linha Ryujinx Neo Current em `neo-v2-nce2`**. A linha histórica `neo-v2-fase1` e o trabalho Linux ARM64 do Hugare não fazem parte deste changelog. A análise combinou o histórico publicado, o [relatório técnico](docs/RELATORIO_COMPLETO_RYUJINX_NEO.md) e os commits de código até `c36fbcff6`. Esta revisão descreve o estado publicado da Current no GitHub.
 
 ## Changelog do Neo Current
+
+### 16 de outubro — suporte à troca de idiomas no aplicativo
+
+- **Núcleo de internacionalização (I18n):** implementação do gerenciador `I18n` e da função global `tr()` em `I18n.kt`, mantendo os textos base no código em português (Brasil) com suporte a substituição de parâmetros `{0}`, `{1}`. A alteração de idioma atualiza as telas Compose de forma reativa e imediata via `mutableIntStateOf`, sem exigir reinicialização do aplicativo. A chamada a `I18n.refresh()` em `BaseActivity` sincroniza o estado caso o idioma do Android seja alterado externamente. [Commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/c36fbcff62e37db9aedde09a2571e89afa8b9ef2)
+- **Dicionários de tradução em assets:** inclusão da pasta `assets/i18n/` com arquivos JSON para sete idiomas: Português (Brasil) (`pt-BR.json`), Inglês (`en.json`), Espanhol (`es.json`), Russo (`ru.json`), Chinês Simplificado (`zh-CN.json`), Japonês (`ja.json`) e Coreano (`ko.json`). Chaves não encontradas ou sem tradução recorrem de forma segura à string original em português. [Commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/c36fbcff62e37db9aedde09a2571e89afa8b9ef2)
+- **Seleção de idioma na interface:** nova opção **Idioma do aplicativo** na aba Sistema das configurações gerais, persistida em preferências (`app_language`) e com suporte ao modo padrão **Seguir o sistema** (seleciona o primeiro idioma compatível da lista do Android ou cai para inglês quando nenhum é suportado). A opção de emulação do idioma do Switch foi renomeada para **Idioma do console** para evitar ambiguidades. A conversão para `tr()` foi aplicada em 29 arquivos Kotlin cobrindo telas, diálogos, toasts, assistentes e mensagens operacionais. [Commit](https://github.com/Sunshinin11/Ryujinx_Neo/commit/c36fbcff62e37db9aedde09a2571e89afa8b9ef2)
 
 ### 12 de outubro — FrameGen LSFG, pipelines Vulkan, vibração e memória
 
