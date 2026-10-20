@@ -35,10 +35,8 @@ jobs:
           yes | sdkmanager --licenses >/dev/null 2>&1 || true
           sdkmanager --install "ndk;28.2.13676358" || true
           sdkmanager --install "platforms;android-37.0" "build-tools;37.0.0" || true
-          sdkmanager --install "platforms;android-36"   "build-tools;36.0.0" || true
-          echo "===== AVAILABLE SDK ====="
+          sdkmanager --install "platforms;android-36" "build-tools;36.0.0" || true
           ls -d $ANDROID_HOME/platforms/* $ANDROID_HOME/build-tools/* 2>/dev/null || true
-          echo "===== AVAILABLE NDK ====="
           ls -d $ANDROID_HOME/ndk/* 2>/dev/null || true
       - name: Setup NDK toolchain + JDK 21
         run: |
@@ -53,9 +51,7 @@ jobs:
           echo "LD=$TOOLCHAIN/bin/ld.lld"  >> $GITHUB_ENV
           echo "AR=$TOOLCHAIN/bin/llvm-ar" >> $GITHUB_ENV
           echo "JAVA_HOME=${JAVA_HOME_21_X64}" >> $GITHUB_ENV
-          echo "===== JDK 21 ====="
           "$JAVA_HOME_21_X64/bin/java" -version
-          echo "===== NDK clang ====="
           "$TOOLCHAIN/bin/clang" --version | head -1
       - name: Cache Gradle + NuGet
         uses: actions/cache@v4
@@ -83,8 +79,8 @@ jobs:
         if: always()
         run: |
           find src/KenjinxAndroid -name "*.apk" -type f -ls 2>/dev/null | head -20 || true
-          echo "===== jniLibs in APK (if present) ====="
           for f in $(find src/KenjinxAndroid -name "*.apk" 2>/dev/null | head -1); do
+            echo "===== APK native libs ====="
             unzip -l "$f" 2>/dev/null | grep -E "lib/.*\.so" || true
           done
       - uses: actions/upload-artifact@v4
