@@ -19,10 +19,13 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
-      - uses: actions/setup-java@v4
+      - name: Setup Java 21 + 17
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: |
+            17
+            21
       - uses: android-actions/setup-android@v3
         with:
           packages: 'platform-tools'
@@ -37,7 +40,7 @@ jobs:
           ls -d $ANDROID_HOME/platforms/* $ANDROID_HOME/build-tools/* 2>/dev/null || true
           echo "===== AVAILABLE NDK ====="
           ls -d $ANDROID_HOME/ndk/* 2>/dev/null || true
-      - name: Setup NDK toolchain
+      - name: Setup NDK toolchain + JDK 21
         run: |
           NDK="$ANDROID_HOME/ndk/28.2.13676358"
           TOOLCHAIN="$NDK/toolchains/llvm/prebuilt/linux-x86_64"
@@ -49,13 +52,11 @@ jobs:
           echo "CXX=$TOOLCHAIN/bin/clang++" >> $GITHUB_ENV
           echo "LD=$TOOLCHAIN/bin/ld.lld"  >> $GITHUB_ENV
           echo "AR=$TOOLCHAIN/bin/llvm-ar" >> $GITHUB_ENV
-          echo "===== clang check ====="
-          which clang || true
-          clang --version || true
-          echo "===== sysroot check ====="
-          ls "$TOOLCHAIN/sysroot/usr/lib/aarch64-linux-android/21/crtbegin_so.o" 2>/dev/null || echo "crtbegin_so.o NOT FOUND at expected path"
-          echo "===== -llog check ====="
-          find "$TOOLCHAIN/sysroot" -name "liblog.so" 2>/dev/null | head -3 || true
+          echo "JAVA_HOME=${JAVA_HOME_21_X64}" >> $GITHUB_ENV
+          echo "===== JDK 21 ====="
+          "$JAVA_HOME_21_X64/bin/java" -version
+          echo "===== NDK clang ====="
+          "$TOOLCHAIN/bin/clang" --version | head -1
       - name: Cache Gradle + NuGet
         uses: actions/cache@v4
         with:
@@ -63,7 +64,7 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.nuget/packages
-          key: build-${{ runner.os }}-${{ hashFiles('src/KenjinxAndroid/**/*.gradle*', 'src/**/*.csproj', 'global.json', 'nuget.config') }}
+          key: build-${{ runner.os }}-${{ hashFiles('src/KenjinxAndroid/**/*.gradle*', 'src/**/*.csproj', 'global.json', 'nuget.config', '.github/workflows/android.yml') }}
           restore-keys: |
             build-${{ runner.os }}-
       - name: chmod gradlew
@@ -74,13 +75,18 @@ jobs:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g"
           NUGET_HTTP_TIMEOUT_SECONDS: "15"
         run: |
-          ./gradlew assembleDebug --no-daemon --stacktrace \
+          ./gradlew -Dorg.gradle.java.home="$JAVA_HOME" \
+            assembleDebug --no-daemon --stacktrace \
             -Porg.kenjinx.llvm.toolchain.path="$NDK_TOOLCHAIN" \
-            -Porg.kenjinx.llvm.toolchain.path.bin="$NDK_TOOLCHAIN/bin" \
             -Pandroid.ndkVersion=28.2.13676358
       - name: Locate APK
         if: always()
-        run: find src/KenjinxAndroid -name "*.apk" -type f -ls 2>/dev/null | head -20 || true
+        run: |
+          find src/KenjinxAndroid -name "*.apk" -type f -ls 2>/dev/null | head -20 || true
+          echo "===== jniLibs in APK (if present) ====="
+          for f in $(find src/KenjinxAndroid -name "*.apk" 2>/dev/null | head -1); do
+            unzip -l "$f" 2>/dev/null | grep -E "lib/.*\.so" || true
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: kenjinx-debug-apk-${{ github.sha }}
