@@ -296,6 +296,7 @@ class MainActivity : BaseActivity() {
 
         AppPath = this.getExternalFilesDir(null)!!.absolutePath
         AppLogger.init(this)
+        AppLogger.writeLog("INFO", "MainActivity", "App Started")
 
         coldResetIfZombie("onCreate")
         initialize()
