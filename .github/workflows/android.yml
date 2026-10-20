@@ -16,12 +16,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Environment
-        run: |
-          uname -a
-          nproc
-          free -m
-          df -h
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
@@ -32,23 +26,10 @@ jobs:
       - uses: android-actions/setup-android@v3
         with:
           packages: 'platform-tools'
-      - name: Install SDK + NDK
+      - name: NuGet diagnostics
         run: |
-          set -o pipefail
-          yes | sdkmanager --licenses >/dev/null 2>&1 || true
-          echo "===== AVAILABLE ====="
-          sdkmanager --list 2>/dev/null | grep -E 'platforms;android-3[4-9]|build-tools;3[4-9]|ndk;2[5-9]' || true
-          sdkmanager --install "platform-tools" || true
-          for api in 37 36 35 34; do
-            if sdkmanager --install "platforms;android-$api" "build-tools;$api.0.0" >/dev/null 2>&1; then
-              echo "INSTALLED platform=$api"; break
-            fi
-          done
-          for ndk in 25.1.8937393 26.1.10909125 27.0.12077973; do
-            sdkmanager --install "ndk;$ndk" || true
-          done
-          echo "===== NDK ====="
-          ls -d $ANDROID_HOME/ndk/* 2>/dev/null || true
+          cat nuget.config
+          dotnet nuget list source || true
       - name: Cache Gradle + NuGet
         uses: actions/cache@v4
         with:
@@ -56,20 +37,18 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
             ~/.nuget/packages
-          key: build-${{ runner.os }}-${{ hashFiles('src/KenjinxAndroid/**/*.gradle*', 'src/KenjinxAndroid/gradle/wrapper/gradle-wrapper.properties', 'src/**/*.csproj', 'global.json') }}
+          key: build-${{ runner.os }}-${{ hashFiles('src/KenjinxAndroid/**/*.gradle*', 'src/**/*.csproj', 'global.json', 'nuget.config') }}
           restore-keys: |
             build-${{ runner.os }}-
       - name: chmod gradlew
         run: chmod +x src/KenjinxAndroid/gradlew
-      - name: Gradle version
-        working-directory: src/KenjinxAndroid
-        run: ./gradlew --version
       - name: Build
         working-directory: src/KenjinxAndroid
         env:
-          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dkotlin.daemon.jvm.options=-Xmx4g"
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g"
           DOTNET_CLI_TELEMETRY_OPTOUT: "1"
           DOTNET_NOLOGO: "1"
+          NUGET_HTTP_TIMEOUT_SECONDS: "15"
         run: ./gradlew assembleDebug --no-daemon --stacktrace
       - name: Locate APK
         if: always()
