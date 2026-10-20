@@ -340,7 +340,7 @@ class QuickSettings(val activity: Activity) {
         if(forceNceAndPptc == true)
         {
             enablePptc = true
-            useNce = true
+            useNce = false
         }
         else
         {
