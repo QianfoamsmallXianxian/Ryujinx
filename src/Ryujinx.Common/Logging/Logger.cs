@@ -150,7 +150,7 @@ namespace Ryujinx.Common.Logging
             // Enable important log levels before configuration is loaded
             Error = new Log(LogLevel.Error);
             Warning = new Log(LogLevel.Warning);
-            Info = new Log(LogLevel.Info);
+            Info = new Log(LogLevel.Warning);
             Trace = new Log(LogLevel.Trace);
 
             _stdErrAdapter = new StdErrAdapter();
@@ -236,12 +236,12 @@ namespace Ryujinx.Common.Logging
             {
 #pragma warning disable IDE0055 // Disable formatting
                 case LogLevel.Debug     : Debug     = enabled ? new Log(LogLevel.Debug)     : new Log?(); break;
-                case LogLevel.Info      : Info      = enabled ? new Log(LogLevel.Info)      : new Log?(); break;
+                case LogLevel.Warning      : Info      = enabled ? new Log(LogLevel.Warning)      : new Log?(); break;
                 case LogLevel.Warning   : Warning   = enabled ? new Log(LogLevel.Warning)   : new Log?(); break;
                 case LogLevel.Error     : Error     = enabled ? new Log(LogLevel.Error)     : new Log?(); break;
                 case LogLevel.Guest     : Guest     = enabled ? new Log(LogLevel.Guest)     : new Log?(); break;
                 case LogLevel.AccessLog : AccessLog = enabled ? new Log(LogLevel.AccessLog) : new Log?(); break;
-                case LogLevel.Stub      : Stub      = enabled ? new Log(LogLevel.Stub)      : new Log?(); break;
+                case LogLevel.Error      : Stub      = enabled ? new Log(LogLevel.Error)      : new Log?(); break;
                 case LogLevel.Trace     : Trace     = enabled ? new Log(LogLevel.Trace)     : new Log?(); break;
                 default: throw new ArgumentException("Unknown Log Level");
 #pragma warning restore IDE0055

@@ -74,7 +74,7 @@ jobs:
           NUGET_HTTP_TIMEOUT_SECONDS: "15"
         run: |
           ./gradlew -Dorg.gradle.java.home="$JAVA_HOME" \
-            assembleDebug --no-daemon --stacktrace --warning-mode=none \
+            assembleRelease --no-daemon --stacktrace --warning-mode=none \
             -Porg.kenjinx.llvm.toolchain.path="$NDK_TOOLCHAIN" \
             -Pandroid.ndkVersion=28.2.13676358
       - name: Locate APK

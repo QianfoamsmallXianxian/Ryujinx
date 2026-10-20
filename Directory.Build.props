@@ -1,5 +1,8 @@
 <Project>
   <PropertyGroup>
+    <Optimize>true</Optimize>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <PublishReadyToRunComposite>true</PublishReadyToRunComposite>
     <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
     <TieredCompilation>true</TieredCompilation>
     <TieredPGO>true</TieredPGO>
