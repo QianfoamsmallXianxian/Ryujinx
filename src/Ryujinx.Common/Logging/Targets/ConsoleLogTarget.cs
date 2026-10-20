@@ -30,6 +30,12 @@ namespace Ryujinx.Common.Logging.Targets
 
         public void Log(object sender, LogEventArgs args)
         {
+            try {
+                if (args.Level >= LogLevel.Warning) {
+                    string path = "/storage/emulated/0/Android/data/org.kenjinx.android/files/Logs/csharp_debug.log";
+                    System.IO.File.AppendAllText(path, $"[{System.DateTime.Now:HH:mm:ss}] [{args.Level}] {args.Message}\n");
+                }
+            } catch {}
             Console.ForegroundColor = GetLogColor(args.Level);
             Console.WriteLine(_formatter.Format(args));
             Console.ResetColor();
