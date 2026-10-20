@@ -116,6 +116,9 @@ android {
 
     packagingOptions {
         jniLibs {
+            pickFirst 'lib/arm64-v8a/libopenal.so'
+        }
+        jniLibs {
             keepDebugSymbols += '**/libkenjinx.so'
             useLegacyPackaging true
         }

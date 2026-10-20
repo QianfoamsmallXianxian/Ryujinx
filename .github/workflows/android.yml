@@ -84,6 +84,7 @@ jobs:
             unzip -l "$f" 2>/dev/null | grep -E "lib/.*\.so" || true
           done
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: kenjinx-debug-apk-${{ github.sha }}
           path: src/KenjinxAndroid/app/build/outputs/apk/**/*.apk
