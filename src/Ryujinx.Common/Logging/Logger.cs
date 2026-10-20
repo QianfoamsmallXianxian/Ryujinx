@@ -238,6 +238,7 @@ namespace Ryujinx.Common.Logging
                 case LogLevel.Debug     : Debug     = enabled ? new Log(LogLevel.Debug)     : new Log?(); break;
                 case LogLevel.Info      : Info      = enabled ? new Log(LogLevel.Info)      : new Log?(); break;
                 case LogLevel.Info      : Info      = enabled ? new Log(LogLevel.Info)      : new Log?(); break;
+                case LogLevel.Info      : Info      = enabled ? new Log(LogLevel.Info)      : new Log?(); break;
                 case LogLevel.Warning   : Warning   = enabled ? new Log(LogLevel.Warning)   : new Log?(); break;
                 case LogLevel.Error     : Error     = enabled ? new Log(LogLevel.Error)     : new Log?(); break;
                 case LogLevel.Guest     : Guest     = enabled ? new Log(LogLevel.Guest)     : new Log?(); break;

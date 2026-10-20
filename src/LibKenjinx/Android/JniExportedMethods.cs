@@ -1402,4 +1402,14 @@ namespace LibKenjinx
             Ryujinx.Common.Diagnostics.NeoGraphicsSettings.WebOfflineTermsEnabled = enable;
         }
     }
+
+    [JniExport("SendLogToAndroid")]
+    public static void SendLogToAndroid(int level, string tag, string message) {
+        try {
+            var logStr = $"[C#] [{level}] [{tag}] {message}";
+            Java.Lang.JavaSystem.LoadLibrary("log");
+            if (level >= 3) Java.Lang.JavaSystem.Err.Println(logStr);
+            else Java.Lang.JavaSystem.Out.Println(logStr);
+        } catch {}
+    }
 }

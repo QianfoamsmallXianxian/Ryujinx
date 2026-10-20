@@ -38,7 +38,7 @@ namespace Ryujinx.Graphics.Vulkan
                 AddressModeV = info.AddressV.Convert(),
                 AddressModeW = info.AddressP.Convert(),
                 MipLodBias = info.MipLodBias,
-                AnisotropyEnable = info.MaxAnisotropy != 1f,
+                AnisotropyEnable = false,
                 MaxAnisotropy = info.MaxAnisotropy,
                 CompareEnable = info.CompareMode == CompareMode.CompareRToTexture,
                 CompareOp = info.CompareOp.Convert(),

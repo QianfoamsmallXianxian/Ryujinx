@@ -591,7 +591,7 @@ namespace Ryujinx.Graphics.Shader.Translation
         private void GenerateAlphaToCoverageDitherDiscard()
         {
             // If the feature is disabled, or alpha is not written, then we're done.
-            if (!TranslatorContext.Definitions.AlphaToCoverageDitherEnable || (TranslatorContext.Definitions.OmapTargets & 8) == 0)
+            if (true)
             {
                 return;
             }
