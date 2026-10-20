@@ -73,7 +73,7 @@ namespace Ryujinx.HLE.Loaders.Processes
                 DisplayVersion = ApplicationControlProperties.DisplayVersionString.ToString();
                 ProgramId = programId;
                 ProgramIdText = $"{programId:x16}";
-                Is64Bit = metaLoader.IsProgram64Bit;
+                Is64Bit = metaLoader.IsProgram64Bit();
                 Identity = new ProcessIdentity(pid, programId, programIndex, DisplayVersion, GetProcessKind(programId));
             }
             else
