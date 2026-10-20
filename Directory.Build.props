@@ -1,6 +1,10 @@
 <Project>
   <PropertyGroup>
-        <NoWarn>$(NoWarn);CS8618;CS8602;CS8794;IL2075;IL2026;IL3050;IL3053;CS0169;CS8601;CS8603;IL2070;IL2020</NoWarn>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+    <TieredCompilation>true</TieredCompilation>
+    <TieredPGO>true</TieredPGO>
+
+        <NoWarn>$(NoWarn);CS8618;CS8602;CS8794;IL2075;IL2026;IL3050;IL3053;CS0169;CS8601;CS8603;IL2070;IL2020;CS8618;CS8602;CS8794;IL2075;IL2026;IL3050;IL3053;CS0169;CS8601;CS8603;IL2070;IL2020</NoWarn>
     <TargetFramework>net9.0</TargetFramework>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
